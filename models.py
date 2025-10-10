@@ -49,7 +49,10 @@ class Hero:
         self.buffs = []
 
         # Skills and abilities
-        self.unlocked_skills = ['basic_attack']
+        self.unlocked_skills = [
+            Skill("Power Strike", "physical", 20, 10, "A powerful physical attack."),
+            Skill("Fireball", "magic", 30, 20, "A fiery magic attack.")
+        ]
         self.skill_cooldowns = {}
 
         # Initialize derived stats after equipment is set up
@@ -416,3 +419,12 @@ class Enemy:
     def get_combat_display_text(self):
         """Get text representation for combat display."""
         return f"{self.name} (Lv.{self.level})\nHP: {self.health}/{self.max_health}"
+
+class Skill:
+    """Represents a skill or ability."""
+    def __init__(self, name, skill_type, damage, mana_cost, description=""):
+        self.name = name
+        self.skill_type = skill_type  # 'physical', 'magic'
+        self.damage = damage
+        self.mana_cost = mana_cost
+        self.description = description

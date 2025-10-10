@@ -184,3 +184,137 @@ def get_enemy_types():
         'tower': ['mage', 'apprentice', 'guardian', 'elemental'],
         'dungeon': ['warrior', 'rogue', 'knight', 'boss']
     }
+
+def handle_combat_turn(hero, enemy, action):
+    """
+    Handles a single turn of combat.
+
+    Args:
+        hero (Hero): The player's character.
+        enemy (Enemy): The enemy character.
+        action (str): The action taken by the player ('attack', 'run', 'use_item').
+
+    Returns:
+        list: A list of combat event dictionaries.
+        bool: True if the combat is over, False otherwise.
+    """
+    events = []
+    combat_over = False
+
+    if action == "attack":
+        # Player attacks with critical chance
+        base_damage = hero.attack_power
+        is_critical = random.random() * 100 < hero.crit_chance
+
+        if is_critical:
+            base_damage = int(base_damage * 1.5)
+            events.append({'type': 'critical_hit'})
+
+        actual_damage = enemy.take_damage(base_damage, 'physical')
+        if actual_damage > 0:
+            events.append({'type': 'player_damage', 'damage': actual_damage, 'target': enemy.name})
+        else:
+            events.append({'type': 'player_miss', 'target': enemy.name})
+
+        if not enemy.is_alive():
+            # Enemy defeated
+            leveled_up, levels_gained = hero.gain_experience(enemy.exp_reward)
+            hero.gold += enemy.gold_reward
+
+            events.append({'type': 'enemy_defeated', 'enemy_name': enemy.name})
+            events.append({'type': 'gain_experience', 'amount': enemy.exp_reward})
+            events.append({'type': 'gain_gold', 'amount': enemy.gold_reward})
+
+            if leveled_up:
+                events.append({'type': 'level_up', 'new_level': hero.level, 'message': hero.get_level_up_message()})
+
+            # Item drop
+            drop_chance = 0.2 + (enemy.level * 0.05)
+            if random.random() < min(drop_chance, 0.8):
+                item = generate_random_item(enemy.level)
+                hero.add_item(item)
+                events.append({'type': 'item_drop', 'item_name': item.name, 'rarity': item.rarity})
+            
+            combat_over = True
+            return events, combat_over
+
+    elif action[0] == "use_skill":
+        skill = action[1]
+        events.append({'type': 'use_skill', 'skill_name': skill.name})
+        
+        damage = skill.damage
+        if skill.skill_type == 'physical':
+            damage += hero.strength // 2
+        elif skill.skill_type == 'magic':
+            damage += hero.intelligence // 2
+
+        actual_damage = enemy.take_damage(damage, skill.skill_type)
+        if actual_damage > 0:
+            events.append({'type': 'player_damage', 'damage': actual_damage, 'target': enemy.name})
+        else:
+            events.append({'type': 'player_miss', 'target': enemy.name})
+
+        if not enemy.is_alive():
+            # Enemy defeated
+            leveled_up, levels_gained = hero.gain_experience(enemy.exp_reward)
+            hero.gold += enemy.gold_reward
+
+            events.append({'type': 'enemy_defeated', 'enemy_name': enemy.name})
+            events.append({'type': 'gain_experience', 'amount': enemy.exp_reward})
+            events.append({'type': 'gain_gold', 'amount': enemy.gold_reward})
+
+            if leveled_up:
+                events.append({'type': 'level_up', 'new_level': hero.level, 'message': hero.get_level_up_message()})
+
+            # Item drop
+            drop_chance = 0.2 + (enemy.level * 0.05)
+            if random.random() < min(drop_chance, 0.8):
+                item = generate_random_item(enemy.level)
+                hero.add_item(item)
+                events.append({'type': 'item_drop', 'item_name': item.name, 'rarity': item.rarity})
+            
+            combat_over = True
+            return events, combat_over
+
+    elif action == "run":
+        # Try to escape
+        if random.random() < 0.4:  # 40% chance to escape
+            events.append({'type': 'escape_success'})
+            combat_over = True
+            return events, combat_over
+        else:
+            events.append({'type': 'escape_fail'})
+
+    elif action == "use_item":
+        # Item was already used, just process enemy turn
+        pass
+
+    # Enemy's turn
+    if enemy.is_alive():
+        if random.random() < 0.3 and enemy.special_attacks:  # 30% chance for special attack
+            damage_type, damage = enemy.perform_special_attack()
+            actual_damage, hit_type = hero.take_damage(damage, damage_type)
+
+            if hit_type == "dodged":
+                events.append({'type': 'enemy_miss', 'enemy_name': enemy.name, 'attack_type': damage_type})
+            else:
+                events.append({'type': 'enemy_damage', 'damage': actual_damage, 'enemy_name': enemy.name, 'attack_type': damage_type})
+        else:
+            # Regular attack
+            actual_damage, hit_type = hero.take_damage(enemy.attack, 'physical')
+            if hit_type == "dodged":
+                events.append({'type': 'enemy_miss', 'enemy_name': enemy.name, 'attack_type': 'physical'})
+            else:
+                events.append({'type': 'enemy_damage', 'damage': actual_damage, 'enemy_name': enemy.name, 'attack_type': 'physical'})
+
+        if not hero.is_alive():
+            events.append({'type': 'player_defeated'})
+            combat_over = True
+            return events, combat_over
+
+    # Process status effects
+    status_damage = hero.process_status_effects()
+    if status_damage > 0:
+        events.append({'type': 'status_effect_damage', 'damage': status_damage})
+
+    return events, combat_over

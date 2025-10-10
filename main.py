@@ -9,7 +9,7 @@ from PySide6.QtGui import QFont, QPalette, QColor, QPixmap
 import random
 import time
 from models import Hero, Enemy
-from game import random_encounter, get_shop_items, apply_item_effects
+from game import random_encounter, get_shop_items, apply_item_effects, handle_combat_turn
 from ui_components import ItemCard, ItemSelectionOverlay, CharacterCreationOverlay
 
 class GameState:
@@ -799,19 +799,73 @@ class RPGGame(QMainWindow):
 
         self.stacked_widget.addWidget(page)
 
+    def create_placeholder_pixmap(self, color, size=150):
+        """Creates a QPixmap of a given color and size."""
+        pixmap = QPixmap(size, size)
+        pixmap.fill(color)
+        return pixmap
+
     def create_combat_page(self):
-        """Create the combat page"""
+        """Create the visual combat page"""
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        # Combat info display
-        self.combat_info = QLabel("Combat Information")
-        self.combat_info.setObjectName("combat_info")
-        self.combat_info.setMinimumHeight(200)
-        layout.addWidget(self.combat_info)
+        # Top section for combatants
+        combatants_layout = QHBoxLayout()
 
+        # Hero Side
+        hero_combat_layout = QVBoxLayout()
+        hero_combat_layout.setAlignment(Qt.AlignCenter)
+        
+        self.hero_combat_name = QLabel("Hero")
+        self.hero_combat_name.setStyleSheet("font-size: 16px; font-weight: bold; color: #61afef;")
+        self.hero_combat_name.setAlignment(Qt.AlignCenter)
+        
+        self.hero_sprite_label = QLabel()
+        self.hero_sprite_label.setAlignment(Qt.AlignCenter)
+        
+        self.hero_combat_health_bar = AnimatedProgressBar()
+        self.hero_combat_health_bar.setMaximumHeight(20)
+        self.hero_combat_health_bar.setStyleSheet("""
+            QProgressBar::chunk { background-color: #98c379; }
+        """)
+
+        hero_combat_layout.addWidget(self.hero_combat_name)
+        hero_combat_layout.addWidget(self.hero_sprite_label)
+        hero_combat_layout.addWidget(self.hero_combat_health_bar)
+        combatants_layout.addLayout(hero_combat_layout)
+
+        # VS Label
+        vs_label = QLabel("VS")
+        vs_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #e5c07b;")
+        vs_label.setAlignment(Qt.AlignCenter)
+        combatants_layout.addWidget(vs_label)
+
+        # Enemy Side
+        enemy_combat_layout = QVBoxLayout()
+        enemy_combat_layout.setAlignment(Qt.AlignCenter)
+
+        self.enemy_combat_name = QLabel("Enemy")
+        self.enemy_combat_name.setStyleSheet("font-size: 16px; font-weight: bold; color: #e06c75;")
+        self.enemy_combat_name.setAlignment(Qt.AlignCenter)
+
+        self.enemy_sprite_label = QLabel()
+        self.enemy_sprite_label.setAlignment(Qt.AlignCenter)
+
+        self.enemy_combat_health_bar = AnimatedProgressBar()
+        self.enemy_combat_health_bar.setMaximumHeight(20)
+        self.enemy_combat_health_bar.setStyleSheet("""
+            QProgressBar::chunk { background-color: #e06c75; }
+        """)
+
+        enemy_combat_layout.addWidget(self.enemy_combat_name)
+        enemy_combat_layout.addWidget(self.enemy_sprite_label)
+        enemy_combat_layout.addWidget(self.enemy_combat_health_bar)
+        combatants_layout.addLayout(enemy_combat_layout)
+
+        layout.addLayout(combatants_layout)
         layout.addStretch()
 
         # Combat buttons
@@ -822,6 +876,25 @@ class RPGGame(QMainWindow):
         self.attack_btn.setObjectName("attack_btn")
         self.attack_btn.setToolTip("Strike the enemy with your weapon!")
         self.attack_btn.setMinimumHeight(60)
+
+        self.use_skill_btn = QPushButton("✨ Use Skill")
+        self.use_skill_btn.setObjectName("use_skill_btn")
+        self.use_skill_btn.setToolTip("Use a special skill or magic spell")
+        self.use_skill_btn.setMinimumHeight(60)
+        self.use_skill_btn.setStyleSheet("""
+            QPushButton#use_skill_btn {
+                background-color: #282c34;
+                color: #c678dd;
+                border: 1px solid #c678dd;
+                padding: 10px 20px;
+                border-radius: 4px;
+                font-weight: 600;
+            }
+            QPushButton#use_skill_btn:hover {
+                background-color: #3e4452;
+                color: #ffffff;
+            }
+        """)
 
         self.use_item_btn = QPushButton("🧪 Use Item")
         self.use_item_btn.setObjectName("use_item_btn")
@@ -848,11 +921,11 @@ class RPGGame(QMainWindow):
         self.run_btn.setMinimumHeight(60)
 
         self.attack_btn.clicked.connect(self.combat_attack)
+        self.use_skill_btn.clicked.connect(self.combat_use_skill)
         self.use_item_btn.clicked.connect(self.combat_use_item)
         self.run_btn.clicked.connect(self.combat_run)
 
-        # Add shadow effects to combat buttons for impact
-        for btn in [self.attack_btn, self.use_item_btn, self.run_btn]:
+        for btn in [self.attack_btn, self.use_skill_btn, self.use_item_btn, self.run_btn]:
             shadow = QGraphicsDropShadowEffect()
             shadow.setBlurRadius(20)
             shadow.setXOffset(0)
@@ -861,11 +934,11 @@ class RPGGame(QMainWindow):
             btn.setGraphicsEffect(shadow)
 
         combat_buttons_layout.addWidget(self.attack_btn, 0, 0)
-        combat_buttons_layout.addWidget(self.use_item_btn, 0, 1)
-        combat_buttons_layout.addWidget(self.run_btn, 1, 0, 1, 2)
+        combat_buttons_layout.addWidget(self.use_skill_btn, 0, 1)
+        combat_buttons_layout.addWidget(self.use_item_btn, 1, 0)
+        combat_buttons_layout.addWidget(self.run_btn, 1, 1)
 
         layout.addLayout(combat_buttons_layout)
-
         self.stacked_widget.addWidget(page)
 
     def log_message(self, message):
@@ -905,6 +978,48 @@ class RPGGame(QMainWindow):
         # Scroll to bottom to show newest messages
         scrollbar = self.log_display.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+    def handle_event(self, event):
+        """Processes a game event and logs a message."""
+        event_type = event.get('type')
+        params = event
+        
+        message = ""
+        if event_type == 'critical_hit':
+            message = "💥 Critical hit!"
+        elif event_type == 'player_damage':
+            message = f"⚔️ You deal {params['damage']} damage to {params['target']}!"
+            self.shake_widget(self.enemy_sprite_label)
+        elif event_type == 'player_miss':
+            message = f"🛡️ {params['target']} dodges your attack!"
+        elif event_type == 'enemy_defeated':
+            message = f"🎉 You defeated the {params['enemy_name']}!"
+        elif event_type == 'gain_experience':
+            message = f"⭐ Gained {params['amount']} experience!"
+        elif event_type == 'gain_gold':
+            message = f"💰 Gained {params['amount']} gold!"
+        elif event_type == 'level_up':
+            message = params['message']
+        elif event_type == 'item_drop':
+            message = f"📦 Found {params['item_name']} ({params['rarity']})!"
+        elif event_type == 'escape_success':
+            message = "🏃 You successfully escaped!"
+        elif event_type == 'escape_fail':
+            message = "❌ Failed to escape!"
+        elif event_type == 'enemy_miss':
+            message = f"🛡️ {params['enemy_name']} attacks, but you dodge!"
+        elif event_type == 'enemy_damage':
+            message = f"💥 {params['enemy_name']} deals {params['damage']} damage to you!"
+            self.shake_widget(self.hero_sprite_label)
+        elif event_type == 'player_defeated':
+            message = "💀 You have been defeated..."
+        elif event_type == 'status_effect_damage':
+            message = f"☠️ You take {params['damage']} damage from status effects!"
+        elif event_type == 'use_skill':
+            message = f"✨ You used {params['skill_name']}!"
+
+        if message:
+            self.log_message(message)
 
     def show_menu(self):
         """Show the main menu"""
@@ -1221,36 +1336,36 @@ class RPGGame(QMainWindow):
             return
 
         self.current_state = GameState.COMBAT
-
-        # Switch to combat page
         self.stacked_widget.setCurrentIndex(PageIndex.COMBAT)
 
-        hero_stats = self.hero.get_combat_stats_text()
-        enemy_stats = self.current_enemy.get_combat_display_text()
+        # Update names
+        self.hero_combat_name.setText(f"{self.hero.name} (Lv.{self.hero.level})")
+        self.enemy_combat_name.setText(f"{self.current_enemy.name} (Lv.{self.current_enemy.level})")
 
-        # Professional combat display with better formatting
-        combat_text = f"""
-<div style='text-align: center; padding: 10px;'>
-    <span style='color: #e06c75; font-size: 16px; font-weight: bold;'>⚔️ Combat Initiated! ⚔️</span><br>
-    <span style='color: #abb2bf; font-size: 14px;'>A wild {self.current_enemy.name} appears!</span>
-</div>
-<div style='padding: 8px; background-color: #21252b; border-radius: 5px; margin: 5px; border: 1px solid #3e4452;'>
-    <span style='color: #61afef; font-weight: bold;'>{self.hero.name} (Lv.{self.hero.level})</span><br>
-    <span style='color: #98c379;'>HP: {self.hero.health}/{self.hero.max_health}</span> |
-    <span style='color: #61afef;'>MP: {self.hero.mana}/{self.hero.max_mana}</span><br>
-    <span style='color: #e06c75;'>ATK: {self.hero.attack_power}</span> |
-    <span style='color: #61afef;'>DEF: {self.hero.defense}</span>
-</div>
-<div style='text-align: center; padding: 5px;'>
-    <span style='color: #e5c07b; font-size: 14px; font-weight: bold;'>⚡ VS ⚡</span>
-</div>
-<div style='padding: 8px; background-color: #21252b; border-radius: 5px; margin: 5px; border: 1px solid #3e4452;'>
-    <span style='color: #e06c75; font-weight: bold;'>{self.current_enemy.name} (Lv.{self.current_enemy.level})</span><br>
-    <span style='color: #e06c75;'>HP: {self.current_enemy.health}/{self.current_enemy.max_health}</span>
-</div>
-        """
+        # Update sprites
+        hero_sprite = QPixmap("assets/Hero.png")
+        
+        enemy_sprite_map = {
+            'warrior': "assets/Orc.png",
+            'mage': "assets/mage.png",
+            'rogue': "assets/rogue.png",
+            'tank': "assets/golem.png"
+        }
+        enemy_sprite_path = enemy_sprite_map.get(self.current_enemy.enemy_type, "assets/Orc.png")
+        enemy_sprite = QPixmap(enemy_sprite_path)
 
-        self.combat_info.setText(combat_text)
+        self.hero_sprite_label.setPixmap(hero_sprite.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.enemy_sprite_label.setPixmap(enemy_sprite.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+        # Update health bars
+        self.hero_combat_health_bar.setRange(0, self.hero.max_health)
+        self.hero_combat_health_bar.setValue(self.hero.health)
+        self.hero_combat_health_bar.setFormat(f"{self.hero.health} / {self.hero.max_health}")
+
+        self.enemy_combat_health_bar.setRange(0, self.current_enemy.max_health)
+        self.enemy_combat_health_bar.setValue(self.current_enemy.health)
+        self.enemy_combat_health_bar.setFormat(f"{self.current_enemy.health} / {self.current_enemy.max_health}")
+
         self.log_message(f"A wild {self.current_enemy.name} (Lv.{self.current_enemy.level}) appears!")
 
     def hide_combat_interface(self):
@@ -1265,126 +1380,26 @@ class RPGGame(QMainWindow):
         if not self.hero or not self.current_enemy:
             return
 
-        combat_messages = []
+        events, combat_over = handle_combat_turn(self.hero, self.current_enemy, action)
 
-        if action == "attack":
-            # Player attacks with critical chance
-            base_damage = self.hero.attack_power
-            is_critical = random.random() * 100 < self.hero.crit_chance
+        for event in events:
+            self.handle_event(event)
 
-            if is_critical:
-                base_damage = int(base_damage * 1.5)
-                combat_messages.append("💥 Critical hit!")
+        # Update health bars
+        self.hero_combat_health_bar.setValue(self.hero.health)
+        self.hero_combat_health_bar.setFormat(f"{self.hero.health} / {self.hero.max_health}")
+        self.enemy_combat_health_bar.setValue(self.current_enemy.health)
+        self.enemy_combat_health_bar.setFormat(f"{self.current_enemy.health} / {self.current_enemy.max_health}")
 
-            actual_damage = self.current_enemy.take_damage(base_damage, 'physical')
-            if actual_damage > 0:
-                combat_messages.append(f"⚔️ You deal {actual_damage} damage to {self.current_enemy.name}!")
-                # Add visual feedback for successful attack
-                QTimer.singleShot(100, lambda: self.flash_widget(self.combat_info, "rgba(231, 76, 60, 0.3)", 200))
-            else:
-                combat_messages.append(f"🛡️ {self.current_enemy.name} dodges your attack!")
-
-            if not self.current_enemy.is_alive():
-                # Enemy defeated
-                leveled_up, levels_gained = self.hero.gain_experience(self.current_enemy.exp_reward)
-                self.hero.gold += self.current_enemy.gold_reward
-
-                combat_messages.append(f"🎉 You defeated the {self.current_enemy.name}!")
-                combat_messages.append(f"⭐ Gained {self.current_enemy.exp_reward} experience!")
-                combat_messages.append(f"💰 Gained {self.current_enemy.gold_reward} gold!")
-
-                if leveled_up:
-                    combat_messages.append(self.hero.get_level_up_message())
-                    # Celebrate level up with visual effects
-                    QTimer.singleShot(500, lambda: self.flash_widget(self.stats_group, "rgba(243, 156, 18, 0.3)", 500))
-
-                # Item drop
-                from game import generate_random_item
-                drop_chance = 0.2 + (self.current_enemy.level * 0.05)
-                if random.random() < min(drop_chance, 0.8):
-                    item = generate_random_item(self.current_enemy.level)
-                    self.hero.add_item(item)
-                    combat_messages.append(f"📦 Found {item.name} ({item.rarity})!")
-
-                # Show victory and return to adventure
-                for message in combat_messages:
-                    self.log_message(message)
-
-                self.hide_combat_interface()
-                self.update_stats_display()
-                return
-
-        elif action == "run":
-            # Try to escape
-            if random.random() < 0.4:  # 40% chance to escape
-                combat_messages.append("🏃 You successfully escaped!")
-                for message in combat_messages:
-                    self.log_message(message)
-                self.hide_combat_interface()
-                return
-            else:
-                combat_messages.append("❌ Failed to escape!")
-
-        elif action == "use_item":
-            # Item was already used in combat_use_item, just process enemy turn
-            pass
-
-        # Enemy's turn - may use special attacks
-        if self.current_enemy.is_alive():
-            if random.random() < 0.3 and self.current_enemy.special_attacks:  # 30% chance for special attack
-                damage_type, damage = self.current_enemy.perform_special_attack()
-                actual_damage, hit_type = self.hero.take_damage(damage, damage_type)
-
-                if hit_type == "dodged":
-                    combat_messages.append(f"🛡️ {self.current_enemy.name} uses {damage_type} attack, but you dodge!")
-                else:
-                    combat_messages.append(f"💥 {self.current_enemy.name} uses special {damage_type} attack dealing {actual_damage} damage!")
-            else:
-                # Regular attack
-                actual_damage, hit_type = self.hero.take_damage(self.current_enemy.attack, 'physical')
-                if hit_type == "dodged":
-                    combat_messages.append(f"🛡️ {self.current_enemy.name} attacks, but you dodge!")
-                else:
-                    combat_messages.append(f"💥 {self.current_enemy.name} deals {actual_damage} damage to you!")
-
+        if combat_over:
             if not self.hero.is_alive():
-                combat_messages.append("💀 You have been defeated...")
-                for message in combat_messages:
-                    self.log_message(message)
                 QMessageBox.critical(self, "Defeat", "You have been defeated! Game Over.")
                 self.quit_game()
-                return
-
-        # Process status effects
-        status_damage = self.hero.process_status_effects()
-        if status_damage > 0:
-            combat_messages.append(f"☠️ You take {status_damage} damage from status effects!")
-
-        # Update combat display with professional formatting
-        combat_text = f"""
-<div style='text-align: center; padding: 10px;'>
-    <span style='color: #e06c75; font-size: 16px; font-weight: bold;'>⚔️ Battle in Progress ⚔️</span>
-</div>
-<div style='padding: 8px; background-color: #21252b; border-radius: 5px; margin: 5px; border: 1px solid #3e4452;'>
-    <span style='color: #61afef; font-weight: bold;'>{self.hero.name} (Lv.{self.hero.level})</span><br>
-    <span style='color: #98c379;'>HP: {self.hero.health}/{self.hero.max_health}</span> |
-    <span style='color: #61afef;'>MP: {self.hero.mana}/{self.hero.max_mana}</span><br>
-    <span style='color: #e06c75;'>ATK: {self.hero.attack_power}</span> |
-    <span style='color: #61afef;'>DEF: {self.hero.defense}</span>
-</div>
-<div style='text-align: center; padding: 5px;'>
-    <span style='color: #e5c07b; font-size: 14px; font-weight: bold;'>⚡ VS ⚡</span>
-</div>
-<div style='padding: 8px; background-color: #21252b; border-radius: 5px; margin: 5px; border: 1px solid #3e4452;'>
-    <span style='color: #e06c75; font-weight: bold;'>{self.current_enemy.name} (Lv.{self.current_enemy.level})</span><br>
-    <span style='color: #e06c75;'>HP: {self.current_enemy.health}/{self.current_enemy.max_health}</span>
-</div>
-        """
-
-        self.combat_info.setText(combat_text)
-
-        for message in combat_messages:
-            self.log_message(message)
+            else:
+                # Use a timer to allow player to see result before hiding interface
+                QTimer.singleShot(1500, self.hide_combat_interface)
+            self.update_stats_display()
+            return
 
         self.update_stats_display()
 
@@ -1496,6 +1511,29 @@ class RPGGame(QMainWindow):
     def combat_run(self):
         """Handle combat run action"""
         self.process_combat_round("run")
+
+    def combat_use_skill(self):
+        """Handle using a skill during combat using overlay"""
+        if not self.hero or not self.current_enemy:
+            return
+
+        if not self.hero.unlocked_skills:
+            self.log_message("You have no skills to use!")
+            return
+
+        # Create skill selection overlay
+        # Note: We need a way to display skills in an overlay. For now, we'll just use the first skill.
+        # This should be replaced with a proper skill selection overlay.
+        skill_to_use = self.hero.unlocked_skills[0]
+        self.on_combat_skill_used(skill_to_use)
+
+    def on_combat_skill_used(self, skill):
+        """Handle skill being used in combat"""
+        if self.hero.mana >= skill.mana_cost:
+            self.hero.mana -= skill.mana_cost
+            self.process_combat_round(('use_skill', skill))
+        else:
+            self.log_message(f"Not enough mana to use {skill.name}!")
 
     def combat_use_item(self):
         """Handle using an item during combat using overlay"""
