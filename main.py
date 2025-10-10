@@ -9,7 +9,7 @@ from PySide6.QtGui import QFont, QPalette, QColor, QPixmap
 import random
 import time
 from models import Hero, Enemy
-from game import random_encounter, get_shop_items, apply_item_effects, handle_combat_turn
+from game import random_encounter, get_shop_items, apply_item_effects, handle_player_turn, handle_enemy_turn
 from ui_components import ItemCard, ItemSelectionOverlay, CharacterCreationOverlay
 
 class GameState:
@@ -45,6 +45,51 @@ class AnimatedProgressBar(QProgressBar):
         self._animation.setEndValue(value)
         self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._animation.start()
+
+class ShadowedProgressBar(AnimatedProgressBar):
+    """A progress bar that draws text with a shadow for better contrast."""
+    def paintEvent(self, event):
+        # First, draw the progress bar as usual but without the text
+        super().paintEvent(event)
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.TextAntialiasing)
+        text = self.text()
+        text_rect = self.rect()
+
+        # Draw the shadow/outline
+        painter.setPen(QColor('#1e2228'))
+        painter.drawText(text_rect.translated(1, 1), Qt.AlignCenter, text)
+
+        # Draw the main text
+        painter.setPen(QColor('#ffffff'))
+        painter.drawText(text_rect, Qt.AlignCenter, text)
+
+class ScalablePixmapLabel(QLabel):
+    """A QLabel that scales its pixmap while maintaining aspect ratio."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._original_pixmap = None
+        self.setMinimumSize(150, 150) # Set a minimum size for the sprite
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    def setOriginalPixmap(self, pixmap):
+        """Set the original, full-resolution pixmap."""
+        self._original_pixmap = pixmap
+        self.update_pixmap(self.size())
+
+    def resizeEvent(self, event):
+        """Handle the widget being resized by rescaling the pixmap."""
+        if self._original_pixmap:
+            self.update_pixmap(event.size())
+        super().resizeEvent(event)
+
+    def update_pixmap(self, size):
+        """Scale the original pixmap to fit the new size and set it."""
+        if not self._original_pixmap:
+            return
+        scaled_pixmap = self._original_pixmap.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.setPixmap(scaled_pixmap)
 
 class RPGGame(QMainWindow):
     def __init__(self):
@@ -85,10 +130,21 @@ class RPGGame(QMainWindow):
         # Restore original style after duration
         QTimer.singleShot(duration, lambda: widget.setStyleSheet(original_style))
 
+    def resizeEvent(self, event):
+        """Handle window resize to scale font size."""
+        super().resizeEvent(event)
+        # Scale font size of the log display based on window height
+        font_size = max(8, min(18, int(self.height() / 50)))
+        font = self.log_display.font()
+        font.setPointSize(font_size)
+        self.log_display.setFont(font)
+
+
     def init_ui(self):
         """Initialize the enhanced user interface with modern design"""
         self.setWindowTitle("PyRPG Adventure")
-        self.setFixedSize(1200, 750)
+        self.resize(1200, 750)
+        self.setMinimumSize(800, 600)
 
         # Modern dark theme inspired by professional applications
         self.setStyleSheet("""
@@ -191,8 +247,7 @@ class RPGGame(QMainWindow):
                 border: 1px solid #3e4452;
                 border-radius: 4px;
                 padding: 10px;
-                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-                font-size: 12px;
+                font-family: 'Inter', 'SF Pro Display', 'Segoe UI', sans-serif;
                 selection-background-color: #3e4452;
             }
 
@@ -205,12 +260,9 @@ class RPGGame(QMainWindow):
                 font-size: 11px;
                 background-color: #21252b;
                 height: 24px;
-                color: #ffffff;
             }
             QProgressBar::chunk {
                 background-color: #61afef;
-                width: 10px;
-                margin: 0.5px;
             }
 
             /* Label Styling */
@@ -284,7 +336,6 @@ class RPGGame(QMainWindow):
 
         # Game log (top section) - Enhanced with better styling
         self.log_display = QTextEdit()
-        self.log_display.setMaximumHeight(150)
         self.log_display.setReadOnly(True)
         welcome_msg = """
         <div style='text-align: center; padding: 10px; font-size: 14px;'>
@@ -293,7 +344,7 @@ class RPGGame(QMainWindow):
         </div>
         """
         self.log_display.setHtml(welcome_msg)
-        self.main_layout.addWidget(self.log_display)
+        self.main_layout.addWidget(self.log_display, 1) # Add with stretch factor
 
         # Main content area: Sidebar + Stacked Widget
         content_layout = QHBoxLayout()
@@ -310,7 +361,7 @@ class RPGGame(QMainWindow):
         self.stacked_widget = QStackedWidget()
         content_layout.addWidget(self.stacked_widget, 1)  # Stretch factor 1
 
-        self.main_layout.addLayout(content_layout, 1)  # Stretch factor 1
+        self.main_layout.addLayout(content_layout, 4)  # Add with stretch factor
 
         # Create all pages
         self.create_adventure_page()
@@ -823,7 +874,7 @@ class RPGGame(QMainWindow):
         self.hero_combat_name.setStyleSheet("font-size: 16px; font-weight: bold; color: #61afef;")
         self.hero_combat_name.setAlignment(Qt.AlignCenter)
         
-        self.hero_sprite_label = QLabel()
+        self.hero_sprite_label = ScalablePixmapLabel()
         self.hero_sprite_label.setAlignment(Qt.AlignCenter)
         
         self.hero_combat_health_bar = AnimatedProgressBar()
@@ -832,9 +883,16 @@ class RPGGame(QMainWindow):
             QProgressBar::chunk { background-color: #98c379; }
         """)
 
+        self.hero_combat_mana_bar = AnimatedProgressBar()
+        self.hero_combat_mana_bar.setMaximumHeight(20)
+        self.hero_combat_mana_bar.setStyleSheet("""
+            QProgressBar::chunk { background-color: #61afef; }
+        """)
+
         hero_combat_layout.addWidget(self.hero_combat_name)
         hero_combat_layout.addWidget(self.hero_sprite_label)
         hero_combat_layout.addWidget(self.hero_combat_health_bar)
+        hero_combat_layout.addWidget(self.hero_combat_mana_bar)
         combatants_layout.addLayout(hero_combat_layout)
 
         # VS Label
@@ -851,7 +909,7 @@ class RPGGame(QMainWindow):
         self.enemy_combat_name.setStyleSheet("font-size: 16px; font-weight: bold; color: #e06c75;")
         self.enemy_combat_name.setAlignment(Qt.AlignCenter)
 
-        self.enemy_sprite_label = QLabel()
+        self.enemy_sprite_label = ScalablePixmapLabel()
         self.enemy_sprite_label.setAlignment(Qt.AlignCenter)
 
         self.enemy_combat_health_bar = AnimatedProgressBar()
@@ -971,7 +1029,7 @@ class RPGGame(QMainWindow):
             elif "escape" in msg.lower() or "🏃" in msg:
                 color = "#abb2bf"  # gray for escape
 
-            log_html += f"<div style='color: {color}; margin: 2px 0; font-size: 11px;'>{msg}</div>"
+            log_html += f"<div style='color: {color}; margin: 2px 0;'>{msg}</div>"
         log_html += "</div>"
 
         self.log_display.setHtml(log_html)
@@ -1354,13 +1412,17 @@ class RPGGame(QMainWindow):
         enemy_sprite_path = enemy_sprite_map.get(self.current_enemy.enemy_type, "assets/Orc.png")
         enemy_sprite = QPixmap(enemy_sprite_path)
 
-        self.hero_sprite_label.setPixmap(hero_sprite.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.enemy_sprite_label.setPixmap(enemy_sprite.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.hero_sprite_label.setOriginalPixmap(hero_sprite)
+        self.enemy_sprite_label.setOriginalPixmap(enemy_sprite)
 
         # Update health bars
         self.hero_combat_health_bar.setRange(0, self.hero.max_health)
         self.hero_combat_health_bar.setValue(self.hero.health)
         self.hero_combat_health_bar.setFormat(f"{self.hero.health} / {self.hero.max_health}")
+
+        self.hero_combat_mana_bar.setRange(0, self.hero.max_mana)
+        self.hero_combat_mana_bar.setValue(self.hero.mana)
+        self.hero_combat_mana_bar.setFormat(f"{self.hero.mana} / {self.hero.max_mana}")
 
         self.enemy_combat_health_bar.setRange(0, self.current_enemy.max_health)
         self.enemy_combat_health_bar.setValue(self.current_enemy.health)
@@ -1376,32 +1438,63 @@ class RPGGame(QMainWindow):
         self.current_enemy = None
 
     def process_combat_round(self, action):
-        """Process a single round of combat based on player action"""
+        """Process the player's turn and schedule the enemy's turn."""
         if not self.hero or not self.current_enemy:
             return
 
-        events, combat_over = handle_combat_turn(self.hero, self.current_enemy, action)
+        # Disable combat buttons during the turn
+        self.set_combat_buttons_enabled(False)
 
+        events, combat_over = handle_player_turn(self.hero, self.current_enemy, action)
         for event in events:
             self.handle_event(event)
 
-        # Update health bars
-        self.hero_combat_health_bar.setValue(self.hero.health)
-        self.hero_combat_health_bar.setFormat(f"{self.hero.health} / {self.hero.max_health}")
-        self.enemy_combat_health_bar.setValue(self.current_enemy.health)
-        self.enemy_combat_health_bar.setFormat(f"{self.current_enemy.health} / {self.current_enemy.max_health}")
+        self.update_combat_ui()
+
+        if combat_over:
+            QTimer.singleShot(1500, self.hide_combat_interface)
+            self.update_stats_display()
+            return
+
+        # Schedule the enemy's turn after a delay
+        QTimer.singleShot(1000, self.execute_enemy_turn)
+
+    def execute_enemy_turn(self):
+        """Process the enemy's turn after a delay."""
+        if not self.hero or not self.current_enemy:
+            return
+
+        events, combat_over = handle_enemy_turn(self.hero, self.current_enemy)
+        for event in events:
+            self.handle_event(event)
+
+        self.update_combat_ui()
 
         if combat_over:
             if not self.hero.is_alive():
                 QMessageBox.critical(self, "Defeat", "You have been defeated! Game Over.")
                 self.quit_game()
-            else:
-                # Use a timer to allow player to see result before hiding interface
-                QTimer.singleShot(1500, self.hide_combat_interface)
-            self.update_stats_display()
             return
+        
+        # Re-enable combat buttons for the next player turn
+        self.set_combat_buttons_enabled(True)
 
+    def update_combat_ui(self):
+        """Update all combat UI elements."""
+        self.hero_combat_health_bar.setValue(self.hero.health)
+        self.hero_combat_health_bar.setFormat(f"{self.hero.health} / {self.hero.max_health}")
+        self.hero_combat_mana_bar.setValue(self.hero.mana)
+        self.hero_combat_mana_bar.setFormat(f"{self.hero.mana} / {self.hero.max_mana}")
+        self.enemy_combat_health_bar.setValue(self.current_enemy.health)
+        self.enemy_combat_health_bar.setFormat(f"{self.current_enemy.health} / {self.current_enemy.max_health}")
         self.update_stats_display()
+
+    def set_combat_buttons_enabled(self, enabled):
+        """Enable or disable all combat action buttons."""
+        self.attack_btn.setEnabled(enabled)
+        self.use_skill_btn.setEnabled(enabled)
+        self.use_item_btn.setEnabled(enabled)
+        self.run_btn.setEnabled(enabled)
 
     def open_shop(self):
         """Open the shop interface"""
