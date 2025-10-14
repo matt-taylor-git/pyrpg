@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import random
 import time
-from models import Hero, Enemy, Item
+from .models import Hero, Enemy
+from .items import Item
 
 def get_random_enemy(hero_level):
     """Get a random enemy for encounters with varied types and levels."""
@@ -149,7 +151,7 @@ def generate_random_item(enemy_level):
 
 def random_encounter(hero):
     """Generate a random enemy encounter and return results."""
-    enemy = get_random_enemy()
+    enemy = get_random_enemy(hero.level)
     success, combat_log = simulate_combat(hero, enemy)
     return success, combat_log
 

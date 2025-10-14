@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 import random
+from .items import Item
 
 class Hero:
     """Advanced player character with comprehensive RPG mechanics."""
@@ -20,8 +22,6 @@ class Hero:
         self.vitality = 10      # Affects health and defense
 
         # Equipment and inventory - Start with basic gear
-        from models import Item  # Import Item for starting equipment
-
         # Create starting equipment
         starter_weapon = Item("Rusty Sword", 'weapon', 'common', 'weapon',
                              attack_bonus=3, value=10,
@@ -76,7 +76,7 @@ class Hero:
         armor_bonus = 0
         if self.equipment['armor']:
             armor_bonus = self.equipment['armor'].defense_bonus
-        return base + armor_bonus
+        return int(base + armor_bonus)
 
     def calculate_crit_chance(self):
         """Calculate critical hit chance."""
@@ -203,20 +203,25 @@ class Hero:
         self.dodge_chance = self.calculate_dodge_chance()
 
     def equip_item(self, item):
-        """Equip an item and apply its bonuses."""
+        """Equip an item and apply its bonuses.
+        Returns the previously equipped item if there was one, None otherwise.
+        Caller is responsible for managing inventory."""
         slot = item.slot
-        if self.equipment[slot]:
-            # Unequip current item
-            self.unequip_item(slot)
-
+        old_item = self.equipment[slot]
         self.equipment[slot] = item
         self.refresh_derived_stats()
+        return old_item
 
     def unequip_item(self, slot):
-        """Unequip an item from the specified slot."""
+        """Unequip an item from the specified slot and return it.
+        Returns the unequipped item if there was one, None otherwise.
+        Caller is responsible for managing inventory."""
         if self.equipment[slot]:
+            old_item = self.equipment[slot]
             self.equipment[slot] = None
             self.refresh_derived_stats()
+            return old_item
+        return None
 
     def add_item(self, item):
         """Add item to inventory."""
@@ -299,34 +304,6 @@ class Hero:
                 f"MP: {self.mana}/{self.max_mana}\n"
                 f"ATK: {self.attack_power} | DEF: {self.defense}")
 
-
-class Item:
-    """Represents items in the game world."""
-
-    def __init__(self, name, item_type, rarity='common', slot=None, attack_bonus=0,
-                 defense_bonus=0, effect=None, power=0, value=0, description=""):
-        self.name = name
-        self.item_type = item_type  # 'weapon', 'armor', 'accessory', 'consumable'
-        self.rarity = rarity  # 'common', 'uncommon', 'rare', 'epic', 'legendary'
-        self.slot = slot  # 'weapon', 'armor', 'accessory' for equipment
-        self.attack_bonus = attack_bonus
-        self.defense_bonus = defense_bonus
-        self.effect = effect  # 'heal', 'restore_mana', etc. for consumables
-        self.power = power  # Power of the effect
-        self.value = value  # Gold value
-        self.description = description
-
-    def get_rarity_color(self):
-        """Get color code for item rarity."""
-        colors = {
-            'common': '#ffffff',
-            'uncommon': '#00ff00',
-            'rare': '#0088ff',
-            'epic': '#aa00ff',
-            'legendary': '#ffaa00'
-        }
-        return colors.get(self.rarity, '#ffffff')
-
 class Enemy:
     """Advanced enemy with sophisticated combat mechanics."""
 
@@ -339,8 +316,8 @@ class Enemy:
         self.max_health = 50 + (level * 15)
         self.health = self.max_health
         self.attack = 8 + (level * 2)
-        self.defense = 3 + (level * 1.5)
-        self.magic_attack = 5 + (level * 1.5)
+        self.defense = int(3 + (level * 1.5))
+        self.magic_attack = int(5 + (level * 1.5))
 
         # Experience and gold rewards
         self.exp_reward = level * 25

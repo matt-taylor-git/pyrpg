@@ -1,3 +1,5 @@
+
+# -*- coding: utf-8 -*-
 """
 UI Components for PyRPG - Modern interface elements
 """
@@ -6,6 +8,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QPushButton, QGridLayout, QFrame, QScrollArea, QSizePolicy, QLineEdit)
 from PySide6.QtCore import Qt, Signal, QPropertyAnimation, QEasingCurve, QRect
 from PySide6.QtGui import QFont, QColor
+from game.items import Item
 
 
 class ItemCard(QFrame):
@@ -331,6 +334,7 @@ class ItemSelectionOverlay(QWidget):
 class CharacterCreationOverlay(QWidget):
     """Overlay for character creation"""
     character_created = Signal(str)  # Emits hero name
+    closed = Signal()  # Emits when overlay is closed
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -457,4 +461,17 @@ class CharacterCreationOverlay(QWidget):
         self.animation.setEndValue(0.0)
         self.animation.setEasingCurve(QEasingCurve.InCubic)
         self.animation.finished.connect(self.deleteLater)
+        self.animation.finished.connect(self.closed.emit)
         self.animation.start()
+
+    def close_overlay(self):
+        """Close the overlay with animation"""
+        self.animate_out()
+
+    def mousePressEvent(self, event):
+        """Close overlay when clicking outside the panel"""
+        # Check if click is on the background (not the panel)
+        child = self.childAt(event.pos())
+        if child == self or child is None:
+            self.close_overlay()
+        super().mousePressEvent(event)
