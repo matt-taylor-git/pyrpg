@@ -21,8 +21,10 @@ class ItemCard(QFrame):
         self.item = item
         self.action_text = action_text
         self.show_price = show_price
+        self.is_selected = False
 
         self.setup_ui()
+        self.setup_drag_drop()
 
     def setup_ui(self):
         """Setup the card UI"""
@@ -122,8 +124,8 @@ class ItemCard(QFrame):
             layout.addWidget(price_label)
 
         # Action button
-        action_btn = QPushButton(self.action_text)
-        action_btn.setStyleSheet("""
+        self.action_btn = QPushButton(self.action_text)
+        self.action_btn.setStyleSheet("""
             QPushButton {
                 background-color: #282c34;
                 color: #dc3545;
@@ -138,10 +140,31 @@ class ItemCard(QFrame):
                 color: #ffffff;
             }
         """)
-        action_btn.clicked.connect(lambda: self.action_clicked.emit(self.item, self.action_text.lower()))
-        layout.addWidget(action_btn)
+        self.action_btn.clicked.connect(lambda: self.action_clicked.emit(self.item, self.action_text.lower()))
+        layout.addWidget(self.action_btn)
 
+        # Set up full tooltip with detailed item information
+        tooltip_text = self.get_tooltip_text()
+        self.setToolTip(tooltip_text)
+
+        # Make the entire card clickable
         self.setCursor(Qt.PointingHandCursor)
+
+    def setup_drag_drop(self):
+        """Set up drag and drop functionality for the item card"""
+        # Enable drag and drop
+        self.setAcceptDrops(True)
+        # We could add drag functionality here if needed
+
+    def dragEnterEvent(self, event):
+        """Handle drag enter events"""
+        if event.mimeData().hasText() and event.mimeData().text().startswith("item:"):
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        """Handle drop events for item rearrangement"""
+        if event.mimeData().hasText() and event.mimeData().text().startswith("item:"):
+            event.acceptProposedAction()
 
     def get_item_icon(self):
         """Get icon for item type - images for weapons, emojis for others"""
@@ -208,6 +231,63 @@ class ItemCard(QFrame):
         if event.button() == Qt.LeftButton:
             self.clicked.emit(self.item)
         super().mousePressEvent(event)
+
+    def get_tooltip_text(self):
+        """Generate detailed tooltip text for the item"""
+        if not self.item:
+            return ""
+
+        tooltip_lines = []
+        tooltip_lines.append(f"<b>{self.item.name}</b>")
+        tooltip_lines.append("")  # Empty line for spacing
+
+        # Type and rarity
+        tooltip_lines.append(f"<i>{self.item.item_type.title()} - {self.item.rarity.title()}</i>")
+        tooltip_lines.append("")  # Empty line for spacing
+
+        # Stats section
+        stats = []
+        if hasattr(self.item, 'attack_bonus') and self.item.attack_bonus > 0:
+            stats.append(f"⚔️ +{self.item.attack_bonus} Attack")
+        if hasattr(self.item, 'defense_bonus') and self.item.defense_bonus > 0:
+            stats.append(f"🛡️ +{self.item.defense_bonus} Defense")
+
+        if stats:
+            tooltip_lines.append("• Stats:")
+            tooltip_lines.extend(f"  {stat}" for stat in stats)
+            tooltip_lines.append("")
+
+        # Effect section
+        if hasattr(self.item, 'effect') and self.item.effect:
+            effect_desc = self.get_effect_description()
+            if effect_desc:
+                tooltip_lines.append("• Effect:")
+                tooltip_lines.append(f"  {effect_desc}")
+                tooltip_lines.append("")
+
+        # Description section
+        if hasattr(self.item, 'description') and self.item.description:
+            tooltip_lines.append("• Description:")
+            tooltip_lines.append(f"  {self.item.description}")
+
+        # Value section
+        if hasattr(self.item, 'value') and self.item.value > 0:
+            tooltip_lines.append(f"")
+            tooltip_lines.append(f"<i>💰 Sell for: {self.item.value // 2} gold</i>")
+
+        return '\n'.join(tooltip_lines)
+
+    def get_effect_description(self):
+        """Get human-readable effect description"""
+        if not hasattr(self.item, 'effect') or not self.item.effect:
+            return ""
+
+        if self.item.effect == 'heal':
+            return f"Heals {self.item.power} HP when used"
+        elif self.item.effect == 'restore_mana':
+            return f"Restores {self.item.power} MP when used"
+        else:
+            return f"Special effect: {self.item.effect.title()}"
 
 
 class ItemSelectionOverlay(QDialog):

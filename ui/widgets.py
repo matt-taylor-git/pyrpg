@@ -17,10 +17,13 @@ class Card(QFrame):
                 border: 1px solid {Theme.BORDER.name()};
                 border-radius: 8px;
             }}
+            Card:hover {{
+                background-color: {Theme.MUTED.name()};
+            }}
         """)
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(20, 20, 20, 20)
-        self.main_layout.setSpacing(15)
+        self.main_layout.setContentsMargins(Theme.MARGIN_LG, Theme.MARGIN_LG, Theme.MARGIN_LG, Theme.MARGIN_LG)
+        self.main_layout.setSpacing(Theme.SPACING_MD)
 
     def setLayout(self, layout):
         # This is a convenience method to allow setting the layout directly on the card
@@ -39,7 +42,17 @@ class StyledButton(QPushButton):
 
     def set_variant(self, variant):
         """Sets the button's visual style (e.g., 'primary', 'destructive')."""
-        self.setObjectName(variant) # Use object name for QSS targeting
+        self.setObjectName(variant)  # Use object name for QSS targeting
+
+    def enterEvent(self, event):
+        """Handle mouse entering button for enhanced hover effects"""
+        super().enterEvent(event)
+        # You can add custom hover animations here in the future
+
+    def leaveEvent(self, event):
+        """Handle mouse leaving button"""
+        super().leaveEvent(event)
+        # Reset any hover effects here in the future
 
     def set_size(self, size):
         """Sets the button's padding and font size."""

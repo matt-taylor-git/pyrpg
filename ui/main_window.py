@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QProgressBar, QListWidget, QListWidgetItem, QGraphicsDropShadowEffect,
                                QStackedWidget, QScrollArea, QFrame, QLineEdit, QSizePolicy, QTabWidget)
 from PySide6.QtCore import Qt, QTimer, QThread, Signal, QPropertyAnimation, QEasingCurve, QPoint, Property
-from PySide6.QtGui import QFont, QPalette, QColor, QPixmap
+from PySide6.QtGui import QFont, QPalette, QColor, QPixmap, QKeySequence
 import random
 import time
 from game.models import Hero, Enemy
@@ -19,6 +19,8 @@ from .views.stats_page import StatsPage
 from .views.inventory_page import InventoryPage
 from .views.shop_page import ShopPage
 from .views.combat_page import CombatPage
+from .views.new_game_view import NewGameView
+from .components import AchievementSystem
 
 from .widgets import Card, StyledButton
 
@@ -89,6 +91,7 @@ class RPGGame(QMainWindow):
         self.current_state = GameState.MENU
         self.current_enemy = None
         self.animations = []  # Store active animations
+        self.current_view_index = 0  # Track current tab for transitions
 
         self.new_game_view = NewGameView()
         self.new_game_view.character_created.connect(self.start_new_game)
@@ -234,11 +237,17 @@ class RPGGame(QMainWindow):
         self.stats_page.magic_plus_btn.clicked.connect(lambda: self.increase_stat('magic'))
         self.stats_page.speed_plus_btn.clicked.connect(lambda: self.increase_stat('speed'))
 
+        # Set up keyboard shortcuts
+        self.setup_keyboard_shortcuts()
+
     def on_tab_changed(self, index):
-        """Handle tab selection changes"""
+        """Handle tab selection changes with smooth transitions"""
         if not self.hero and index != 0:  # 0 is Adventure tab
             self.tab_widget.setCurrentIndex(0)
             return
+
+        # Animate tab transition fade
+        self.animate_tab_transition(index)
 
         if self.hero:
             self.update_stats_display()
@@ -252,6 +261,35 @@ class RPGGame(QMainWindow):
                     widget = self.inventory_page.inventory_grid_layout.itemAt(i).widget()
                     if isinstance(widget, ItemCard):
                         widget.action_clicked.connect(self.on_inventory_item_clicked)
+
+    def animate_tab_transition(self, new_index):
+        """Animate tab transition with fade effect"""
+        # Get current and target widgets
+        current_widget = self.tab_widget.widget(self.current_view_index)
+        target_widget = self.tab_widget.widget(new_index)
+
+        if not current_widget or not target_widget or current_widget == target_widget:
+            self.current_view_index = new_index
+            return
+
+        # Simple crossfade animation (fade out current, fade in new)
+        fade_out = QPropertyAnimation(current_widget, b"windowOpacity")
+        fade_out.setStartValue(1.0)
+        fade_out.setEndValue(0.0)
+        fade_out.setDuration(150)
+
+        fade_in = QPropertyAnimation(target_widget, b"windowOpacity")
+        fade_in.setStartValue(0.0)
+        fade_in.setEndValue(1.0)
+        fade_in.setDuration(150)
+
+        fade_out.finished.connect(lambda: fade_in.start())
+
+        fade_out.start()
+        self.current_view_index = new_index
+
+        # Keep references
+        self._tab_animations = [fade_out, fade_in]
 
     def log_message(self, message):
         """Add a message to the game log with left-border accent style (matching React sample)"""
@@ -375,6 +413,16 @@ class RPGGame(QMainWindow):
             is_combat_event = True
         elif event_type == 'use_skill':
             message = f"\u2728 You used {params['skill_name']}!"
+            is_combat_event = True
+        elif event_type == 'healing_effect':
+            message = f"💚 Recovered {params['amount']} HP!"
+            # Flash healing effect
+            QTimer.singleShot(200, lambda: self.flash_widget(self.combat_page.hero_sprite_label, "rgba(39, 174, 96, 0.4)", 300))
+            is_combat_event = True
+        elif event_type == 'mana_recovery':
+            message = f"🔷 Recovered {params['amount']} MP!"
+            # Flash mana effect
+            QTimer.singleShot(200, lambda: self.flash_widget(self.combat_page.hero_sprite_label, "rgba(52, 152, 219, 0.4)", 300))
             is_combat_event = True
 
         if message:
@@ -615,13 +663,32 @@ class RPGGame(QMainWindow):
         self.set_combat_buttons_enabled(True)
 
     def update_combat_ui(self):
-        """Update all combat UI elements."""
-        self.combat_page.hero_combat_health_bar.setValue(self.hero.health)
-        self.combat_page.hero_combat_health_bar.setFormat(f"{self.hero.health} / {self.hero.max_health}")
+        """Update all combat UI elements with smooth animations"""
+        # Animate hero health bar
+        if hasattr(self, 'combat_page') and self.combat_page:
+            current_hero_health = self.combat_page.hero_combat_health_bar.value()
+            target_hero_health = int((self.hero.health / self.hero.max_health) * 100)
+            self.animate_progress_bar(self.combat_page.hero_combat_health_bar, current_hero_health, target_hero_health)
+            self.combat_page.hero_combat_health_bar.setFormat(f"{self.hero.health} / {self.hero.max_health}")
 
-        self.combat_page.enemy_combat_health_bar.setValue(self.current_enemy.health)
-        self.combat_page.enemy_combat_health_bar.setFormat(f"{self.current_enemy.health} / {self.current_enemy.max_health}")
+            # Animate enemy health bar
+            current_enemy_health = self.combat_page.enemy_combat_health_bar.value()
+            target_enemy_health = int((self.current_enemy.health / self.current_enemy.max_health) * 100)
+            self.animate_progress_bar(self.combat_page.enemy_combat_health_bar, current_enemy_health, target_enemy_health)
+            self.combat_page.enemy_combat_health_bar.setFormat(f"{self.current_enemy.health} / {self.current_enemy.max_health}")
+
         self.update_stats_display()
+
+    def animate_progress_bar(self, progress_bar, start_value, end_value, duration=500):
+        """Animate a progress bar smoothly from start to end value"""
+        if hasattr(self, 'animations'):
+            animation = QPropertyAnimation(progress_bar, b"value")
+            animation.setStartValue(start_value)
+            animation.setEndValue(end_value)
+            animation.setDuration(duration)
+            animation.setEasingCurve(QEasingCurve.OutCubic)
+            animation.start()
+            self.animations.append(animation)  # Keep reference
 
     def set_combat_buttons_enabled(self, enabled):
         """Enable or disable all combat action buttons."""
@@ -803,3 +870,66 @@ class RPGGame(QMainWindow):
 
         # Enemy gets a turn after using item - pass tuple for action
         self.process_combat_round(("use_item", item))
+
+    def increase_stat(self, stat_name):
+        """Increase a character's stat using available stat points"""
+        if not self.hero:
+            return
+
+        if self.hero.stat_points > 0:
+            # Increase the stat
+            if stat_name == 'strength':
+                self.hero.strength += 1
+                self.hero.attack_power = self.hero.calculate_attack_power()
+            elif stat_name == 'defense':
+                self.hero.defense += 1
+            elif stat_name == 'magic':
+                self.hero.intelligence += 1
+                self.hero.magic_power = self.hero.calculate_magic_power()
+            elif stat_name == 'speed':
+                self.hero.dexterity += 1
+                # Recalculate crit/dodge chances
+                self.hero.update_secondary_stats()
+
+            # Consume stat point
+            self.hero.stat_points -= 1
+
+            # Update display
+            self.update_stats_display()
+            self.log_message(f"🏋️ Increased {stat_name}!")
+        else:
+            QMessageBox.information(self, "No Stat Points", "You have no available stat points to allocate.")
+
+    def setup_keyboard_shortcuts(self):
+        """Set up global keyboard shortcuts for the application"""
+        # For now, keyboard shortcuts are disabled due to import issues
+        # This would be implemented once we have proper shortcut import support
+        pass
+
+    def show_help(self):
+        """Show help dialog with keyboard shortcuts"""
+        help_text = """
+        <h2>PyRPG Adventure - Keyboard Shortcuts</h2>
+
+        <h3>General</h3>
+        <b>F1</b> - Show this help<br>
+        <b>Ctrl+Q</b> - Quit game<br>
+
+        <h3>Navigation</h3>
+        <b>Alt+S</b> - Stats tab<br>
+        <b>Alt+I</b> - Inventory tab<br>
+        <b>Alt+Shop</b> - Shop tab<br>
+
+        <h3>Combat</h3>
+        <b>A</b> - Attack<br>
+        <b>S</b> - Use Skill<br>
+        <b>I</b> - Use Item<br>
+        <b>R</b> - Run away<br>
+
+        <h3>Character Creation</h3>
+        Enter your hero's name (1-20 characters, letters/numbers/space/-/underscore)
+
+        <h3>Tooltip System</h3>
+        Hover over items, buttons, and stats for detailed information.
+        """
+        QMessageBox.information(self, "PyRPG Help", help_text)

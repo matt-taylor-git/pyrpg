@@ -42,6 +42,7 @@ class StatsPage(QWidget):
         self.char_name_label = QLabel("Hero")
         self.char_name_label.setAlignment(Qt.AlignCenter)
         self.char_name_label.setStyleSheet("font-size: 24px; font-weight: bold;")
+        self.char_name_label.setToolTip("Your character's name and level")
         layout.addWidget(self.char_name_label)
 
         # Progress Bars
