@@ -1,6 +1,20 @@
 # -*- coding: utf-8 -*-
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollArea, QGridLayout
 from PySide6.QtCore import Qt
+from ..widgets import Card
+from ..theme import Theme
+from ui_components import ItemCard
+
+
+def clear_layout(layout):
+    """Clear all widgets from a layout"""
+    if layout is not None:
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.setParent(None)
+                widget.deleteLater()
 
 class InventoryPage(QWidget):
     def __init__(self, parent=None):
@@ -8,62 +22,51 @@ class InventoryPage(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(Theme.MARGIN_LG, Theme.MARGIN_LG, Theme.MARGIN_LG, Theme.MARGIN_LG)
+        main_layout.setSpacing(Theme.SPACING_LG)
 
-        # Header with title and gold
+        # Header
         header_layout = QHBoxLayout()
-
-        title = QLabel("\U0001f392 Inventory")
-        title.setStyleSheet("""
-            font-size: 20px;
-            font-weight: 600;
-            color: #61afef;
-        """)
+        title = QLabel("Inventory")
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        self.gold_label = QLabel("Gold: 0")
+        self.gold_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #e5c07b;")
         header_layout.addWidget(title)
-
         header_layout.addStretch()
+        header_layout.addWidget(self.gold_label)
+        main_layout.addLayout(header_layout)
 
-        self.inventory_gold_label = QLabel("\U0001f4b0 Gold: 0")
-        self.inventory_gold_label.setStyleSheet("""
-            font-size: 16px;
-            font-weight: 600;
-            color: #e5c07b;
-            background-color: #21252b;
-            padding: 8px 15px;
-            border-radius: 6px;
-            border: 1px solid #3e4452;
-        """)
-        header_layout.addWidget(self.inventory_gold_label)
+        # Inventory Grid
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_content = QWidget()
+        self.inventory_grid_layout = QGridLayout(scroll_content)
+        scroll_area.setWidget(scroll_content)
+        main_layout.addWidget(scroll_area)
 
-        layout.addLayout(header_layout)
+    def update_inventory(self, hero):
+        if not hero:
+            return
 
-        # Scroll area for inventory grid
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("""
-            QScrollArea {
-                border: none;
-                background-color: #21252b;
-                border-radius: 8px;
-            }
-        """)
+        self.gold_label.setText(f"Gold: {hero.gold}")
 
-        scroll_widget = QWidget()
-        self.inventory_grid_layout = QGridLayout(scroll_widget)
-        self.inventory_grid_layout.setSpacing(15)
-        self.inventory_grid_layout.setContentsMargins(15, 15, 15, 15)
+        # Clear existing items properly
+        clear_layout(self.inventory_grid_layout)
 
-        # Empty state label
-        self.inventory_empty_label = QLabel("No items in inventory\n\nDefeat enemies and visit the shop to collect items!")
-        self.inventory_empty_label.setStyleSheet("""
-            font-size: 14px;
-            color: #abb2bf;
-            padding: 40px;
-        """)
-        self.inventory_empty_label.setAlignment(Qt.AlignCenter)
-        self.inventory_grid_layout.addWidget(self.inventory_empty_label, 0, 0, Qt.AlignCenter)
+        if not hero.inventory:
+            empty_label = QLabel("Your inventory is empty.")
+            empty_label.setAlignment(Qt.AlignCenter)
+            self.inventory_grid_layout.addWidget(empty_label, 0, 0, 1, 4)
+            return
 
-        scroll.setWidget(scroll_widget)
-        layout.addWidget(scroll)
+        row, col = 0, 0
+        for item in hero.inventory:
+            action = "Use" if item.item_type == 'consumable' else "Equip"
+            item_card = ItemCard(item, action_text=action, show_price=False)
+            # item_card.action_clicked.connect(self.on_item_action) # Connect this in main_window
+            self.inventory_grid_layout.addWidget(item_card, row, col)
+            col += 1
+            if col >= 4:
+                col = 0
+                row += 1

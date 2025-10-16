@@ -5,6 +5,13 @@ from ui.main_window import RPGGame
 def main():
     app = QApplication(sys.argv)
 
+    # Load the global stylesheet
+    try:
+        with open("ui/styles.qss", "r") as f:
+            app.setStyleSheet(f.read())
+    except FileNotFoundError:
+        print("Warning: Stylesheet 'ui/styles.qss' not found. UI will have default styling.")
+
     # Set application properties
     app.setApplicationName("PyRPG Adventure")
     app.setApplicationVersion("1.0")
