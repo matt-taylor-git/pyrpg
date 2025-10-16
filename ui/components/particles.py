@@ -10,19 +10,20 @@ import random
 import math
 
 
-class Particle(QWidget):
+class Particle(QLabel):
     """Individual particle for visual effects"""
 
     def __init__(self, parent=None, particle_type="star", color="#dc3545"):
         super().__init__(parent)
         self.particle_type = particle_type
         self.color = color
+        self._animations = []
         self.init_particle()
 
     def init_particle(self):
         """Initialize particle appearance"""
         self.setFixedSize(16, 16)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         # Create particle based on type
         if self.particle_type == "star":
@@ -50,8 +51,8 @@ class Particle(QWidget):
         anim = QPropertyAnimation(self, b"pos")
         anim.setStartValue(start_pos)
         anim.setEndValue(end_pos)
-        anim.setDuration(duration)
-        anim.setEasingCurve(QEasingCurve.OutExpo)
+        anim.setDuration(int(duration))
+        anim.setEasingCurve(QEasingCurve.Type.OutExpo)
 
         # Add some randomness to end position
         variance = QPoint(random.randint(-10, 10), random.randint(-10, 10))
@@ -61,8 +62,8 @@ class Particle(QWidget):
         fade_anim = QPropertyAnimation(self, b"windowOpacity")
         fade_anim.setStartValue(1.0)
         fade_anim.setEndValue(0.0)
-        fade_anim.setDuration(duration * 0.7)
-        fade_anim.setEasingCurve(QEasingCurve.InQuad)
+        fade_anim.setDuration(int(duration * 0.7))
+        fade_anim.setEasingCurve(QEasingCurve.Type.InQuad)
 
         fade_anim.finished.connect(self.deleteLater)
 
@@ -80,7 +81,7 @@ class ParticleSystem(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.particles = []
 
     def create_burst(self, center_pos, particle_count=12, particle_type="star", color="#dc3545"):
@@ -136,6 +137,7 @@ class AchievementSystem:
         self.parent = parent_widget
         self.particle_system = ParticleSystem(parent_widget)
         self.particle_system.animation_finished.connect(self.on_particles_finished)
+        self.text_animations = []
 
     def trigger_achievement(self, achievement_type, position):
         """Trigger a visual achievement effect"""
@@ -173,7 +175,7 @@ class AchievementSystem:
         anim.setStartValue(text_pos)
         anim.setEndValue(text_pos - QPoint(0, 30))
         anim.setDuration(2000)
-        anim.setEasingCurve(QEasingCurve.OutQuad)
+        anim.setEasingCurve(QEasingCurve.Type.OutQuad)
 
         fade_anim = QPropertyAnimation(label, b"windowOpacity")
         fade_anim.setStartValue(1.0)
@@ -185,8 +187,9 @@ class AchievementSystem:
         anim.start()
         fade_anim.start()
 
-        # Store references
-        label._animations = [anim, fade_anim]
+        # Store references to prevent garbage collection
+        self.text_animations.append(anim)
+        self.text_animations.append(fade_anim)
 
     def on_particles_finished(self):
         """Handle particle animation completion"""

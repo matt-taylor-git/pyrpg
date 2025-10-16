@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineE
                                QPushButton, QFrame, QProgressBar, QGraphicsDropShadowEffect,
                                QApplication)
 from PySide6.QtCore import Qt, Signal, QTimer, QPropertyAnimation, QEasingCurve, QRect, QPoint
-from PySide6.QtGui import QFont, QPixmap
+from PySide6.QtGui import QFont, QPixmap, QColor
 from ..widgets import Card, StyledButton
 from ..theme import Theme
 from ..custom_widgets import ScalablePixmapLabel
@@ -45,7 +45,7 @@ class CharacterPreview(QFrame):
         # Title
         title = QLabel("Character Preview")
         title.setStyleSheet("font-size: 14px; font-weight: bold; color: #dc3545;")
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
         # Sprite container
@@ -54,7 +54,7 @@ class CharacterPreview(QFrame):
 
         self.sprite_label = ScalablePixmapLabel()
         self.sprite_label.setMinimumSize(120, 120)
-        self.sprite_label.setAlignment(Qt.AlignCenter)
+        self.sprite_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.sprite_label.setStyleSheet("border: none; background: transparent;")
         sprite_layout.addWidget(self.sprite_label)
 
@@ -130,7 +130,7 @@ class CharacterPreview(QFrame):
             pixmap = QPixmap(os.path.join("assets", asset_name))
             if not pixmap.isNull():
                 # Scale and center the sprite with proper fallbacks
-                scaled_pixmap = pixmap.scaledToHeight(120, Qt.SmoothTransformation)
+                scaled_pixmap = pixmap.scaledToHeight(120, Qt.TransformationMode.SmoothTransformation)
                 self.sprite_label.setOriginalPixmap(scaled_pixmap)
             else:
                 # Fallback to text representation
@@ -156,11 +156,11 @@ class NewGameView(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(20)
-        main_layout.setAlignment(Qt.AlignCenter)
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Title with animation
         title_layout = QVBoxLayout()
-        title_layout.setAlignment(Qt.AlignCenter)
+        title_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Main title
         self.main_title = QLabel("🌟 R E A L M   O F   L E G E N D S 🌟")
@@ -170,14 +170,14 @@ class NewGameView(QWidget):
             color: #dc3545;
             font-family: 'Segoe UI', 'Inter', sans-serif;
         """)
-        self.main_title.setAlignment(Qt.AlignCenter)
+        self.main_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Add shadow effect
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(20)
         shadow.setXOffset(2)
         shadow.setYOffset(4)
-        shadow.setColor(Qt.black)
+        shadow.setColor(QColor(Qt.GlobalColor.black))
         self.main_title.setGraphicsEffect(shadow)
 
         title_layout.addWidget(self.main_title)
@@ -185,7 +185,7 @@ class NewGameView(QWidget):
         # Subtitle
         subtitle = QLabel("Forge Your Destiny")
         subtitle.setStyleSheet("font-size: 18px; color: #9a96a5; margin-top: 10px;")
-        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_layout.addWidget(subtitle)
 
         main_layout.addLayout(title_layout)
@@ -263,7 +263,7 @@ class NewGameView(QWidget):
         </body>
         </html>
         """)
-        stats_info.setTextFormat(Qt.RichText)
+        stats_info.setTextFormat(Qt.TextFormat.RichText)
         stats_layout.addWidget(stats_info)
 
         details_layout.addWidget(stats_section)
@@ -297,7 +297,7 @@ class NewGameView(QWidget):
         # Footer with fade animation
         self.footer_label = QLabel("Press Enter to create your character instantly")
         self.footer_label.setStyleSheet("color: #6c757d; font-size: 12px; margin-top: 20px;")
-        self.footer_label.setAlignment(Qt.AlignCenter)
+        self.footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(self.footer_label)
 
     def start_entry_animation(self):
@@ -312,14 +312,14 @@ class NewGameView(QWidget):
         title_anim.setStartValue(self.main_title.pos() + QPoint(0, -100))
         title_anim.setEndValue(self.main_title.pos())
         title_anim.setDuration(1200)
-        title_anim.setEasingCurve(QEasingCurve.OutBounce)
+        title_anim.setEasingCurve(QEasingCurve.Type.OutBounce)
 
         # Animate card from right
         card_anim = QPropertyAnimation(self.create_card, b"pos")
         card_anim.setStartValue(self.create_card.pos() + QPoint(800, 0))
         card_anim.setEndValue(self.create_card.pos())
         card_anim.setDuration(1000)
-        card_anim.setEasingCurve(QEasingCurve.OutBack)
+        card_anim.setEasingCurve(QEasingCurve.Type.OutBack)
 
         # Start animations
         title_anim.start()
@@ -393,7 +393,7 @@ class NewGameView(QWidget):
         exit_anim.setStartValue(self.create_card.pos())
         exit_anim.setEndValue(self.create_card.pos() + QPoint(0, -600))
         exit_anim.setDuration(800)
-        exit_anim.setEasingCurve(QEasingCurve.InBack)
+        exit_anim.setEasingCurve(QEasingCurve.Type.InBack)
         exit_anim.finished.connect(lambda: self.character_created.emit(char_name))
         exit_anim.start()
 
@@ -401,7 +401,7 @@ class NewGameView(QWidget):
 
     def keyPressEvent(self, event):
         """Handle Enter key for quick creation"""
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             if self.name_input.hasFocus():
                 self.start_game()
         super().keyPressEvent(event)

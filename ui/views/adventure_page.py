@@ -27,13 +27,13 @@ class AdventurePage(QWidget):
         self.quit_btn.setAccessibleDescription("Exit the game")
 
         # Enable keyboard navigation
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
     def init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(Theme.MARGIN_XL, Theme.MARGIN_XL, Theme.MARGIN_XL, Theme.MARGIN_XL)
         layout.setSpacing(Theme.SPACING_LG)
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Title section
         title_label = QLabel("Adventure awaits...")
@@ -44,13 +44,13 @@ class AdventurePage(QWidget):
         title_label.setStyleSheet(f"color: {Theme.FOREGROUND.name()}; margin-bottom: {Theme.SPACING_MD}px;")
         title_label.setAccessibleName("Page Title")
         title_label.setAccessibleDescription("Adventure page header")
-        layout.addWidget(title_label, alignment=Qt.AlignCenter)
+        layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Button container for better layout
         button_container = QWidget()
         button_layout = QVBoxLayout(button_container)
         button_layout.setSpacing(Theme.SPACING_MD)
-        button_layout.setAlignment(Qt.AlignCenter)
+        button_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Action buttons with improved styling and accessibility
         self.explore_btn = StyledButton("🏞️ Explore", variant="primary", size="lg")

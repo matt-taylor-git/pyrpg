@@ -28,7 +28,7 @@ class ItemCard(QFrame):
 
     def setup_ui(self):
         """Setup the card UI with Theme constants"""
-        self.setFrameShape(QFrame.Box)
+        self.setFrameShape(QFrame.Shape.Box)
         self.setMinimumSize(180, 200)
         self.setMaximumSize(200, 220)
 
@@ -90,7 +90,7 @@ class ItemCard(QFrame):
             background: transparent;
             border: none;
         """)
-        name_label.setAlignment(Qt.AlignCenter)
+        name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         name_label.setWordWrap(True)
         name_label.setAccessibleName("Item name")
         name_label.setAccessibleDescription(self.item.name)
@@ -105,7 +105,7 @@ class ItemCard(QFrame):
             background: transparent;
             border: none;
         """)
-        stats_label.setAlignment(Qt.AlignCenter)
+        stats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         stats_label.setWordWrap(True)
         stats_label.setAccessibleName("Item stats")
         stats_label.setAccessibleDescription(stats_text if stats_text else "No special stats")
@@ -122,7 +122,7 @@ class ItemCard(QFrame):
             border: none;
             font-weight: {Theme.FONT_WEIGHT_MEDIUM};
         """)
-        rarity_label.setAlignment(Qt.AlignCenter)
+        rarity_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         rarity_label.setAccessibleName("Item rarity")
         rarity_label.setAccessibleDescription(f"This item is {self.item.rarity} rarity")
         layout.addWidget(rarity_label)
@@ -139,7 +139,7 @@ class ItemCard(QFrame):
                 background: transparent;
                 border: none;
             """)
-            price_label.setAlignment(Qt.AlignCenter)
+            price_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             price_label.setAccessibleName("Item price")
             price_label.setAccessibleDescription(f"Costs {self.item.value} gold coins")
             layout.addWidget(price_label)
@@ -179,8 +179,8 @@ class ItemCard(QFrame):
         self.setToolTip(tooltip_text)
 
         # Make the entire card clickable and focusable
-        self.setCursor(Qt.PointingHandCursor)
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setAccessibleName(f"Item card for {self.item.name}")
         self.setAccessibleDescription(f"{self.item.item_type.title()} item: {self.item.description or 'No description available'}")
 
@@ -264,7 +264,7 @@ class ItemCard(QFrame):
 
     def mousePressEvent(self, event):
         """Handle mouse press for card selection"""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.item)
         super().mousePressEvent(event)
 
@@ -350,14 +350,14 @@ class ItemSelectionOverlay(QDialog):
         # Title
         title_label = QLabel(self.title_text)
         title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #f1f0f2;")
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title_label)
 
         # Scrollable grid of item cards
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         scroll_content = QWidget()
         self.grid_layout = QGridLayout(scroll_content)
@@ -399,7 +399,7 @@ class ItemSelectionOverlay(QDialog):
 
         if not self.items:
             empty_label = QLabel("No items available")
-            empty_label.setAlignment(Qt.AlignCenter)
+            empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             empty_label.setStyleSheet("color: #9a96a5; font-size: 16px;")
             self.grid_layout.addWidget(empty_label, 0, 0, 1, 4)
             return

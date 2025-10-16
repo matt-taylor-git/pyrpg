@@ -34,188 +34,7 @@ from .theme import Theme
 
 from .widgets import Card, StyledButton
 
-class NewGameView(QWidget):
-    """A view for creating a new character, replacing the old splash screen."""
-    character_created = Signal(str)
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.init_ui()
-        self.setup_accessibility()
-
-    def setup_accessibility(self):
-        """Set up accessibility features for screen readers and keyboard navigation"""
-        self.setAccessibleName("New Game Character Creation")
-        self.setAccessibleDescription("Create a new character to begin your RPG adventure")
-
-        # Set up keyboard shortcuts
-        from PySide6.QtGui import QShortcut, QKeySequence
-        from PySide6.QtWidgets import QApplication
-
-        # Enter key on name input starts game
-        name_shortcut = QShortcut(QKeySequence("Return"), self.name_input)
-        name_shortcut.activated.connect(self.start_game)
-
-        # Set focus order for keyboard navigation
-        self.setTabOrder(self.name_input, self.start_btn)
-
-    def init_ui(self):
-        main_layout = QVBoxLayout(self)
-        main_layout.setAlignment(Qt.AlignCenter)
-
-        # Background image setup
-        self.setup_background_image()
-
-        # Central card container
-        card = Card()
-        card.setMaximumWidth(int(self.size().width() * 0.6))  # Responsive width based on window
-        card_layout = QVBoxLayout()
-        card.setLayout(card_layout)
-
-        # Title
-        title = QLabel("Realm of Legends")
-        title.setObjectName("new-game-title")
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet(f"font-size: 36px; font-weight: bold; color: {Theme.PRIMARY.name()};")
-        title.setAccessibleName("Game Title")
-        title.setAccessibleDescription("PyRPG Adventure game title")
-        card_layout.addWidget(title)
-
-        subtitle = QLabel("Create Your Hero")
-        subtitle.setObjectName("new-game-subtitle")
-        subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet(f"font-size: 16px; color: {Theme.MUTED_FOREGROUND.name()};")
-        subtitle.setAccessibleName("Subtitle")
-        subtitle.setAccessibleDescription("Instructions for character creation")
-        card_layout.addWidget(subtitle)
-
-        # Name Input
-        self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Enter your hero's name...")
-        self.name_input.setAccessibleName("Character Name Input")
-        self.name_input.setAccessibleDescription("Enter a unique name for your character, 1-20 characters using letters, numbers, spaces, hyphens, and underscores")
-        self.name_input.setMaxLength(20)
-        self.name_input.textChanged.connect(self.validate_input)
-        card_layout.addWidget(self.name_input)
-
-        # Validation label (shows real-time feedback)
-        self.validation_label = QLabel("")
-        self.validation_label.setStyleSheet(f"font-size: 12px; color: {Theme.MUTED_FOREGROUND.name()};")
-        self.validation_label.setAccessibleName("Input Validation")
-        self.validation_label.hide()
-        card_layout.addWidget(self.validation_label)
-
-        # Begin Adventure Button
-        self.start_btn = StyledButton("Begin Adventure", variant="primary")
-        self.start_btn.setAccessibleName("Start Game Button")
-        self.start_btn.setAccessibleDescription("Begin your RPG adventure with the entered character name")
-        self.start_btn.clicked.connect(self.start_game)
-        self.start_btn.setEnabled(False)  # Disabled until valid input
-        card_layout.addWidget(self.start_btn)
-
-        main_layout.addWidget(card)
-
-    def validate_input(self, text):
-        """Real-time input validation with user feedback"""
-        text = text.strip()
-        is_valid, message = self._validate_name(text)
-
-        if not text:
-            self.validation_label.hide()
-            self.start_btn.setEnabled(False)
-        else:
-            self.validation_label.setText(message)
-            self.validation_label.show()
-            self.start_btn.setEnabled(is_valid)
-
-        # Update validation label color
-        if is_valid:
-            self.validation_label.setStyleSheet(f"font-size: 12px; color: {Theme.ACCENT.name()};")
-        else:
-            self.validation_label.setStyleSheet(f"font-size: 12px; color: {Theme.DESTRUCTIVE.name()};")
-
-    def _validate_name(self, name):
-        """Validate character name and return (valid, message) tuple"""
-        if not name:
-            return False, "Please enter a character name"
-
-        if len(name) > 20:
-            return False, f"Name too long ({len(name)}/20 characters)"
-
-        if len(name) < 3:
-            return False, "Name must be at least 3 characters"
-
-        invalid_chars = []
-        for c in name:
-            if not (c.isalnum() or c in " _-"):
-                invalid_chars.append(c)
-
-        if invalid_chars:
-            return False, f"Invalid characters: {', '.join(set(invalid_chars))}. Use only letters, numbers, spaces, hyphens, and underscores."
-
-        # Check for reserved names or inappropriate content
-        reserved_names = ["admin", "system", "god", "cheat"]
-        if name.lower() in reserved_names:
-            return False, "This name is reserved. Please choose another."
-
-        return True, "✓ Valid character name"
-
-    def setup_background_image(self):
-        """Load and display the character creation background image"""
-        try:
-            # Try the corrected filename first (character_creation_bg.png)
-            bg_path = "assets/character_creation_bg.png"
-            if not os.path.exists(bg_path):
-                # Fallback to the other filename
-                bg_path = "assets/character_creation_bg.png.png"
-
-            if os.path.exists(bg_path):
-                self.background_pixmap = QPixmap(bg_path)
-                if not self.background_pixmap.isNull():
-                    # Scale to fit the window
-                    scaled_pixmap = self.background_pixmap.scaled(
-                        self.size(),
-                        Qt.AspectRatioMode.KeepAspectRatioByExpanding,
-                        Qt.TransformationMode.SmoothTransformation
-                    )
-                    self.background_label = QLabel(self)
-                    self.background_label.setPixmap(scaled_pixmap)
-                    self.background_label.setScaledContents(True)
-                    self.background_label.lower()  # Send to back
-                    self.background_label.setGeometry(0, 0, self.width(), self.height())
-
-                    # Make background slightly transparent
-                    self.background_label.setStyleSheet("background-color: rgba(0, 0, 0, 0.3);")
-
-        except Exception as e:
-            print(f"Warning: Could not load background image: {e}")
-            self.background_pixmap = None
-
-    def resizeEvent(self, event):
-        """Handle window resize and scale background"""
-        super().resizeEvent(event)
-
-        # Scale background if it exists
-        if hasattr(self, 'background_label') and self.background_label and hasattr(self, 'background_pixmap') and self.background_pixmap:
-            scaled_pixmap = self.background_pixmap.scaled(
-                self.size(),
-                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
-                Qt.TransformationMode.SmoothTransformation
-            )
-            self.background_label.setPixmap(scaled_pixmap)
-            self.background_label.setGeometry(0, 0, self.width(), self.height())
-
-    def start_game(self):
-        """Emits the character name and signals the main window to start."""
-        char_name = self.name_input.text().strip()
-        is_valid, message = self._validate_name(char_name)
-
-        if not is_valid:
-            QMessageBox.warning(self, "Invalid Name", message)
-            self.name_input.setFocus()
-            return
-
-        self.character_created.emit(char_name)
 
 class RPGGame(QMainWindow):
     def __init__(self):
@@ -279,7 +98,7 @@ class RPGGame(QMainWindow):
 
         # Create tab widget (horizontal tabs at top, like React sample)
         self.tab_widget = QTabWidget()
-        self.tab_widget.setTabPosition(QTabWidget.North)
+        self.tab_widget.setTabPosition(QTabWidget.TabPosition.North)
         self.tab_widget.setAccessibleName("Main navigation tabs")
         self.tab_widget.setAccessibleDescription("Navigate between different game sections")
         self.tab_widget.setStyleSheet(f"""
@@ -387,9 +206,11 @@ class RPGGame(QMainWindow):
             elif index == PageIndex.INVENTORY:
                 self.inventory_page.update_inventory(self.hero)
                 for i in range(self.inventory_page.inventory_grid_layout.count()):
-                    widget = self.inventory_page.inventory_grid_layout.itemAt(i).widget()
-                    if isinstance(widget, ItemCard):
-                        widget.action_clicked.connect(self.on_inventory_item_clicked)
+                    item = self.inventory_page.inventory_grid_layout.itemAt(i)
+                    if item:
+                        widget = item.widget()
+                        if isinstance(widget, ItemCard):
+                            widget.action_clicked.connect(self.on_inventory_item_clicked)
 
     def animate_tab_transition(self, new_index):
         """Animate tab transition with fade effect"""
@@ -553,7 +374,7 @@ class RPGGame(QMainWindow):
                 color: #ffffff;
             }
         """)
-        self.new_game_btn.clicked.connect(self.new_game)
+        self.new_game_btn.clicked.connect(self.show_new_game_view)
 
         # Add shadow to new game button
         shadow = QGraphicsDropShadowEffect()
@@ -565,6 +386,13 @@ class RPGGame(QMainWindow):
 
         # Replace explore button with new game button
         self.adventure_page.button_layout.addWidget(self.new_game_btn, 0, 0, 1, 2)
+
+
+    def show_new_game_view(self):
+        """Show the new game view."""
+        self.new_game_view = NewGameView()
+        self.new_game_view.character_created.connect(self.start_new_game)
+        self.setCentralWidget(self.new_game_view)
 
 
     def _explore_via_controller(self):
@@ -590,25 +418,29 @@ class RPGGame(QMainWindow):
 
     def _on_item_purchased(self, item):
         """Handle item purchase completion"""
-        self.hero.add_item(item)
-        self.log_message(f"💰 Purchased {item.name}!")
-        self.update_stats_display()
+        if self.hero:
+            self.hero.add_item(item)
+            self.log_message(f"💰 Purchased {item.name}!")
+            self.update_stats_display()
 
     def _on_item_used(self, item):
         """Handle item usage completion"""
-        self.log_message(f"🧪 {self.hero.use_item(item)}")
-        self.hero.remove_item(item)
-        self.update_stats_display()
+        if self.hero:
+            self.log_message(f"🧪 {self.hero.use_item(item)}")
+            self.hero.remove_item(item)
+            self.update_stats_display()
 
     def _on_item_equipped(self, item):
         """Handle item equip completion"""
-        self.log_message(f"⚔️ Equipped {item.name}!")
-        self.update_stats_display()
+        if self.hero:
+            self.log_message(f"⚔️ Equipped {item.name}!")
+            self.update_stats_display()
 
     def _on_stat_increased(self, stat_name):
         """Handle stat increase completion"""
-        self.log_message(f"🏋️ Increased {stat_name}!")
-        self.update_stats_display()
+        if self.hero:
+            self.log_message(f"🏋️ Increased {stat_name}!")
+            self.update_stats_display()
 
     def _update_gold_displays(self, new_gold):
         """Update all gold displays when gold changes"""
@@ -619,8 +451,8 @@ class RPGGame(QMainWindow):
         if action == "buy":
             reply = QMessageBox.question(self, "Confirm Purchase",
                                        f"Buy {item.name} for {item.value} gold?",
-                                       QMessageBox.Yes | QMessageBox.No)
-            if reply == QMessageBox.Yes:
+                                       QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.Yes:
                 success = self.shop_controller.purchase_item(item)
                 if success:
                     self._on_item_purchased(item)
@@ -628,7 +460,7 @@ class RPGGame(QMainWindow):
 
     def handle_consumable_auto_use(self, item):
         """Handle automatic use of consumables after purchase"""
-        if item.item_type == 'consumable':
+        if self.hero and item.item_type == 'consumable':
             message = self.hero.use_item(item)
             if message:
                 self.log_message(f"🧪 {message}")
@@ -708,23 +540,24 @@ class RPGGame(QMainWindow):
 
     def on_inventory_item_clicked(self, item, action):
         """Handle inventory item card clicks"""
-        if action.lower() == "use" and item.item_type == 'consumable':
-            # Use consumable
-            message = self.hero.use_item(item)
-            if message:
-                self.log_message(f"\U0001f9ea {message}")
+        if self.hero:
+            if action.lower() == "use" and item.item_type == 'consumable':
+                # Use consumable
+                message = self.hero.use_item(item)
+                if message:
+                    self.log_message(f"\U0001f9ea {message}")
+                    self.hero.remove_item(item)
+                    self.update_stats_display()
+            elif action.lower() == "equip" and item.item_type in ['weapon', 'armor', 'accessory']:
+                # Remove item from inventory
                 self.hero.remove_item(item)
+                # Equip the item and get the previously equipped item (if any)
+                old_item = self.hero.equip_item(item)
+                # Add the old item back to inventory if there was one
+                if old_item:
+                    self.hero.add_item(old_item)
+                self.log_message(f"\u2694\ufe0f Equipped {item.name}!")
                 self.update_stats_display()
-        elif action.lower() == "equip" and item.item_type in ['weapon', 'armor', 'accessory']:
-            # Remove item from inventory
-            self.hero.remove_item(item)
-            # Equip the item and get the previously equipped item (if any)
-            old_item = self.hero.equip_item(item)
-            # Add the old item back to inventory if there was one
-            if old_item:
-                self.hero.add_item(old_item)
-            self.log_message(f"\u2694\ufe0f Equipped {item.name}!")
-            self.update_stats_display()
 
     def explore(self):
         """Handle exploration and random encounters"""
@@ -739,12 +572,13 @@ class RPGGame(QMainWindow):
 
     def trigger_random_encounter(self):
         """Trigger a random enemy encounter"""
-        # Get a random enemy for this encounter
-        from game.game import get_random_enemy
-        self.current_enemy = get_random_enemy(self.hero.level)
+        if self.hero:
+            # Get a random enemy for this encounter
+            from game.game import get_random_enemy
+            self.current_enemy = get_random_enemy(self.hero.level)
 
-        # Show combat interface
-        self.show_combat_interface()
+            # Show combat interface
+            self.show_combat_interface()
 
     def show_combat_interface(self):
         """Show the combat interface with current enemy - Enhanced formatting"""
@@ -811,18 +645,19 @@ class RPGGame(QMainWindow):
 
     def update_combat_ui(self):
         """Update all combat UI elements with smooth animations"""
-        # Animate hero health bar
-        if hasattr(self, 'combat_page') and self.combat_page:
-            current_hero_health = self.combat_page.hero_combat_health_bar.value()
-            target_hero_health = int((self.hero.health / self.hero.max_health) * 100)
-            self.animate_progress_bar(self.combat_page.hero_combat_health_bar, current_hero_health, target_hero_health)
-            self.combat_page.hero_combat_health_bar.setFormat(f"{self.hero.health} / {self.hero.max_health}")
+        if self.hero and self.current_enemy:
+            # Animate hero health bar
+            if hasattr(self, 'combat_page') and self.combat_page:
+                current_hero_health = self.combat_page.hero_combat_health_bar.value()
+                target_hero_health = int((self.hero.health / self.hero.max_health) * 100)
+                self.animate_progress_bar(self.combat_page.hero_combat_health_bar, current_hero_health, target_hero_health)
+                self.combat_page.hero_combat_health_bar.setFormat(f"{self.hero.health} / {self.hero.max_health}")
 
-            # Animate enemy health bar
-            current_enemy_health = self.combat_page.enemy_combat_health_bar.value()
-            target_enemy_health = int((self.current_enemy.health / self.current_enemy.max_health) * 100)
-            self.animate_progress_bar(self.combat_page.enemy_combat_health_bar, current_enemy_health, target_enemy_health)
-            self.combat_page.enemy_combat_health_bar.setFormat(f"{self.current_enemy.health} / {self.current_enemy.max_health}")
+                # Animate enemy health bar
+                current_enemy_health = self.combat_page.enemy_combat_health_bar.value()
+                target_enemy_health = int((self.current_enemy.health / self.current_enemy.max_health) * 100)
+                self.animate_progress_bar(self.combat_page.enemy_combat_health_bar, current_enemy_health, target_enemy_health)
+                self.combat_page.enemy_combat_health_bar.setFormat(f"{self.current_enemy.health} / {self.current_enemy.max_health}")
 
         self.update_stats_display()
 
@@ -833,7 +668,7 @@ class RPGGame(QMainWindow):
             animation.setStartValue(start_value)
             animation.setEndValue(end_value)
             animation.setDuration(duration)
-            animation.setEasingCurve(QEasingCurve.OutCubic)
+            animation.setEasingCurve(QEasingCurve.Type.OutCubic)
             animation.start()
             self.animations.append(animation)  # Keep reference
 
@@ -911,11 +746,12 @@ class RPGGame(QMainWindow):
 
     def on_item_sold(self, item):
         """Handle item being sold"""
-        sell_value = item.value // 2  # Sell for half price
-        self.hero.inventory.remove(item)
-        self.hero.gold += sell_value
-        self.update_stats_display()
-        self.log_message(f"Sold {item.name} for {sell_value} gold!")
+        if self.hero:
+            sell_value = item.value // 2  # Sell for half price
+            self.hero.inventory.remove(item)
+            self.hero.gold += sell_value
+            self.update_stats_display()
+            self.log_message(f"Sold {item.name} for {sell_value} gold!")
 
     def show_stats(self):
         """Show detailed stats"""
@@ -930,18 +766,16 @@ class RPGGame(QMainWindow):
 
     def rest(self):
         """Rest to restore health"""
-        if not self.hero:
-            return
-
-        self.hero.health = self.hero.max_health
-        self.update_stats_display()
-        self.log_message("You rest and restore your health!")
+        if self.hero:
+            self.hero.health = self.hero.max_health
+            self.update_stats_display()
+            self.log_message("You rest and restore your health!")
 
     def quit_game(self):
         """Quit the game"""
         reply = QMessageBox.question(self, "Quit Game",
                                    "Are you sure you want to quit?",
-                                   QMessageBox.Yes | QMessageBox.No)
+                                   QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
         if reply == QMessageBox.StandardButton.Yes:
             QApplication.quit()
@@ -971,7 +805,7 @@ class RPGGame(QMainWindow):
 
     def on_combat_skill_used(self, skill):
         """Handle skill being used in combat"""
-        if self.hero.mana >= skill.mana_cost:
+        if self.hero and self.hero.mana >= skill.mana_cost:
             self.hero.mana -= skill.mana_cost
             self.process_combat_round(('use_skill', skill))
         else:
@@ -1002,21 +836,22 @@ class RPGGame(QMainWindow):
 
     def on_combat_item_used(self, item):
         """Handle item being used in combat"""
-        # Use the item
-        message = self.hero.use_item(item)
-        self.hero.inventory.remove(item)
+        if self.hero:
+            # Use the item
+            message = self.hero.use_item(item)
+            self.hero.inventory.remove(item)
 
-        # Log the action
-        if message:
-            self.log_message(f"\U0001f9ea {message}")
-            # Flash green for healing
-            QTimer.singleShot(100, lambda: self.flash_widget(self.combat_page.hero_sprite_label, "rgba(46, 204, 113, 0.3)", 200))
+            # Log the action
+            if message:
+                self.log_message(f"\U0001f9ea {message}")
+                # Flash green for healing
+                QTimer.singleShot(100, lambda: self.flash_widget(self.combat_page.hero_sprite_label, "rgba(46, 204, 113, 0.3)", 200))
 
-        # Update stats display
-        self.update_stats_display()
+            # Update stats display
+            self.update_stats_display()
 
-        # Enemy gets a turn after using item - pass tuple for action
-        self.process_combat_round(("use_item", item))
+            # Enemy gets a turn after using item - pass tuple for action
+            self.process_combat_round(("use_item", item))
 
     def increase_stat(self, stat_name):
         """Increase a character's stat using available stat points"""
@@ -1036,7 +871,7 @@ class RPGGame(QMainWindow):
             elif stat_name == 'speed':
                 self.hero.dexterity += 1
                 # Recalculate crit/dodge chances
-                self.hero.update_secondary_stats()
+                self.hero.refresh_derived_stats()
 
             # Consume stat point
             self.hero.stat_points -= 1
@@ -1051,24 +886,54 @@ class RPGGame(QMainWindow):
         """Set up global keyboard shortcuts for the application"""
         from PySide6.QtGui import QShortcut, QKeySequence
 
+        self.shortcuts = []
         # General shortcuts
-        QShortcut(QKeySequence("F1"), self).activated.connect(self.show_help)
-        QShortcut(QKeySequence.Quit, self).activated.connect(self.quit_game)
+        shortcut = QShortcut(QKeySequence("F1"), self)
+        shortcut.activated.connect(self.show_help)
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence.StandardKey.Quit, self)
+        shortcut.activated.connect(self.quit_game)
+        self.shortcuts.append(shortcut)
 
         # Tab navigation shortcuts
-        QShortcut(QKeySequence("Alt+S"), self).activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.STATS))
-        QShortcut(QKeySequence("Alt+I"), self).activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.INVENTORY))
-        QShortcut(QKeySequence("Alt+P"), self).activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.SHOP))  # P for shop
+        shortcut = QShortcut(QKeySequence("Alt+S"), self)
+        shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.STATS))
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence("Alt+I"), self)
+        shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.INVENTORY))
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence("Alt+P"), self)
+        shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.SHOP))  # P for shop
+        self.shortcuts.append(shortcut)
 
         # Combat shortcuts (only active in combat)
-        QShortcut(QKeySequence("A"), self, activated=lambda: self.combat_attack() if self.current_state == GameState.COMBAT else None)
-        QShortcut(QKeySequence("S"), self, activated=lambda: self.combat_use_skill() if self.current_state == GameState.COMBAT else None)
-        QShortcut(QKeySequence("I"), self, activated=lambda: self.combat_use_item() if self.current_state == GameState.COMBAT else None)
-        QShortcut(QKeySequence("R"), self, activated=lambda: self.combat_run() if self.current_state == GameState.COMBAT else None)
+        shortcut = QShortcut(QKeySequence("A"), self)
+        shortcut.activated.connect(lambda: self.combat_attack() if self.current_state == GameState.COMBAT else None)
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence("S"), self)
+        shortcut.activated.connect(lambda: self.combat_use_skill() if self.current_state == GameState.COMBAT else None)
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence("I"), self)
+        shortcut.activated.connect(lambda: self.combat_use_item() if self.current_state == GameState.COMBAT else None)
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence("R"), self)
+        shortcut.activated.connect(lambda: self.combat_run() if self.current_state == GameState.COMBAT else None)
+        self.shortcuts.append(shortcut)
 
         # Adventure shortcuts
-        QShortcut(QKeySequence("E"), self, activated=lambda: self.explore() if self.current_state == GameState.ADVENTURE and self.hero else None)
-        QShortcut(QKeySequence("T"), self, activated=lambda: self.rest() if self.current_state == GameState.ADVENTURE and self.hero else None)
+        shortcut = QShortcut(QKeySequence("E"), self)
+        shortcut.activated.connect(lambda: self.explore() if self.current_state == GameState.ADVENTURE and self.hero else None)
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence("T"), self)
+        shortcut.activated.connect(lambda: self.rest() if self.current_state == GameState.ADVENTURE and self.hero else None)
+        self.shortcuts.append(shortcut)
 
     def show_help(self):
         """Show help dialog with keyboard shortcuts"""

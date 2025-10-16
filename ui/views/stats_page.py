@@ -40,7 +40,7 @@ class StatsPage(QWidget):
 
         # Avatar and Name
         self.char_name_label = QLabel("Hero")
-        self.char_name_label.setAlignment(Qt.AlignCenter)
+        self.char_name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.char_name_label.setStyleSheet("font-size: 24px; font-weight: bold;")
         self.char_name_label.setToolTip("Your character's name and level")
         layout.addWidget(self.char_name_label)
@@ -108,8 +108,8 @@ class StatsPage(QWidget):
         plus_button = StyledButton("+", size="sm")
 
         row_layout.addWidget(name_label, 0, 0)
-        row_layout.addWidget(value_label, 0, 1, 2, 1, Qt.AlignRight)
-        row_layout.addWidget(plus_button, 0, 2, 2, 1, Qt.AlignRight)
+        row_layout.addWidget(value_label, 0, 1, 2, 1, Qt.AlignmentFlag.AlignRight)
+        row_layout.addWidget(plus_button, 0, 2, 2, 1, Qt.AlignmentFlag.AlignRight)
         row_layout.addWidget(desc_label, 1, 0)
 
         return row_widget, value_label, plus_button

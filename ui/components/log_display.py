@@ -46,18 +46,18 @@ class LogDisplay(QWidget):
         # Scroll area for log entries
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.scroll_area.setMinimumHeight(150)
         self.scroll_area.setMaximumHeight(400)
-        self.scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Container for log entries
         self.entries_container = QWidget()
         self.entries_layout = QVBoxLayout(self.entries_container)
         self.entries_layout.setContentsMargins(10, 10, 10, 10)
         self.entries_layout.setSpacing(8)
-        self.entries_layout.setAlignment(Qt.AlignTop)
+        self.entries_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.entries_layout.addStretch()  # Push entries to top
 
         self.scroll_area.setWidget(self.entries_container)
@@ -110,9 +110,9 @@ class LogDisplay(QWidget):
         """Add a visual widget for the log entry"""
         # Create label for this entry
         entry_label = QLabel()
-        entry_label.setTextFormat(Qt.RichText)
+        entry_label.setTextFormat(Qt.TextFormat.RichText)
         entry_label.setWordWrap(True)
-        entry_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        entry_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
         # Format the entry with CSS styling
         border_color = entry.get_border_color()

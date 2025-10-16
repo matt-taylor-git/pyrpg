@@ -39,7 +39,7 @@ class CombatPage(QWidget):
         self.enemy_combat_health_bar.setAccessibleDescription("Current enemy health status")
 
         # Enable keyboard navigation
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
     def init_ui(self):
         main_layout = QHBoxLayout(self)
@@ -71,7 +71,7 @@ class CombatPage(QWidget):
 
         # Sprites container with better visual hierarchy
         sprites_container = QFrame()
-        sprites_container.setFrameStyle(QFrame.Box)
+        sprites_container.setFrameShape(QFrame.Shape.Box)
         sprites_container.setStyleSheet(f"""
             QFrame {{
                 border: 2px solid {Theme.BORDER.name()};
@@ -86,7 +86,7 @@ class CombatPage(QWidget):
 
         # Hero sprite with actual character images
         self.hero_sprite_label = QLabel()
-        self.hero_sprite_label.setAlignment(Qt.AlignCenter)
+        self.hero_sprite_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.hero_sprite_label.setMinimumSize(80, 80)
         self.hero_sprite_label.setStyleSheet(f"""
             QLabel {{
@@ -104,12 +104,12 @@ class CombatPage(QWidget):
         vs_font = QFont()
         vs_font.setPointSize(24)
         vs_label.setFont(vs_font)
-        vs_label.setAlignment(Qt.AlignCenter)
+        vs_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         vs_label.setAccessibleName("Versus indicator")
 
         # Enemy sprite with better formatting
         self.enemy_sprite_label = QLabel()
-        self.enemy_sprite_label.setAlignment(Qt.AlignCenter)
+        self.enemy_sprite_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.enemy_sprite_label.setMinimumSize(80, 80)
         self.enemy_sprite_label.setStyleSheet(f"""
             QLabel {{
@@ -122,7 +122,7 @@ class CombatPage(QWidget):
         self.enemy_sprite_label.setAccessibleDescription("Representation of the enemy in battle")
 
         sprites_layout.addWidget(self.hero_sprite_label)
-        sprites_layout.addWidget(vs_label, alignment=Qt.AlignCenter)
+        sprites_layout.addWidget(vs_label, alignment=Qt.AlignmentFlag.AlignCenter)
         sprites_layout.addWidget(self.enemy_sprite_label)
 
         layout.addWidget(sprites_container)
@@ -218,7 +218,8 @@ class CombatPage(QWidget):
 
         # Get the actual container dimensions for proper scaling
         # Use the parent container's size for more reliable calculations
-        container_size = self.hero_sprite_label.parent().size() if self.hero_sprite_label.parent() else self.hero_sprite_label.size()
+        parent = self.hero_sprite_label.parentWidget()
+        container_size = parent.size() if parent else self.hero_sprite_label.size()
 
         # Calculate target size based on container with proper padding
         # Use a reasonable size that's responsive but not too large
@@ -238,7 +239,7 @@ class CombatPage(QWidget):
 
             self.hero_sprite_label.setPixmap(scaled_pixmap)
             self.hero_sprite_label.setScaledContents(False)
-            self.hero_sprite_label.setAlignment(Qt.AlignCenter)
+            self.hero_sprite_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         except Exception as e:
             print(f"Warning: Error scaling hero sprite: {e}")
@@ -270,8 +271,10 @@ class CombatPage(QWidget):
             if os.path.exists(enemy_sprite_path):
                 pixmap = QPixmap(enemy_sprite_path)
                 if not pixmap.isNull():
+                    # Get the actual size for proper scaling
+                    target_size = self.enemy_sprite_label.size()
                     scaled_pixmap = pixmap.scaled(
-                        self.enemy_sprite_label.size(),
+                        target_size,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation
                     )
@@ -286,68 +289,6 @@ class CombatPage(QWidget):
         except Exception as e:
             print(f"Warning: Error loading enemy sprite: {e}")
             self.enemy_sprite_label.setText(f"👹 {getattr(enemy, 'name', 'ENEMY')}")
-
-        # Health Bars with better labels and styling
-        health_bars_layout = QVBoxLayout()
-        health_bars_layout.setSpacing(Theme.SPACING_SM)
-
-        # Hero health section
-        hero_health_layout = QVBoxLayout()
-        hero_health_label = QLabel("❤️ Hero Health")
-        hero_health_label.setStyleSheet(f"color: {Theme.FOREGROUND.name()}; font-weight: bold;")
-        hero_health_label.setAccessibleName("Hero health section")
-        hero_health_label.setAccessibleDescription("Hero's current health status")
-
-        self.hero_combat_health_bar = StyledProgressBar(variant="health")
-        self.hero_combat_health_bar.setAccessibleName("Hero health progress bar")
-        self.hero_combat_health_bar.setAccessibleDescription("Visual indicator of hero's remaining health")
-
-        hero_health_layout.addWidget(hero_health_label)
-        hero_health_layout.addWidget(self.hero_combat_health_bar)
-        health_bars_layout.addLayout(hero_health_layout)
-
-        # Enemy health section
-        enemy_health_layout = QVBoxLayout()
-        enemy_health_label = QLabel("💀 Enemy Health")
-        enemy_health_label.setStyleSheet(f"color: {Theme.FOREGROUND.name()}; font-weight: bold;")
-        enemy_health_label.setAccessibleName("Enemy health section")
-        enemy_health_label.setAccessibleDescription("Enemy's current health status")
-
-        self.enemy_combat_health_bar = StyledProgressBar(variant="health")
-        self.enemy_combat_health_bar.setAccessibleName("Enemy health progress bar")
-        self.enemy_combat_health_bar.setAccessibleDescription("Visual indicator of enemy's remaining health")
-
-        enemy_health_layout.addWidget(enemy_health_label)
-        enemy_health_layout.addWidget(self.enemy_combat_health_bar)
-        health_bars_layout.addLayout(enemy_health_layout)
-
-        layout.addLayout(health_bars_layout)
-
-        # Action Buttons with improved tooltips
-        actions_layout = QGridLayout()
-        actions_layout.setSpacing(Theme.SPACING_SM)
-
-        self.attack_btn = StyledButton("⚔️ Attack", variant="primary")
-        self.attack_btn.setToolTip("Attack the enemy with your weapon (A)")
-
-        self.use_skill_btn = StyledButton("✨ Use Skill", variant="secondary")
-        self.use_skill_btn.setToolTip("Use a special skill or spell (S)")
-
-        self.use_item_btn = StyledButton("🧪 Use Item", variant="secondary")
-        self.use_item_btn.setToolTip("Use a consumable item (I)")
-
-        self.run_btn = StyledButton("🏃 Run", variant="destructive")
-        self.run_btn.setToolTip("Attempt to flee from battle (R)")
-
-        actions_layout.addWidget(self.attack_btn, 0, 0)
-        actions_layout.addWidget(self.use_skill_btn, 0, 1)
-        actions_layout.addWidget(self.use_item_btn, 1, 0)
-        actions_layout.addWidget(self.run_btn, 1, 1)
-
-        layout.addLayout(actions_layout)
-
-        card.setLayout(layout)
-        return card
 
     def _create_log_card(self):
         card = Card()

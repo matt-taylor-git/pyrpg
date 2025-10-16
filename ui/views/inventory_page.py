@@ -56,7 +56,7 @@ class InventoryPage(QWidget):
 
         if not hero.inventory:
             empty_label = QLabel("Your inventory is empty.")
-            empty_label.setAlignment(Qt.AlignCenter)
+            empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.inventory_grid_layout.addWidget(empty_label, 0, 0, 1, 4)
             return
 

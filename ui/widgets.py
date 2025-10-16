@@ -41,8 +41,8 @@ class StyledButton(QPushButton):
         self.setAccessibleName(text)  # For screen readers
 
         # Set proper focus policy for keyboard navigation
-        self.setFocusPolicy(Qt.StrongFocus)
-        self.setCursor(Qt.PointingHandCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def setVariant(self, variant):
         """Sets the button's visual style using QSS object name targeting."""
@@ -105,7 +105,7 @@ class Badge(QLabel):
     """A small label for displaying status or rarity."""
     def __init__(self, text, variant="default", parent=None):
         super().__init__(text, parent)
-        self.setAlignment(Qt.AlignCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.set_variant(variant)
 
     def set_variant(self, variant):
