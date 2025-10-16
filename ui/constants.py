@@ -8,9 +8,9 @@ class GameState:
     STATS = "stats"
 
 class PageIndex:
-    """Page indices for QStackedWidget"""
+    """Page indices for QTabWidget tabs"""
     ADVENTURE = 0
-    STATS = 1
-    INVENTORY = 2
-    SHOP = 3
-    COMBAT = 4
+    COMBAT = 1
+    STATS = 2
+    INVENTORY = 3
+    SHOP = 4
