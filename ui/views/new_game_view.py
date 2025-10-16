@@ -11,6 +11,7 @@ from PySide6.QtGui import QFont, QPixmap
 from ..widgets import Card, StyledButton
 from ..theme import Theme
 from ..custom_widgets import ScalablePixmapLabel
+from ..components.validation_label import ValidationLabel
 import os
 import random
 
@@ -213,7 +214,7 @@ class NewGameView(QWidget):
         name_title.setStyleSheet("font-size: 16px; font-weight: bold; color: #f1f0f2;")
         name_layout.addWidget(name_title)
 
-        # Name input with styling
+        # Name input with styling and validation
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Enter your hero's name...")
         self.name_input.setStyleSheet(f"""
@@ -232,7 +233,12 @@ class NewGameView(QWidget):
             }}
         """)
         self.name_input.setMaxLength(20)  # Enforce limit visually
+        self.name_input.textChanged.connect(self.validate_name_input)
         name_layout.addWidget(self.name_input)
+
+        # Validation feedback label
+        self.validation_label = ValidationLabel()
+        name_layout.addWidget(self.validation_label)
 
         details_layout.addWidget(name_section)
 
@@ -322,24 +328,65 @@ class NewGameView(QWidget):
         # Keep references to prevent garbage collection
         self._animations = [title_anim, card_anim]
 
+    def validate_name_input(self):
+        """Validate character name input and show inline feedback"""
+        char_name = self.name_input.text().strip()
+
+        # Clear previous validation
+        self.validation_label.clear_validation()
+
+        # Basic validation rules
+        if not char_name:
+            self.validation_label.show_warning("A hero needs a name!")
+            self.start_btn.setEnabled(False)
+            return
+
+        if len(char_name) > 20:
+            self.validation_label.show_error("Name is too long (max 20 characters)")
+            self.start_btn.setEnabled(False)
+            return
+
+        # Check for invalid characters
+        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 _-")
+        if not all(c in valid_chars for c in char_name):
+            self.validation_label.show_error("Only letters, numbers, spaces, hyphens, and underscores allowed")
+            self.start_btn.setEnabled(False)
+            return
+
+        # Check for spaces at start/end
+        if char_name.startswith(' ') or char_name.endswith(' '):
+            self.validation_label.show_warning("Name shouldn't start or end with spaces")
+            self.start_btn.setEnabled(False)
+            return
+
+        # All validation passed
+        if len(char_name) >= 3:
+            self.validation_label.show_success("That's a heroic name!")
+            self.start_btn.setEnabled(True)
+        else:
+            self.validation_label.show_warning("Make it at least 3 characters long")
+            self.start_btn.setEnabled(False)
+
     def start_game(self):
         """Handle character creation and transition"""
         char_name = self.name_input.text().strip()
 
-        # Input validation
-        if not char_name:
-            QMessageBox.warning(self, "Invalid Name", "Please enter a character name.")
+        # Use inline validation instead of QMessageBox
+        if self.validation_label.isVisible() and "error" in self.validation_label.styleSheet().lower():
+            # Error feedback is already shown, don't proceed
             return
-        if len(char_name) > 20:
-            QMessageBox.warning(self, "Invalid Name", "Character name must be 20 characters or less.")
-            return
-        if not all(c.isalnum() or c in " _-" for c in char_name):
-            QMessageBox.warning(self, "Invalid Name", "Character name can only contain letters, numbers, spaces, hyphens, and underscores.")
+
+        # Additional final validation
+        if not char_name or len(char_name) < 3 or len(char_name) > 20:
+            self.validate_name_input()  # This will show appropriate error
             return
 
         # Disable button to prevent double-clicking
         self.start_btn.setEnabled(False)
         self.start_btn.setText("🌀 Creating Character...")
+
+        # Clear validation feedback
+        self.validation_label.clear_validation()
 
         # Animate out before emitting signal
         exit_anim = QPropertyAnimation(self.create_card, b"pos")

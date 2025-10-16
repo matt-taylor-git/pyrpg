@@ -27,119 +27,150 @@ class ItemCard(QFrame):
         self.setup_drag_drop()
 
     def setup_ui(self):
-        """Setup the card UI"""
+        """Setup the card UI with Theme constants"""
         self.setFrameShape(QFrame.Box)
         self.setMinimumSize(180, 200)
         self.setMaximumSize(200, 220)
 
-        # Styling based on rarity
-        rarity_colors = {
-            'common': '#abb2bf',
-            'uncommon': '#98c379',
-            'rare': '#dc3545',
-            'epic': '#c678dd',
-            'legendary': '#e5c07b'
+        # Styling based on rarity using Theme constants
+        import os
+        import sys
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        from ui.theme import Theme
+        rarity_styles = {
+            'common': {'color': Theme.MUTED_FOREGROUND, 'border': Theme.BORDER},
+            'uncommon': {'color': Theme.ACCENT, 'border': Theme.ACCENT},
+            'rare': {'color': Theme.PRIMARY, 'border': Theme.PRIMARY},
+            'epic': {'color': Theme.SECONDARY, 'border': Theme.SECONDARY},  # Purple for epic
+            'legendary': {'color': Theme.MUTED, 'border': Theme.MUTED}  # Gold for legendary
         }
 
-        border_color = rarity_colors.get(self.item.rarity, '#abb2bf')
+        rarity_style = rarity_styles.get(self.item.rarity, rarity_styles['common'])
+        border_color = rarity_style['border'].name()
+        text_color = rarity_style['color'].name()
 
         self.setStyleSheet(f"""
             ItemCard {{
-                background-color: #21252b;
+                background-color: {Theme.CARD.name()};
                 border: 2px solid {border_color};
-                border-radius: 8px;
-                padding: 10px;
+                border-radius: {Theme.BORDER_RADIUS_MD}px;
+                padding: {Theme.SPACING_SM}px;
             }}
             ItemCard:hover {{
-                background-color: #282c34;
-                border-color: {border_color};
+                background-color: {Theme.MUTED.name()};
+                border-color: {text_color};
             }}
         """)
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(8)
+        layout.setSpacing(Theme.SPACING_XS)
+        layout.setContentsMargins(Theme.SPACING_SM, Theme.SPACING_SM, Theme.SPACING_SM, Theme.SPACING_SM)
 
-        # Item icon/emoji
+        # Item icon/emoji with accessibility
         icon_result = self.get_item_icon()
         icon_label = QLabel()
         if isinstance(icon_result, str):
             # It's text/emoji
             icon_label.setText(icon_result)
-            icon_label.setStyleSheet("font-size: 32px; border: none;")
+            icon_label.setStyleSheet(f"font-size: 32px; background: transparent; border: none;")
             icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            icon_label.setAccessibleName(f"Icon for {self.item.name}")
+            icon_label.setAccessibleDescription(f"Visual representation of {self.item.item_type}")
         else:
             # It's a QLabel with image already set up
             icon_label = icon_result
         layout.addWidget(icon_label)
 
-        # Item name
+        # Item name with better styling
         name_label = QLabel(self.item.name)
         name_label.setStyleSheet(f"""
             font-size: 13px;
-            font-weight: 600;
-            color: {border_color};
+            font-weight: {Theme.FONT_WEIGHT_BOLD};
+            color: {text_color};
+            background: transparent;
             border: none;
         """)
         name_label.setAlignment(Qt.AlignCenter)
         name_label.setWordWrap(True)
+        name_label.setAccessibleName("Item name")
+        name_label.setAccessibleDescription(self.item.name)
         layout.addWidget(name_label)
 
-        # Item stats/description
+        # Item stats/description with theme colors
         stats_text = self.get_stats_text()
         stats_label = QLabel(stats_text)
-        stats_label.setStyleSheet("""
+        stats_label.setStyleSheet(f"""
             font-size: 11px;
-            color: #abb2bf;
+            color: {Theme.MUTED_FOREGROUND.name()};
+            background: transparent;
             border: none;
         """)
         stats_label.setAlignment(Qt.AlignCenter)
         stats_label.setWordWrap(True)
+        stats_label.setAccessibleName("Item stats")
+        stats_label.setAccessibleDescription(stats_text if stats_text else "No special stats")
         layout.addWidget(stats_label)
 
-        # Rarity badge
+        # Rarity badge with theme colors
         rarity_label = QLabel(self.item.rarity.title())
         rarity_label.setStyleSheet(f"""
             font-size: 10px;
-            color: {border_color};
-            background-color: rgba(0, 0, 0, 0.3);
-            padding: 3px 8px;
-            border-radius: 3px;
+            color: {text_color};
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: {Theme.SPACING_XS}px {Theme.SPACING_SM}px;
+            border-radius: {Theme.BORDER_RADIUS_SM}px;
             border: none;
+            font-weight: {Theme.FONT_WEIGHT_MEDIUM};
         """)
         rarity_label.setAlignment(Qt.AlignCenter)
+        rarity_label.setAccessibleName("Item rarity")
+        rarity_label.setAccessibleDescription(f"This item is {self.item.rarity} rarity")
         layout.addWidget(rarity_label)
 
         layout.addStretch()
 
-        # Price/Value
+        # Price/Value with theme colors
         if self.show_price:
-            price_label = QLabel(f"{self.item.value} gold")
-            price_label.setStyleSheet("""
+            price_label = QLabel(f"💰 {self.item.value} gold")
+            price_label.setStyleSheet(f"""
                 font-size: 12px;
-                font-weight: 600;
-                color: #e5c07b;
+                font-weight: {Theme.FONT_WEIGHT_SEMIBOLD};
+                color: {Theme.ACCENT.name()};
+                background: transparent;
                 border: none;
             """)
             price_label.setAlignment(Qt.AlignCenter)
+            price_label.setAccessibleName("Item price")
+            price_label.setAccessibleDescription(f"Costs {self.item.value} gold coins")
             layout.addWidget(price_label)
 
-        # Action button
+        # Action button with theme colors
         self.action_btn = QPushButton(self.action_text)
-        self.action_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #282c34;
-                color: #dc3545;
-                border: 1px solid #dc3545;
-                border-radius: 4px;
-                padding: 6px 12px;
+        self.action_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Theme.CARD.name()};
+                color: {Theme.PRIMARY.name()};
+                border: 1px solid {Theme.PRIMARY.name()};
+                border-radius: {Theme.BORDER_RADIUS_SM}px;
+                padding: {Theme.SPACING_XS}px {Theme.SPACING_SM}px;
                 font-size: 11px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #3e4452;
-                color: #ffffff;
-            }
+                font-weight: {Theme.FONT_WEIGHT_MEDIUM};
+            }}
+            QPushButton:hover {{
+                background-color: {Theme.SECONDARY.name()};
+                color: {Theme.SECONDARY_FOREGROUND.name()};
+            }}
+            QPushButton:pressed {{
+                background-color: {Theme.MUTED.name()};
+            }}
+            QPushButton:disabled {{
+                background-color: {Theme.MUTED.name()};
+                color: {Theme.MUTED_FOREGROUND.name()};
+                border-color: {Theme.BORDER.name()};
+            }}
         """)
+        self.action_btn.setAccessibleName(f"{self.action_text} button for {self.item.name}")
+        self.action_btn.setAccessibleDescription(f"Click to {self.action_text.lower()} {self.item.name}")
         self.action_btn.clicked.connect(lambda: self.action_clicked.emit(self.item, self.action_text.lower()))
         layout.addWidget(self.action_btn)
 
@@ -147,8 +178,11 @@ class ItemCard(QFrame):
         tooltip_text = self.get_tooltip_text()
         self.setToolTip(tooltip_text)
 
-        # Make the entire card clickable
+        # Make the entire card clickable and focusable
         self.setCursor(Qt.PointingHandCursor)
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setAccessibleName(f"Item card for {self.item.name}")
+        self.setAccessibleDescription(f"{self.item.item_type.title()} item: {self.item.description or 'No description available'}")
 
     def setup_drag_drop(self):
         """Set up drag and drop functionality for the item card"""
@@ -169,14 +203,16 @@ class ItemCard(QFrame):
     def get_item_icon(self):
         """Get icon for item type - images for weapons, emojis for others"""
         if self.item.item_type == 'weapon':
-            return self.get_weapon_icon()
-        else:
-            icons = {
-                'armor': '🛡️',
-                'accessory': '💍',
-                'consumable': '🧪'
-            }
-            return icons.get(self.item.item_type, '📦')
+            weapon_icon = self.get_weapon_icon()
+            if weapon_icon:  # If we got an image, return it
+                return weapon_icon
+        # Default emoji icons
+        icons = {
+            'armor': '🛡️',
+            'accessory': '💍',
+            'consumable': '🧪'
+        }
+        return icons.get(self.item.item_type, '📦')
 
     def get_weapon_icon(self):
         """Get weapon icon as a QLabel with image, fallback to emoji"""

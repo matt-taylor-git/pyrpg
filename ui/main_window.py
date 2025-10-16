@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
+import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QHBoxLayout, QLabel, QPushButton, QTextEdit,
                                QGridLayout, QGroupBox, QInputDialog, QMessageBox,
@@ -21,6 +22,15 @@ from .views.shop_page import ShopPage
 from .views.combat_page import CombatPage
 from .views.new_game_view import NewGameView
 from .components import AchievementSystem
+from .controllers import (
+    AdventureController,
+    CombatController,
+    ShopController,
+    InventoryController,
+    StatsController
+)
+from .components.log_display import LogDisplay
+from .theme import Theme
 
 from .widgets import Card, StyledButton
 
@@ -31,10 +41,30 @@ class NewGameView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.init_ui()
+        self.setup_accessibility()
+
+    def setup_accessibility(self):
+        """Set up accessibility features for screen readers and keyboard navigation"""
+        self.setAccessibleName("New Game Character Creation")
+        self.setAccessibleDescription("Create a new character to begin your RPG adventure")
+
+        # Set up keyboard shortcuts
+        from PySide6.QtGui import QShortcut, QKeySequence
+        from PySide6.QtWidgets import QApplication
+
+        # Enter key on name input starts game
+        name_shortcut = QShortcut(QKeySequence("Return"), self.name_input)
+        name_shortcut.activated.connect(self.start_game)
+
+        # Set focus order for keyboard navigation
+        self.setTabOrder(self.name_input, self.start_btn)
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignCenter)
+
+        # Background image setup
+        self.setup_background_image()
 
         # Central card container
         card = Card()
@@ -46,40 +76,143 @@ class NewGameView(QWidget):
         title = QLabel("Realm of Legends")
         title.setObjectName("new-game-title")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 36px; font-weight: bold; color: #dc3545;")
+        title.setStyleSheet(f"font-size: 36px; font-weight: bold; color: {Theme.PRIMARY.name()};")
+        title.setAccessibleName("Game Title")
+        title.setAccessibleDescription("PyRPG Adventure game title")
         card_layout.addWidget(title)
 
         subtitle = QLabel("Create Your Hero")
         subtitle.setObjectName("new-game-subtitle")
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("font-size: 16px; color: #9a96a5;")
+        subtitle.setStyleSheet(f"font-size: 16px; color: {Theme.MUTED_FOREGROUND.name()};")
+        subtitle.setAccessibleName("Subtitle")
+        subtitle.setAccessibleDescription("Instructions for character creation")
         card_layout.addWidget(subtitle)
 
         # Name Input
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Enter your hero's name...")
+        self.name_input.setAccessibleName("Character Name Input")
+        self.name_input.setAccessibleDescription("Enter a unique name for your character, 1-20 characters using letters, numbers, spaces, hyphens, and underscores")
+        self.name_input.setMaxLength(20)
+        self.name_input.textChanged.connect(self.validate_input)
         card_layout.addWidget(self.name_input)
+
+        # Validation label (shows real-time feedback)
+        self.validation_label = QLabel("")
+        self.validation_label.setStyleSheet(f"font-size: 12px; color: {Theme.MUTED_FOREGROUND.name()};")
+        self.validation_label.setAccessibleName("Input Validation")
+        self.validation_label.hide()
+        card_layout.addWidget(self.validation_label)
 
         # Begin Adventure Button
         self.start_btn = StyledButton("Begin Adventure", variant="primary")
+        self.start_btn.setAccessibleName("Start Game Button")
+        self.start_btn.setAccessibleDescription("Begin your RPG adventure with the entered character name")
         self.start_btn.clicked.connect(self.start_game)
+        self.start_btn.setEnabled(False)  # Disabled until valid input
         card_layout.addWidget(self.start_btn)
 
         main_layout.addWidget(card)
 
+    def validate_input(self, text):
+        """Real-time input validation with user feedback"""
+        text = text.strip()
+        is_valid, message = self._validate_name(text)
+
+        if not text:
+            self.validation_label.hide()
+            self.start_btn.setEnabled(False)
+        else:
+            self.validation_label.setText(message)
+            self.validation_label.show()
+            self.start_btn.setEnabled(is_valid)
+
+        # Update validation label color
+        if is_valid:
+            self.validation_label.setStyleSheet(f"font-size: 12px; color: {Theme.ACCENT.name()};")
+        else:
+            self.validation_label.setStyleSheet(f"font-size: 12px; color: {Theme.DESTRUCTIVE.name()};")
+
+    def _validate_name(self, name):
+        """Validate character name and return (valid, message) tuple"""
+        if not name:
+            return False, "Please enter a character name"
+
+        if len(name) > 20:
+            return False, f"Name too long ({len(name)}/20 characters)"
+
+        if len(name) < 3:
+            return False, "Name must be at least 3 characters"
+
+        invalid_chars = []
+        for c in name:
+            if not (c.isalnum() or c in " _-"):
+                invalid_chars.append(c)
+
+        if invalid_chars:
+            return False, f"Invalid characters: {', '.join(set(invalid_chars))}. Use only letters, numbers, spaces, hyphens, and underscores."
+
+        # Check for reserved names or inappropriate content
+        reserved_names = ["admin", "system", "god", "cheat"]
+        if name.lower() in reserved_names:
+            return False, "This name is reserved. Please choose another."
+
+        return True, "✓ Valid character name"
+
+    def setup_background_image(self):
+        """Load and display the character creation background image"""
+        try:
+            # Try the corrected filename first (character_creation_bg.png)
+            bg_path = "assets/character_creation_bg.png"
+            if not os.path.exists(bg_path):
+                # Fallback to the other filename
+                bg_path = "assets/character_creation_bg.png.png"
+
+            if os.path.exists(bg_path):
+                self.background_pixmap = QPixmap(bg_path)
+                if not self.background_pixmap.isNull():
+                    # Scale to fit the window
+                    scaled_pixmap = self.background_pixmap.scaled(
+                        self.size(),
+                        Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    self.background_label = QLabel(self)
+                    self.background_label.setPixmap(scaled_pixmap)
+                    self.background_label.setScaledContents(True)
+                    self.background_label.lower()  # Send to back
+                    self.background_label.setGeometry(0, 0, self.width(), self.height())
+
+                    # Make background slightly transparent
+                    self.background_label.setStyleSheet("background-color: rgba(0, 0, 0, 0.3);")
+
+        except Exception as e:
+            print(f"Warning: Could not load background image: {e}")
+            self.background_pixmap = None
+
+    def resizeEvent(self, event):
+        """Handle window resize and scale background"""
+        super().resizeEvent(event)
+
+        # Scale background if it exists
+        if hasattr(self, 'background_label') and self.background_label and hasattr(self, 'background_pixmap') and self.background_pixmap:
+            scaled_pixmap = self.background_pixmap.scaled(
+                self.size(),
+                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                Qt.TransformationMode.SmoothTransformation
+            )
+            self.background_label.setPixmap(scaled_pixmap)
+            self.background_label.setGeometry(0, 0, self.width(), self.height())
+
     def start_game(self):
         """Emits the character name and signals the main window to start."""
         char_name = self.name_input.text().strip()
+        is_valid, message = self._validate_name(char_name)
 
-        # Input validation
-        if not char_name:
-            QMessageBox.warning(self, "Invalid Name", "Please enter a character name.")
-            return
-        if len(char_name) > 20:
-            QMessageBox.warning(self, "Invalid Name", "Character name must be 20 characters or less.")
-            return
-        if not all(c.isalnum() or c in " _-" for c in char_name):
-            QMessageBox.warning(self, "Invalid Name", "Character name can only contain letters, numbers, spaces, hyphens, and underscores.")
+        if not is_valid:
+            QMessageBox.warning(self, "Invalid Name", message)
+            self.name_input.setFocus()
             return
 
         self.character_created.emit(char_name)
@@ -98,33 +231,16 @@ class RPGGame(QMainWindow):
         self.setCentralWidget(self.new_game_view)
 
     def shake_widget(self, widget, duration=200, magnitude=10):
-        """Create a shake animation for a widget"""
-        original_pos = widget.pos()
-
-        animation = QPropertyAnimation(widget, b"pos")
-        animation.setDuration(duration)
-        animation.setLoopCount(2)
-
-        # Create shake effect by moving left and right
-        animation.setKeyValueAt(0, original_pos)
-        animation.setKeyValueAt(0.25, original_pos + QPoint(magnitude, 0))
-        animation.setKeyValueAt(0.5, original_pos - QPoint(magnitude, 0))
-        animation.setKeyValueAt(0.75, original_pos + QPoint(magnitude // 2, 0))
-        animation.setKeyValueAt(1, original_pos)
-
+        """Create a shake animation for a widget using AnimationFactory"""
+        from .widgets import AnimationFactory
+        animation = AnimationFactory.shake_animation(widget, duration, magnitude)
         animation.start()
-        self.animations.append(animation)  # Keep reference to prevent garbage collection
+        self.animations.append(animation)  # Keep reference
 
     def flash_widget(self, widget, color, duration=300):
-        """Create a flash effect on a widget by temporarily changing background"""
-        original_style = widget.styleSheet()
-
-        # Flash color
-        flash_style = original_style + f"\nbackground-color: {color};"
-        widget.setStyleSheet(flash_style)
-
-        # Restore original style after duration
-        QTimer.singleShot(duration, lambda: widget.setStyleSheet(original_style))
+        """Create a flash effect using AnimationFactory"""
+        from .widgets import AnimationFactory
+        AnimationFactory.color_flash_animation(widget, color, duration)
 
     def resizeEvent(self, event):
         """Handle window resize to scale font size."""
@@ -156,46 +272,41 @@ class RPGGame(QMainWindow):
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
 
-        # Game log (top section) - Enhanced with better styling
-        self.log_display = QTextEdit()
-        self.log_display.setReadOnly(True)
-        self.log_display.setTextInteractionFlags(Qt.NoTextInteraction)
-        self.log_display.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.log_display.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
+        # Game log (top section) - Using modern LogDisplay component
+        self.log_display = LogDisplay(max_entries=20)
+        self.add_entry_to_log("Welcome to PyRPG Adventure! Type 'help' for commands.", "info")
         self.main_layout.addWidget(self.log_display, 1) # Add with stretch factor
-
-        # Initialize with styled welcome messages using the new battle log style
-        self.game_log = []
-        self.log_message("Welcome to PyRPG Adventure! Type 'help' for commands.")
 
         # Create tab widget (horizontal tabs at top, like React sample)
         self.tab_widget = QTabWidget()
         self.tab_widget.setTabPosition(QTabWidget.North)
-        self.tab_widget.setStyleSheet("""
-            QTabWidget::pane {
+        self.tab_widget.setAccessibleName("Main navigation tabs")
+        self.tab_widget.setAccessibleDescription("Navigate between different game sections")
+        self.tab_widget.setStyleSheet(f"""
+            QTabWidget::pane {{
                 border: none;
-                background-color: #282c34;
-            }
-            QTabBar::tab {
-                background-color: #21252b;
-                color: #abb2bf;
-                padding: 12px 24px;
+                background-color: {Theme.BACKGROUND.name()};
+            }}
+            QTabBar::tab {{
+                background-color: {Theme.CARD.name()};
+                color: {Theme.MUTED_FOREGROUND.name()};
+                padding: {Theme.SPACING_MD}px {Theme.SPACING_LG}px;
                 border: none;
                 border-bottom: 3px solid transparent;
                 font-size: 14px;
-                font-weight: 500;
-                margin-right: 2px;
-            }
-            QTabBar::tab:hover {
-                background-color: #282c34;
-                color: #ffffff;
-            }
-            QTabBar::tab:selected {
-                background-color: #282c34;
-                color: #dc3545;
-                border-bottom-color: #dc3545;
-            }
+                font-weight: {Theme.FONT_WEIGHT_MEDIUM};
+                margin-right: {Theme.SPACING_XS}px;
+                border-radius: {Theme.BORDER_RADIUS_SM}px  {Theme.BORDER_RADIUS_SM}px 0 0;
+            }}
+            QTabBar::tab:hover {{
+                background-color: {Theme.MUTED.name()};
+                color: {Theme.FOREGROUND.name()};
+            }}
+            QTabBar::tab:selected {{
+                background-color: {Theme.BACKGROUND.name()};
+                color: {Theme.PRIMARY.name()};
+                border-bottom-color: {Theme.PRIMARY.name()};
+            }}
         """)
 
         # Create and add pages
@@ -216,26 +327,44 @@ class RPGGame(QMainWindow):
 
         self.main_layout.addWidget(self.tab_widget, 4)  # Add with stretch factor
 
-        # Connect adventure page buttons
-        self.adventure_page.explore_btn.clicked.connect(self.explore)
-        self.adventure_page.rest_btn.clicked.connect(self.rest)
+        # Initialize controllers (following MVC pattern)
+        self.adventure_controller = AdventureController(self.hero)
+        self.combat_controller = CombatController(self.hero)
+        self.shop_controller = ShopController(self.hero, get_shop_items())
+        self.inventory_controller = InventoryController(self.hero)
+        self.stats_controller = StatsController(self.hero)
+
+        # Connect controller signals to UI updates
+        self.adventure_controller.status_message.connect(self.log_message)
+        self.adventure_controller.error_occurred.connect(lambda title, msg: QMessageBox.warning(self, title, msg))
+
+        self.shop_controller.transaction_completed.connect(self._on_item_purchased)
+        self.shop_controller.gold_updated.connect(self._update_gold_displays)
+        self.shop_controller.error_occurred.connect(lambda title, msg: QMessageBox.warning(self, title, msg))
+
+        self.inventory_controller.item_used.connect(self._on_item_used)
+        self.inventory_controller.item_equipped.connect(self._on_item_equipped)
+
+        self.stats_controller.stat_increased.connect(self._on_stat_increased)
+        self.stats_controller.error_occurred.connect(lambda title, msg: QMessageBox.information(self, title, msg))
+
+        # Connect UI elements to controllers (clean separation)
+        self.adventure_page.explore_btn.clicked.connect(self._explore_via_controller)
+        self.adventure_page.rest_btn.clicked.connect(self._rest_via_controller)
         self.adventure_page.quit_btn.clicked.connect(self.quit_game)
 
-        # Connect combat page buttons
         self.combat_page.attack_btn.clicked.connect(self.combat_attack)
         self.combat_page.use_skill_btn.clicked.connect(self.combat_use_skill)
         self.combat_page.use_item_btn.clicked.connect(self.combat_use_item)
         self.combat_page.run_btn.clicked.connect(self.combat_run)
 
-        # Connect shop page buttons
         self.shop_page.sell_btn.clicked.connect(self.sell_items)
         self.shop_page.leave_btn.clicked.connect(self.leave_shop)
 
-        # Connect stats page stat buttons
-        self.stats_page.strength_plus_btn.clicked.connect(lambda: self.increase_stat('strength'))
-        self.stats_page.defense_plus_btn.clicked.connect(lambda: self.increase_stat('defense'))
-        self.stats_page.magic_plus_btn.clicked.connect(lambda: self.increase_stat('magic'))
-        self.stats_page.speed_plus_btn.clicked.connect(lambda: self.increase_stat('speed'))
+        self.stats_page.strength_plus_btn.clicked.connect(lambda: self._increase_stat_via_controller('strength'))
+        self.stats_page.defense_plus_btn.clicked.connect(lambda: self._increase_stat_via_controller('defense'))
+        self.stats_page.magic_plus_btn.clicked.connect(lambda: self._increase_stat_via_controller('magic'))
+        self.stats_page.speed_plus_btn.clicked.connect(lambda: self._increase_stat_via_controller('speed'))
 
         # Set up keyboard shortcuts
         self.setup_keyboard_shortcuts()
@@ -292,69 +421,23 @@ class RPGGame(QMainWindow):
         self._tab_animations = [fade_out, fade_in]
 
     def log_message(self, message):
-        """Add a message to the game log with left-border accent style (matching React sample)"""
-        # Initialize log display if it doesn't exist
-        if not hasattr(self, 'log_display') or self.log_display is None:
-            self.game_log = []
-            self.log_display = QTextEdit()
-            self.log_display.setReadOnly(True)
-            self.log_display.setTextInteractionFlags(Qt.NoTextInteraction)
-            self.log_display.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            self.log_display.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        """Add a message to the game log with type-based coloring"""
+        if hasattr(self, 'log_display') and isinstance(self.log_display, LogDisplay):
+            # Determine message type based on content
+            message_type = "info"
+            if any(word in message.lower() for word in ["defeated", "damage", "critical", "died"]):
+                message_type = "combat"
+            elif any(word in message.lower() for word in ["gold", "purchased", "sold"]):
+                message_type = "success"
+            elif "error" in message.lower() or "failed" in message.lower():
+                message_type = "error"
 
-            # Add to top of main layout
-            self.main_layout.insertWidget(0, self.log_display, 1)
+            self.log_display.add_entry(message, message_type)
 
-        self.game_log.append(message)
-        # Keep only last 20 messages
-        if len(self.game_log) > 20:
-            self.game_log = self.game_log[-20:]
-
-        # Build HTML with clean left-border style (matching React sample)
-        # Use a full HTML document with proper styling
-        log_html = """
-        <html>
-        <head>
-            <style>
-                body {
-                    background-color: #282c34;
-                    margin: 0;
-                    padding: 0;
-                    font-family: 'Inter', 'Segoe UI', sans-serif;
-                }
-                .log-container {
-                    padding: 10px;
-                    background-color: #21252b;
-                    border-radius: 8px;
-                    margin: 5px;
-                }
-                .log-message {
-                    border-left: 3px solid #dc3545;
-                    padding-left: 12px;
-                    margin: 8px 0;
-                    color: #abb2bf;
-                    font-size: 13px;
-                    line-height: 1.6;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="log-container">
-        """
-
-        for msg in self.game_log[-10:]:  # Show last 10 messages in correct order
-            log_html += f'<div class="log-message">{msg}</div>'
-
-        log_html += """
-            </div>
-        </body>
-        </html>
-        """
-
-        self.log_display.setHtml(log_html)
-        # Scroll to bottom to show newest messages
-        scrollbar = self.log_display.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+    def add_entry_to_log(self, message, message_type="info"):
+        """Direct method to add log entries with type"""
+        if hasattr(self, 'log_display') and isinstance(self.log_display, LogDisplay):
+            self.log_display.add_entry(message, message_type)
 
 
     def hide_main_log(self):
@@ -484,9 +567,73 @@ class RPGGame(QMainWindow):
         self.adventure_page.button_layout.addWidget(self.new_game_btn, 0, 0, 1, 2)
 
 
+    def _explore_via_controller(self):
+        """Explore using controller pattern"""
+        if not self.hero:
+            return
+        self.adventure_controller.explore_wilderness()
+        # After controller logic, handle UI parts
+        QApplication.processEvents()
+        QTimer.singleShot(1000, self.trigger_random_encounter)
+
+    def _rest_via_controller(self):
+        """Rest using controller pattern"""
+        if not self.hero:
+            return
+        self.adventure_controller.rest_at_camp()
+        self.hero.health = self.hero.max_health
+        self.update_stats_display()
+
+    def _increase_stat_via_controller(self, stat_name):
+        """Increase stat using controller pattern"""
+        self.stats_controller.increase_stat(stat_name)
+
+    def _on_item_purchased(self, item):
+        """Handle item purchase completion"""
+        self.hero.add_item(item)
+        self.log_message(f"💰 Purchased {item.name}!")
+        self.update_stats_display()
+
+    def _on_item_used(self, item):
+        """Handle item usage completion"""
+        self.log_message(f"🧪 {self.hero.use_item(item)}")
+        self.hero.remove_item(item)
+        self.update_stats_display()
+
+    def _on_item_equipped(self, item):
+        """Handle item equip completion"""
+        self.log_message(f"⚔️ Equipped {item.name}!")
+        self.update_stats_display()
+
+    def _on_stat_increased(self, stat_name):
+        """Handle stat increase completion"""
+        self.log_message(f"🏋️ Increased {stat_name}!")
+        self.update_stats_display()
+
+    def _update_gold_displays(self, new_gold):
+        """Update all gold displays when gold changes"""
+        self.shop_page.gold_label.setText(f"Gold: {new_gold}")
+        self.inventory_page.gold_label.setText(f"Gold: {new_gold}")
+
     def on_shop_item_clicked(self, item, action):
         if action == "buy":
-            self.buy_item(item.name, item.value)
+            reply = QMessageBox.question(self, "Confirm Purchase",
+                                       f"Buy {item.name} for {item.value} gold?",
+                                       QMessageBox.Yes | QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                success = self.shop_controller.purchase_item(item)
+                if success:
+                    self._on_item_purchased(item)
+                    QTimer.singleShot(100, lambda: self.handle_consumable_auto_use(item))
+
+    def handle_consumable_auto_use(self, item):
+        """Handle automatic use of consumables after purchase"""
+        if item.item_type == 'consumable':
+            message = self.hero.use_item(item)
+            if message:
+                self.log_message(f"🧪 {message}")
+                self.hero.remove_item(item)
+                self.update_stats_display()
 
     def update_stats_display(self):
         """Update the stats display with current hero stats"""
@@ -902,9 +1049,26 @@ class RPGGame(QMainWindow):
 
     def setup_keyboard_shortcuts(self):
         """Set up global keyboard shortcuts for the application"""
-        # For now, keyboard shortcuts are disabled due to import issues
-        # This would be implemented once we have proper shortcut import support
-        pass
+        from PySide6.QtGui import QShortcut, QKeySequence
+
+        # General shortcuts
+        QShortcut(QKeySequence("F1"), self).activated.connect(self.show_help)
+        QShortcut(QKeySequence.Quit, self).activated.connect(self.quit_game)
+
+        # Tab navigation shortcuts
+        QShortcut(QKeySequence("Alt+S"), self).activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.STATS))
+        QShortcut(QKeySequence("Alt+I"), self).activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.INVENTORY))
+        QShortcut(QKeySequence("Alt+P"), self).activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.SHOP))  # P for shop
+
+        # Combat shortcuts (only active in combat)
+        QShortcut(QKeySequence("A"), self, activated=lambda: self.combat_attack() if self.current_state == GameState.COMBAT else None)
+        QShortcut(QKeySequence("S"), self, activated=lambda: self.combat_use_skill() if self.current_state == GameState.COMBAT else None)
+        QShortcut(QKeySequence("I"), self, activated=lambda: self.combat_use_item() if self.current_state == GameState.COMBAT else None)
+        QShortcut(QKeySequence("R"), self, activated=lambda: self.combat_run() if self.current_state == GameState.COMBAT else None)
+
+        # Adventure shortcuts
+        QShortcut(QKeySequence("E"), self, activated=lambda: self.explore() if self.current_state == GameState.ADVENTURE and self.hero else None)
+        QShortcut(QKeySequence("T"), self, activated=lambda: self.rest() if self.current_state == GameState.ADVENTURE and self.hero else None)
 
     def show_help(self):
         """Show help dialog with keyboard shortcuts"""
