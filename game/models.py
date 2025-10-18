@@ -343,6 +343,122 @@ class Hero:
         self.customization['name'] = name
         self.name = name
 
+    def to_dict(self) -> dict:
+        """
+        Serialize Hero object to dictionary for saving.
+
+        Returns:
+            Dictionary containing all hero state
+        """
+        from .items import Item
+
+        # Prepare equipment data
+        equipment_data = {}
+        for slot, item in self.equipment.items():
+            if item:
+                equipment_data[slot] = item.to_dict()
+            else:
+                equipment_data[slot] = None
+
+        # Prepare inventory data
+        inventory_data = [item.to_dict() for item in self.inventory]
+
+        # Prepare skills data
+        skills_data = [{'name': skill.name, 'skill_type': skill.skill_type,
+                       'damage': skill.damage, 'mana_cost': skill.mana_cost,
+                       'description': skill.description}
+                      for skill in self.unlocked_skills]
+
+        return {
+            'name': self.name,
+            'level': self.level,
+            'health': self.health,
+            'max_health': self.max_health,
+            'mana': self.mana,
+            'max_mana': self.max_mana,
+            'strength': self.strength,
+            'dexterity': self.dexterity,
+            'intelligence': self.intelligence,
+            'vitality': self.vitality,
+            'equipment': equipment_data,
+            'inventory': inventory_data,
+            'gold': self.gold,
+            'experience': self.experience,
+            'experience_to_level': self.experience_to_level,
+            'skill_points': self.skill_points,
+            'stat_points': self.stat_points,
+            'status_effects': self.status_effects.copy(),
+            'buffs': self.buffs.copy(),
+            'unlocked_skills': skills_data,
+            'skill_cooldowns': self.skill_cooldowns.copy(),
+            'customization': self.customization.copy()
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """
+        Deserialize Hero object from dictionary.
+
+        Args:
+            data: Dictionary containing hero state
+
+        Returns:
+            Hero instance
+        """
+        from .items import Item
+
+        # Create hero with basic name first
+        hero = cls(data['name'])
+
+        # Override basic stats with saved data
+        hero.level = data['level']
+        hero.health = data['health']
+        hero.max_health = data['max_health']
+        hero.mana = data['mana']
+        hero.max_mana = data['max_mana']
+        hero.strength = data['strength']
+        hero.dexterity = data['dexterity']
+        hero.intelligence = data['intelligence']
+        hero.vitality = data['vitality']
+        hero.gold = data['gold']
+        hero.experience = data['experience']
+        hero.experience_to_level = data['experience_to_level']
+        hero.skill_points = data['skill_points']
+        hero.stat_points = data['stat_points']
+        hero.status_effects = data['status_effects'].copy()
+        hero.buffs = data['buffs'].copy()
+        hero.skill_cooldowns = data['skill_cooldowns'].copy()
+        hero.customization = data['customization'].copy()
+
+        # Restore equipment
+        hero.equipment = {}
+        for slot, item_data in data['equipment'].items():
+            if item_data:
+                hero.equipment[slot] = Item.from_dict(item_data)
+            else:
+                hero.equipment[slot] = None
+
+        # Restore inventory
+        hero.inventory = []
+        for item_data in data['inventory']:
+            hero.inventory.append(Item.from_dict(item_data))
+
+        # Restore skills
+        hero.unlocked_skills = []
+        for skill_data in data['unlocked_skills']:
+            hero.unlocked_skills.append(Skill(
+                skill_data['name'],
+                skill_data['skill_type'],
+                skill_data['damage'],
+                skill_data['mana_cost'],
+                skill_data['description']
+            ))
+
+        # Recalculate derived stats
+        hero.refresh_derived_stats()
+
+        return hero
+
 class Enemy:
     """Advanced enemy with detailed stats and battle mechanics for monster viewer."""
 

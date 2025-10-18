@@ -5,6 +5,7 @@ These controllers handle the interaction between UI components and game models.
 """
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox
+from game.models import Hero, Enemy
 
 
 class BaseController(QObject):
@@ -546,3 +547,313 @@ class MonsterStatsController(BaseController):
                 base_threat = 'weak'
 
         return base_threat
+
+
+class SaveLoadController(BaseController):
+    """Controller handling save/load game operations"""
+
+    save_operation_completed = Signal(str, bool)  # (slot_name, success)
+    load_operation_completed = Signal(str, bool)  # (slot_name, success)
+    saves_list_updated = Signal(list)  # list of save dictionaries
+    auto_save_enabled = Signal(bool)  # emitted when auto-save is toggled
+
+    def __init__(self, hero_model, save_directory="saves", parent=None):
+        super().__init__(parent)
+        self.hero = hero_model
+        # Initialize save/load manager with proper directory handling
+        from game.save_load import SaveLoadManager
+        self.save_manager = SaveLoadManager(save_directory)
+        self.__init_auto_save()
+
+    def save_game(self, slot_name="manual"):
+        """Save current game state"""
+        if not self.hero:
+            self.error_occurred.emit("Error", "No hero available to save!")
+            self.save_operation_completed.emit(slot_name, False)
+            return False
+
+        try:
+            # Create game state object
+            from game.save_load import GameState
+            game_state = GameState()
+            game_state.hero = self.hero
+
+            # Add progress and settings (these would come from other controllers)
+            game_state.game_progress = getattr(self.hero, '_game_progress', {'chapter': 1, 'bosses_defeated': 0})
+            game_state.settings = getattr(self.hero, '_game_settings', {'music_volume': 75, 'sfx_volume': 60})
+            game_state.session_stats = getattr(self.hero, '_session_stats', {'play_time': 0, 'enemies_killed': 0})
+
+            # Save using save manager
+            success = self._perform_save(game_state, slot_name)
+
+            if success:
+                self.status_message.emit(f"💾 Game saved to slot '{slot_name}'!")
+            else:
+                self.error_occurred.emit("Save Failed", f"Could not save game to slot '{slot_name}'")
+
+            self.save_operation_completed.emit(slot_name, success)
+            return success
+
+        except Exception as e:
+            self.error_occurred.emit("Save Error", f"Unexpected error during save: {str(e)}")
+            self.save_operation_completed.emit(slot_name, False)
+            return False
+
+    def load_game(self, slot_name):
+        """Load game state from slot"""
+        try:
+            # Load using save manager
+            loaded_state = self._perform_load(slot_name)
+
+            if loaded_state and loaded_state.is_valid():
+                # Restore hero state
+                self.hero = loaded_state.hero
+
+                # Store additional state on hero for other controllers to access
+                self.hero._game_progress = loaded_state.game_progress
+                self.hero._game_settings = loaded_state.settings
+                self.hero._session_stats = loaded_state.session_stats
+
+                self.status_message.emit(f"📁 Game loaded from slot '{slot_name}'!")
+                self.load_operation_completed.emit(slot_name, True)
+                return True
+            else:
+                self.error_occurred.emit("Load Failed", f"Could not load game from slot '{slot_name}' or save file is corrupted")
+                self.load_operation_completed.emit(slot_name, False)
+                return False
+
+        except Exception as e:
+            self.error_occurred.emit("Load Error", f"Unexpected error during load: {str(e)}")
+            self.load_operation_completed.emit(slot_name, False)
+            return False
+
+    def get_available_saves(self):
+        """Get list of available save files"""
+        try:
+            saves_list = self._get_saves_list()
+            self.saves_list_updated.emit(saves_list)
+            return saves_list
+        except Exception as e:
+            self.error_occurred.emit("Save List Error", f"Could not retrieve saves list: {str(e)}")
+            self.saves_list_updated.emit([])
+            return []
+
+    def delete_save(self, slot_name):
+        """Delete a save file"""
+        try:
+            success = self._perform_delete(slot_name)
+            if success:
+                self.status_message.emit(f"🗑️ Save slot '{slot_name}' deleted!")
+                # Update saves list
+                self.get_available_saves()
+            else:
+                self.error_occurred.emit("Delete Failed", f"Could not delete save slot '{slot_name}'")
+            return success
+        except Exception as e:
+            self.error_occurred.emit("Delete Error", f"Unexpected error during delete: {str(e)}")
+            return False
+
+    def _perform_save(self, game_state, slot_name):
+        """Perform the actual save operation"""
+        try:
+            return self.save_manager.save_game(game_state, slot_name)
+        except Exception as e:
+            print(f"Save manager error: {e}")
+            # Fallback implementation if save_load module has issues
+            return self._fallback_save(game_state, slot_name)
+
+    def _perform_load(self, slot_name):
+        """Perform the actual load operation"""
+        try:
+            return self.save_manager.load_game(slot_name)
+        except Exception as e:
+            print(f"Save manager error: {e}")
+            # Fallback implementation if save_load module has issues
+            return self._fallback_load(slot_name)
+
+    def _get_saves_list(self):
+        """Get the list of saves"""
+        try:
+            return self.save_manager.list_saves()
+        except Exception as e:
+            print(f"Save manager error: {e}")
+            return []
+
+    def _perform_delete(self, slot_name):
+        """Perform the actual delete operation"""
+        try:
+            return self.save_manager.delete_save(slot_name)
+        except Exception as e:
+            print(f"Save manager error: {e}")
+            return False
+
+    def _fallback_save(self, game_state, slot_name):
+        """Fallback save implementation using basic JSON"""
+        try:
+            import json
+            import os
+
+            # Ensure saves directory exists
+            os.makedirs("saves", exist_ok=True)
+
+            # Serialize hero data (basic version)
+            hero_data = {
+                'name': self.hero.name,
+                'level': self.hero.level,
+                'health': self.hero.health,
+                'max_health': self.hero.max_health,
+                'mana': self.hero.mana,
+                'max_mana': self.hero.max_mana,
+                'strength': self.hero.strength,
+                'dexterity': self.hero.dexterity,
+                'intelligence': self.hero.intelligence,
+                'vitality': self.hero.vitality,
+                'gold': self.hero.gold,
+                'experience': self.hero.experience,
+                'experience_to_level': self.hero.experience_to_level,
+                'skill_points': self.hero.stat_points,
+                'stat_points': self.hero.skill_points,
+            }
+
+            # Save to file
+            filename = f"saves/{slot_name}.json"
+            with open(filename, 'w') as f:
+                json.dump(hero_data, f, indent=2)
+
+            return True
+
+        except Exception as e:
+            print(f"Fallback save error: {e}")
+            return False
+
+    def _fallback_load(self, slot_name):
+        """Fallback load implementation using basic JSON"""
+        try:
+            import json
+
+            # Load from file
+            filename = f"saves/{slot_name}.json"
+            with open(filename, 'r') as f:
+                hero_data = json.load(f)
+
+            # Create new hero from data
+            from game.models import Hero
+            loaded_hero = Hero(hero_data['name'])
+
+            # Restore stats
+            loaded_hero.level = hero_data['level']
+            loaded_hero.health = hero_data['health']
+            loaded_hero.max_health = hero_data['max_health']
+            loaded_hero.mana = hero_data['mana']
+            loaded_hero.max_mana = hero_data['max_mana']
+            loaded_hero.strength = hero_data['strength']
+            loaded_hero.dexterity = hero_data['dexterity']
+            loaded_hero.intelligence = hero_data['intelligence']
+            loaded_hero.vitality = hero_data['vitality']
+            loaded_hero.gold = hero_data['gold']
+            loaded_hero.experience = hero_data['experience']
+            loaded_hero.experience_to_level = hero_data['experience_to_level']
+            loaded_hero.skill_points = hero_data['skill_points']
+            loaded_hero.stat_points = hero_data['stat_points']
+
+            # Recalculate derived stats
+            loaded_hero.refresh_derived_stats()
+
+            # Create minimal game state
+            from game.save_load import GameState
+            game_state = GameState()
+            game_state.hero = loaded_hero
+
+            return game_state
+
+        except Exception as e:
+            print(f"Fallback load error: {e}")
+            return None
+
+    # Auto-save functionality
+    def __init_auto_save(self):
+        """Initialize auto-save components"""
+        # Auto-save settings will be stored in hero settings
+        self.auto_save_settings = {
+            'enabled': True,
+            'interval_minutes': 5,  # Default 5 minutes
+        }
+        self.last_auto_save_time = 0
+
+    def is_auto_save_enabled(self):
+        """Check if auto-save is enabled"""
+        return getattr(self.hero, '_auto_save_enabled', True) if self.hero else True
+
+    def set_auto_save_enabled(self, enabled):
+        """Enable or disable auto-save"""
+        if self.hero:
+            self.hero._auto_save_enabled = enabled
+        self.auto_save_enabled.emit(enabled)
+
+    def get_auto_save_interval(self):
+        """Get current auto-save interval in minutes"""
+        return getattr(self.hero, '_auto_save_interval', 5) if self.hero else 5
+
+    def set_auto_save_interval(self, minutes):
+        """Set auto-save interval in minutes"""
+        if not isinstance(minutes, int) or minutes < 1 or minutes > 60:
+            self.error_occurred.emit("Invalid Interval", "Auto-save interval must be between 1-60 minutes.")
+            return False
+
+        if self.hero:
+            self.hero._auto_save_interval = minutes
+
+        self.status_message.emit(f"⏰ Auto-save interval set to {minutes} minutes")
+        return True
+
+    def check_and_perform_auto_save(self, current_time):
+        """
+        Check if auto-save should occur and perform it if needed.
+
+        Args:
+            current_time: Current timestamp (time.time())
+
+        Returns:
+            True if auto-save occurred, False otherwise
+        """
+        if not self.hero or not self.is_auto_save_enabled():
+            return False
+
+        interval_seconds = self.get_auto_save_interval() * 60  # Convert to seconds
+        time_since_last_save = current_time - getattr(self, 'last_auto_save_time', 0)
+
+        if time_since_last_save >= interval_seconds:
+            # Time to auto-save
+            try:
+                success = self.save_game("auto")
+                if success:
+                    self.last_auto_save_time = current_time
+                    # Don't emit success message for auto-saves to avoid spam
+                    print(f"Auto-saved at {current_time}")
+                    return True
+                else:
+                    # Auto-save failed - maybe disk full or permissions issue
+                    print(f"Auto-save failed at {current_time}")
+                    return False
+            except Exception as e:
+                print(f"Auto-save error: {e}")
+                return False
+
+        return False
+
+    def get_time_until_next_auto_save(self, current_time):
+        """
+        Get seconds until next auto-save.
+
+        Args:
+            current_time: Current timestamp
+
+        Returns:
+            Seconds until next auto-save, or None if disabled
+        """
+        if not self.hero or not self.is_auto_save_enabled():
+            return None
+
+        interval_seconds = self.get_auto_save_interval() * 60
+        time_since_last_save = current_time - getattr(self, 'last_auto_save_time', 0)
+        return max(0, interval_seconds - time_since_last_save)

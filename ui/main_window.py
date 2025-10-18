@@ -30,7 +30,8 @@ from .controllers import (
     InventoryController,
     StatsController,
     CustomizationController,
-    MonsterStatsController
+    MonsterStatsController,
+    SaveLoadController
 )
 from .components.log_display import LogDisplay
 from .theme import Theme
@@ -159,6 +160,7 @@ class RPGGame(QMainWindow):
         self.stats_controller = StatsController(self.hero)
         self.customization_controller = CustomizationController(self.hero)
         self.monster_stats_controller = MonsterStatsController(self.hero)
+        self.save_load_controller = SaveLoadController(self.hero)
 
         # Connect controller signals to UI updates
         self.adventure_controller.status_message.connect(self.log_message)
@@ -209,8 +211,234 @@ class RPGGame(QMainWindow):
         self.stats_page.magic_plus_btn.clicked.connect(lambda: self._increase_stat_via_controller('magic'))
         self.stats_page.speed_plus_btn.clicked.connect(lambda: self._increase_stat_via_controller('speed'))
 
+        # Set up menubar
+        self.setup_menu_bar()
+
         # Set up keyboard shortcuts
         self.setup_keyboard_shortcuts()
+
+    def setup_menu_bar(self):
+        """Set up the application menu bar with save/load options"""
+        # Create menubar
+        menubar = self.menuBar()
+        if not menubar:
+            return
+
+        # File menu
+        file_menu = menubar.addMenu('&File')
+
+        # Save actions
+        save_action = file_menu.addAction('💾 &Save Game')
+        save_action.setShortcut(QKeySequence.StandardKey.Save)
+        save_action.triggered.connect(lambda: self.quick_save_game() if self.hero else None)
+
+        # Quick save
+        quick_save_action = file_menu.addAction('⚡ &Quick Save')
+        quick_save_action.setShortcut(QKeySequence('F5'))
+        quick_save_action.triggered.connect(lambda: self.quick_save_game() if self.hero else None)
+
+        # Load actions
+        file_menu.addSeparator()
+
+        load_action = file_menu.addAction('📁 &Load Game')
+        load_action.setShortcut(QKeySequence.StandardKey.Open)
+        load_action.triggered.connect(lambda: self.show_load_dialog() if self.hero else None)
+
+        # Quick load
+        quick_load_action = file_menu.addAction('⚡ &Quick Load')
+        quick_load_action.setShortcut(QKeySequence('F9'))
+        quick_load_action.triggered.connect(lambda: self.quick_load_game() if self.hero else None)
+
+        # Save/load interface
+        file_menu.addSeparator()
+        save_load_menu_action = file_menu.addAction('💾📁 &Save/Load Interface')
+        save_load_menu_action.setShortcut(QKeySequence('Ctrl+L'))
+        save_load_menu_action.triggered.connect(self.show_save_load_interface)
+
+        # Exit action
+        file_menu.addSeparator()
+        quit_action = file_menu.addAction('&Quit')
+        quit_action.setShortcut(QKeySequence.StandardKey.Quit)
+        quit_action.triggered.connect(self.quit_game)
+
+    def quick_save_game(self):
+        """Perform a quick save operation"""
+        if not self.hero:
+            QMessageBox.warning(self, "No Game", "No active game to save.")
+            return
+
+        if not self.save_load_controller:
+            return
+
+        # Disable UI during save
+        self.setEnabled(False)
+
+        try:
+            # Use manual save slot for now, but could be "quick" slot
+            self.save_load_controller.save_game("manual")
+            self.log_message("⚡ Game saved successfully!")
+        except Exception as e:
+            self.error(f"Failed to quick save: {str(e)}")
+            QMessageBox.warning(self, "Save Failed", f"Could not save game: {str(e)}")
+        finally:
+            self.setEnabled(True)
+
+    def quick_load_game(self):
+        """Perform a quick load operation (loads most recent save)"""
+        if not self.save_load_controller:
+            return
+
+        # Get available saves
+        saves = self.save_load_controller.get_available_saves()
+        if not saves:
+            QMessageBox.information(self, "No Saves", "No save files found to load.")
+            return
+
+        # Sort by last saved (newest first) and try to load the most recent
+        saves.sort(key=lambda x: x.get('last_saved', ''), reverse=True)
+        most_recent = saves[0]
+        slot_name = most_recent.get('slot')
+
+        if slot_name:
+            # Confirm load
+            reply = QMessageBox.question(
+                self,
+                "Load Game",
+                f"Load the most recent save '{slot_name}'?\n\nAny unsaved progress will be lost.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+
+            if reply == QMessageBox.StandardButton.Yes:
+                self.load_game_by_slot(slot_name)
+
+    def show_load_dialog(self):
+        """Show the full save/load interface for manual loading"""
+        self.show_save_load_interface()
+
+    def show_save_load_interface(self):
+        """Show the comprehensive save/load interface dialog"""
+        if not self.save_load_controller:
+            return
+
+        from PySide6.QtWidgets import QDialog, QVBoxLayout
+        from ui.views.save_load_page import SaveLoadPage
+
+        # Create dialog
+        dialog = QDialog(self)
+        dialog.setWindowTitle("💾 Save & Load Game")
+        dialog.setModal(True)
+        dialog.setMinimumSize(1000, 600)
+
+        # Create the save/load page
+        save_load_page = SaveLoadPage(dialog)
+
+        # Connect signals
+        save_load_page.save_requested.connect(self.on_save_requested)
+        save_load_page.load_requested.connect(self.on_load_requested)
+        save_load_page.delete_requested.connect(self.on_delete_requested)
+        save_load_page.refresh_requested.connect(self.on_refresh_saves)
+
+        # Set up dialog layout
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(save_load_page)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # Load initial saves
+        self.on_refresh_saves()
+
+        # Show dialog
+        dialog.exec()
+
+    def on_save_requested(self, slot_name):
+        """Handle save request from save/load interface"""
+        if not self.save_load_controller or not self.hero:
+            return
+
+        try:
+            self.save_load_controller.save_game(slot_name)
+        except Exception as e:
+            QMessageBox.warning(self, "Save Failed", f"Could not save to '{slot_name}': {str(e)}")
+
+    def on_load_requested(self, slot_name):
+        """Handle load request from save/load interface"""
+        if not self.save_load_controller:
+            return
+
+        if self.hero:
+            reply = QMessageBox.question(
+                self,
+                "Load Game",
+                f"Load game from slot '{slot_name}'?\n\nAny unsaved progress will be lost.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+        self.load_game_by_slot(slot_name)
+
+    def load_game_by_slot(self, slot_name):
+        """Load game from the specified slot"""
+        if not self.save_load_controller:
+            return
+
+        try:
+            # Perform the load
+            success = self.save_load_controller.load_game(slot_name)
+
+            if success:
+                # Update hero reference (controller may have created new hero)
+                if hasattr(self.save_load_controller, 'hero') and self.save_load_controller.hero:
+                    self.hero = self.save_load_controller.hero
+
+                # Update all controllers with new hero
+                self.update_controllers_with_new_hero()
+
+                # Update UI
+                self.update_stats_display()
+                self.log_message(f"📁 Game loaded successfully from '{slot_name}'!")
+            else:
+                QMessageBox.warning(self, "Load Failed", f"Could not load game from '{slot_name}'.")
+        except Exception as e:
+            QMessageBox.warning(self, "Load Error", f"Error loading game: {str(e)}")
+
+    def on_delete_requested(self, slot_name):
+        """Handle delete request from save/load interface"""
+        if not self.save_load_controller:
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Delete Save",
+            f"Are you sure you want to delete save slot '{slot_name}'?\n\nThis action cannot be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                self.save_load_controller.delete_save(slot_name)
+            except Exception as e:
+                QMessageBox.warning(self, "Delete Failed", f"Could not delete save '{slot_name}': {str(e)}")
+
+    def on_refresh_saves(self):
+        """Refresh the list of available saves"""
+        # This will be called when the refresh signal is emitted from the save/load interface
+        pass
+
+    def update_controllers_with_new_hero(self):
+        """Update all controllers when hero changes (for load operations)"""
+        if not self.hero:
+            return
+
+        # Update all controllers with the new hero instance
+        self.adventure_controller.hero = self.hero
+        self.combat_controller.hero = self.hero
+        self.shop_controller.hero = self.hero
+        self.inventory_controller.hero = self.hero
+        self.stats_controller.hero = self.hero
+        self.customization_controller.hero = self.hero
+        self.monster_stats_controller.hero = self.hero
+        self.save_load_controller.hero = self.hero
 
     def on_tab_changed(self, index):
         """Handle tab selection changes with smooth transitions"""
@@ -1221,6 +1449,23 @@ class RPGGame(QMainWindow):
         shortcut.activated.connect(lambda: self.rest() if self.current_state == GameState.ADVENTURE and self.hero else None)
         self.shortcuts.append(shortcut)
 
+        # Save/load shortcuts
+        shortcut = QShortcut(QKeySequence.StandardKey.Save, self)  # Ctrl+S
+        shortcut.activated.connect(lambda: self.quick_save_game() if self.hero else None)
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence.StandardKey.Open, self)  # Ctrl+O
+        shortcut.activated.connect(lambda: self.show_load_dialog() if self.hero else None)
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence('F5'), self)
+        shortcut.activated.connect(lambda: self.quick_save_game() if self.hero else None)
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence('F9'), self)
+        shortcut.activated.connect(lambda: self.quick_load_game() if self.hero else None)
+        self.shortcuts.append(shortcut)
+
     def show_help(self):
         """Show help dialog with keyboard shortcuts"""
         help_text = """
@@ -1230,19 +1475,35 @@ class RPGGame(QMainWindow):
         <b>F1</b> - Show this help<br>
         <b>Ctrl+Q</b> - Quit game<br>
 
+        <h3>Save/Load</h3>
+        <b>Ctrl+S</b> - Quick Save<br>
+        <b>Ctrl+O</b> - Quick Load<br>
+        <b>F5</b> - Quick Save<br>
+        <b>F9</b> - Quick Load<br>
+        <b>Ctrl+L</b> - Save/Load Interface<br>
+
         <h3>Navigation</h3>
         <b>Alt+S</b> - Stats tab<br>
         <b>Alt+I</b> - Inventory tab<br>
-        <b>Alt+Shop</b> - Shop tab<br>
+        <b>Alt+P</b> - Shop tab<br>
+        <b>Alt+C</b> - Character customization<br>
 
         <h3>Combat</h3>
         <b>A</b> - Attack<br>
         <b>S</b> - Use Skill<br>
         <b>I</b> - Use Item<br>
         <b>R</b> - Run away<br>
+        <b>V</b> - View enemy stats<br>
+
+        <h3>Adventure</h3>
+        <b>E</b> - Explore<br>
+        <b>T</b> - Rest/Take camp<br>
 
         <h3>Character Creation</h3>
         Enter your hero's name (1-20 characters, letters/numbers/space/-/underscore)
+
+        <h3>Menu Bar</h3>
+        The File menu provides full save/load options and quit functionality.
 
         <h3>Tooltip System</h3>
         Hover over items, buttons, and stats for detailed information.
