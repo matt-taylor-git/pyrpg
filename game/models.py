@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import random
 from .items import Item
+from .customization import customization_system
 
 class Hero:
     """Advanced player character with comprehensive RPG mechanics."""
@@ -54,6 +55,10 @@ class Hero:
             Skill("Fireball", "magic", 30, 20, "A fiery magic attack.")
         ]
         self.skill_cooldowns = {}
+
+        # Character customization - appearance and cosmetic choices
+        self.customization = customization_system.get_default_customization()
+        self.customization['name'] = name  # Override default name with hero's actual name
 
         # Initialize derived stats after equipment is set up
         self.refresh_derived_stats()
@@ -303,6 +308,40 @@ class Hero:
                 f"HP: {self.health}/{self.max_health}\n"
                 f"MP: {self.mana}/{self.max_mana}\n"
                 f"ATK: {self.attack_power} | DEF: {self.defense}")
+
+    def get_customization(self):
+        """Get the current character customization settings."""
+        return self.customization.copy()
+
+    def set_customization(self, customization):
+        """Set character customization settings."""
+        # Validate customization before setting
+        is_valid, message = customization_system.validate_customization(customization)
+        if not is_valid:
+            raise ValueError(f"Invalid customization: {message}")
+
+        # Update internal customization
+        self.customization = customization.copy()
+
+        # Update hero name if it changed
+        if customization['name'] != self.name:
+            self.name = customization['name']
+
+    def update_customization_name(self, new_name):
+        """Update only the character name in customization."""
+        # Validate name
+        name = new_name.strip()
+        if not customization_system.name_limits[0] <= len(name) <= customization_system.name_limits[1]:
+            raise ValueError(f"Name must be {customization_system.name_limits[0]}-{customization_system.name_limits[1]} characters")
+
+        # Validate allowed characters
+        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 _-")
+        if not all(c in valid_chars for c in name):
+            raise ValueError("Name can only contain letters, numbers, spaces, hyphens, and underscores")
+
+        # Update both hero name and customization
+        self.customization['name'] = name
+        self.name = name
 
 class Enemy:
     """Advanced enemy with sophisticated combat mechanics."""

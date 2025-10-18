@@ -21,13 +21,15 @@ from .views.inventory_page import InventoryPage
 from .views.shop_page import ShopPage
 from .views.combat_page import CombatPage
 from .views.new_game_view import NewGameView
+from .views.character_customization_page import CharacterCustomizationPage
 from .components import AchievementSystem
 from .controllers import (
     AdventureController,
     CombatController,
     ShopController,
     InventoryController,
-    StatsController
+    StatsController,
+    CustomizationController
 )
 from .components.log_display import LogDisplay
 from .theme import Theme
@@ -134,12 +136,14 @@ class RPGGame(QMainWindow):
         self.inventory_page = InventoryPage()
         self.shop_page = ShopPage()
         self.combat_page = CombatPage()
+        self.customization_page = CharacterCustomizationPage()
 
         self.tab_widget.addTab(self.adventure_page, "🏠 Adventure")
         self.tab_widget.addTab(self.combat_page, "⚔️ Battle")
         self.tab_widget.addTab(self.stats_page, "📊 Stats")
         self.tab_widget.addTab(self.inventory_page, "🎒 Inventory")
         self.tab_widget.addTab(self.shop_page, "🏪 Shop")
+        self.tab_widget.addTab(self.customization_page, "👤 Character")
 
         # Connect tab changes
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
@@ -152,6 +156,7 @@ class RPGGame(QMainWindow):
         self.shop_controller = ShopController(self.hero, get_shop_items())
         self.inventory_controller = InventoryController(self.hero)
         self.stats_controller = StatsController(self.hero)
+        self.customization_controller = CustomizationController(self.hero)
 
         # Connect controller signals to UI updates
         self.adventure_controller.status_message.connect(self.log_message)
@@ -166,6 +171,22 @@ class RPGGame(QMainWindow):
 
         self.stats_controller.stat_increased.connect(self._on_stat_increased)
         self.stats_controller.error_occurred.connect(lambda title, msg: QMessageBox.information(self, title, msg))
+
+        self.customization_controller.error_occurred.connect(lambda title, msg: QMessageBox.warning(self, title, msg))
+        self.customization_controller.status_message.connect(self.log_message)
+        self.customization_controller.customization_saved.connect(self._on_customization_saved)
+        self.customization_controller.customization_loaded.connect(self._on_customization_loaded)
+
+        # Connect customization page to controller
+        self.customization_page.customization_changed.connect(
+            lambda data: self.customization_controller.apply_customization(data)
+        )
+        self.customization_page.save_requested.connect(
+            lambda data: self.customization_controller.save_customization(data)
+        )
+        self.customization_page.load_requested.connect(
+            self.customization_controller.load_customization
+        )
 
         # Connect UI elements to controllers (clean separation)
         self.adventure_page.explore_btn.clicked.connect(self._explore_via_controller)
@@ -441,6 +462,19 @@ class RPGGame(QMainWindow):
         if self.hero:
             self.log_message(f"🏋️ Increased {stat_name}!")
             self.update_stats_display()
+
+    def _on_customization_saved(self):
+        """Handle customization save completion"""
+        # Additional UI updates if needed
+        pass
+
+    def _on_customization_loaded(self):
+        """Handle customization load completion"""
+        # Refresh customization page display if necessary
+        if hasattr(self, 'customization_page') and self.customization_page:
+            current_customization = self.customization_controller.get_current_customization()
+            if current_customization:
+                self.customization_page.load_customization(current_customization)
 
     def _update_gold_displays(self, new_gold):
         """Update all gold displays when gold changes"""
@@ -907,6 +941,10 @@ class RPGGame(QMainWindow):
 
         shortcut = QShortcut(QKeySequence("Alt+P"), self)
         shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.SHOP))  # P for shop
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence("Alt+C"), self)
+        shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(PageIndex.CUSTOMIZATION))  # C for character
         self.shortcuts.append(shortcut)
 
         # Combat shortcuts (only active in combat)

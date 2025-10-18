@@ -198,3 +198,157 @@ class StatsController(BaseController):
 
         self.stat_increased.emit(stat_name)
         self.status_message.emit(f"🏋️ Increased {stat_name}!")
+
+
+class CustomizationController(BaseController):
+    """Controller handling character customization logic"""
+
+    customization_saved = Signal()    # Emitted when customization is saved
+    customization_loaded = Signal()   # Emitted when customization is loaded
+
+    def __init__(self, hero_model, parent=None):
+        super().__init__(parent)
+        self.hero = hero_model
+        self.customization_file = "customization.json"
+
+    def save_customization(self, customization_data=None):
+        """Save current customization settings"""
+        if not self.hero:
+            self.error_occurred.emit("Error", "No hero loaded!")
+            return False
+
+        try:
+            import json
+            import os
+
+            # Use provided data or current hero customization
+            if customization_data is None:
+                customization_data = self.hero.get_customization()
+
+            # Ensure the directory exists
+            os.makedirs("saves", exist_ok=True)
+            file_path = os.path.join("saves", self.customization_file)
+
+            # Save customization to file
+            with open(file_path, 'w') as f:
+                json.dump(customization_data, f, indent=2)
+
+            self.customization_saved.emit()
+            self.status_message.emit("💾 Character customization saved!")
+            return True
+
+        except Exception as e:
+            self.error_occurred.emit("Save Failed", f"Could not save customization: {str(e)}")
+            return False
+
+    def load_customization(self):
+        """Load customization settings from file"""
+        if not self.hero:
+            self.error_occurred.emit("Error", "No hero loaded!")
+            return False
+
+        try:
+            import json
+            import os
+
+            file_path = os.path.join("saves", self.customization_file)
+
+            if not os.path.exists(file_path):
+                self.error_occurred.emit("No Saved Customization", "No customization file found to load.")
+                return False
+
+            # Load customization from file
+            with open(file_path, 'r') as f:
+                customization_data = json.load(f)
+
+            # Validate the loaded data
+            from game.customization import customization_system
+            is_valid, message = customization_system.validate_customization(customization_data)
+
+            if not is_valid:
+                self.error_occurred.emit("Invalid Customization", f"Loaded customization is invalid: {message}")
+                return False
+
+            # Apply customization to hero
+            self.hero.set_customization(customization_data)
+
+            self.customization_loaded.emit()
+            self.status_message.emit("📁 Character customization loaded!")
+            return True
+
+        except json.JSONDecodeError:
+            self.error_occurred.emit("Load Failed", "Customization file is corrupted.")
+            return False
+        except Exception as e:
+            self.error_occurred.emit("Load Failed", f"Could not load customization: {str(e)}")
+            return False
+
+    def apply_customization(self, customization_data):
+        """Apply customization changes to hero"""
+        if not self.hero:
+            self.error_occurred.emit("Error", "No hero loaded!")
+            return False
+
+        try:
+            # Validate before applying
+            from game.customization import customization_system
+            is_valid, message = customization_system.validate_customization(customization_data)
+
+            if not is_valid:
+                self.error_occurred.emit("Invalid Customization", message)
+                return False
+
+            # Apply changes
+            self.hero.set_customization(customization_data)
+
+            self.status_message.emit("✅ Character customization updated!")
+            return True
+
+        except Exception as e:
+            self.error_occurred.emit("Update Failed", f"Could not apply customization: {str(e)}")
+            return False
+
+    def get_current_customization(self):
+        """Get hero's current customization settings"""
+        if not self.hero:
+            return None
+        return self.hero.get_customization()
+
+    def reset_customization(self):
+        """Reset customization to default settings"""
+        if not self.hero:
+            self.error_occurred.emit("Error", "No hero loaded!")
+            return False
+
+        try:
+            from game.customization import customization_system
+            default_customization = customization_system.get_default_customization()
+            # Keep the hero's current name
+            default_customization['name'] = self.hero.name
+
+            self.hero.set_customization(default_customization)
+
+            self.status_message.emit("🔄 Character customization reset to default!")
+            return True
+
+        except Exception as e:
+            self.error_occurred.emit("Reset Failed", f"Could not reset customization: {str(e)}")
+            return False
+
+    def update_customization_name(self, new_name):
+        """Update only the character name"""
+        if not self.hero:
+            self.error_occurred.emit("Error", "No hero loaded!")
+            return False
+
+        try:
+            self.hero.update_customization_name(new_name)
+            self.status_message.emit(f"✏️ Character name updated to '{new_name}'!")
+            return True
+
+        except ValueError as e:
+            self.error_occurred.emit("Invalid Name", str(e))
+            return False
+        except Exception as e:
+            self.error_occurred.emit("Update Failed", f"Could not update name: {str(e)}")
+            return False

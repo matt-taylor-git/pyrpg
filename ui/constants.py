@@ -14,3 +14,4 @@ class PageIndex:
     STATS = 2
     INVENTORY = 3
     SHOP = 4
+    CUSTOMIZATION = 5
