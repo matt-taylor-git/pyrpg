@@ -352,3 +352,197 @@ class CustomizationController(BaseController):
         except Exception as e:
             self.error_occurred.emit("Update Failed", f"Could not update name: {str(e)}")
             return False
+
+
+class MonsterStatsController(BaseController):
+    """Controller handling monster stats viewing logic"""
+
+    enemy_displayed = Signal(object)  # enemy object
+    enemy_comparison_requested = Signal(object, object)  # hero, enemy pair
+
+    def __init__(self, hero_model, parent=None):
+        super().__init__(parent)
+        self.hero = hero_model
+        self.current_enemy = None
+        self.known_monsters = {}  # Cache of monsters we've encountered
+        self.monster_database = {}  # Comprehensive monster encyclopedia
+
+    def view_enemy_stats(self, enemy, viewing_mode='detailed'):
+        """Display enemy statistics in the monster stats viewer"""
+        if not enemy:
+            self.error_occurred.emit("Error", "No enemy selected to view.")
+            return
+
+        self.current_enemy = enemy
+
+        # Mark this monster as known for future reference
+        self._add_to_known_monsters(enemy)
+
+        self.enemy_displayed.emit(enemy)
+        self.status_message.emit(f"📊 Viewing stats for {enemy.name}")
+
+    def load_monster_by_name(self, monster_name, level=1):
+        """Load and display a monster by name and level"""
+        try:
+            # Create a basic enemy of the specified type and level
+            enemy = self._create_enemy_from_name(monster_name, level)
+
+            if enemy:
+                self.view_enemy_stats(enemy)
+                return True
+            else:
+                self.error_occurred.emit("Monster Not Found", f"Could not find monster: {monster_name}")
+                return False
+
+        except Exception as e:
+            self.error_occurred.emit("Load Error", f"Could not load monster: {str(e)}")
+            return False
+
+    def compare_with_hero(self, enemy=None):
+        """Compare enemy stats with current hero"""
+        if not self.hero:
+            self.error_occurred.emit("Error", "No hero loaded for comparison.")
+            return
+
+        compare_enemy = enemy or self.current_enemy
+        if not compare_enemy:
+            self.error_occurred.emit("Error", "No enemy selected for comparison.")
+            return
+
+        self.enemy_comparison_requested.emit(self.hero, compare_enemy)
+        self.status_message.emit(f"⚖️ Comparing {self.hero.name} vs {compare_enemy.name}")
+
+    def get_encounter_preview(self, enemy, immediate_danger=False):
+        """Get quick stats preview for encounter decision"""
+        if not enemy:
+            return None
+
+        preview_data = {
+            'name': enemy.name,
+            'level': enemy.level,
+            'health': f"{enemy.health}/{enemy.max_health}",
+            'attack': f"{enemy.attack_min}-{enemy.attack_max}",
+            'weaknesses': enemy.elemental_weakness[:3],  # Show top 3 weaknesses
+            'threat_level': self._calculate_encounter_threat(self.hero, enemy),
+            'immediate_danger': immediate_danger
+        }
+
+        return preview_data
+
+    def get_known_monsters(self):
+        """Get list of all known monsters for browsing"""
+        return list(self.known_monsters.values())
+
+    def get_monsters_by_rarity(self, rarity):
+        """Get monsters filtered by rarity"""
+        return [monster for monster in self.known_monsters.values() if monster.rarity == rarity]
+
+    def get_monsters_by_type(self, enemy_type):
+        """Get monsters filtered by type"""
+        return [monster for monster in self.known_monsters.values() if monster.enemy_type == enemy_type]
+
+    def get_bestiary_completion(self):
+        """Get completion statistics for monster encyclopedia"""
+        if not self.known_monsters:
+            return {
+                'total_known': 0,
+                'completion_percentage': 0,
+                'by_rarity': {},
+                'by_type': {}
+            }
+
+        # In a real implementation, this would compare against a full monster database
+        # For now, we'll calculate stats from known monsters
+
+        by_rarity = {}
+        by_type = {}
+
+        for monster in self.known_monsters.values():
+            by_rarity[monster.rarity] = by_rarity.get(monster.rarity, 0) + 1
+            by_type[monster.enemy_type] = by_type.get(monster.enemy_type, 0) + 1
+
+        total_known = len(self.known_monsters)
+        # Mock completion percentage - in reality this would be vs database size
+        completion_percentage = min(100, total_known * 10)
+
+        return {
+            'total_known': total_known,
+            'completion_percentage': completion_percentage,
+            'by_rarity': by_rarity,
+            'by_type': by_type
+        }
+
+    def _add_to_known_monsters(self, enemy):
+        """Add enemy to known monsters cache"""
+        key = f"{enemy.enemy_type}_{enemy.level}_{enemy.name}"
+
+        if key not in self.known_monsters:
+            # Create a copy for the database to avoid modifying original
+            monster_copy = self._duplicate_enemy(enemy)
+            self.known_monsters[key] = monster_copy
+
+    def _duplicate_enemy(self, enemy):
+        """Create a duplicate of an enemy for safe storage"""
+        # For now, create a new enemy instance - in reality you might want to serialize/deserialize
+        return enemy.__class__(enemy.name, enemy.level, enemy.enemy_type)
+
+    def _create_enemy_from_name(self, name, level=1):
+        """Create an enemy instance from a name string"""
+        # This is a simplified implementation - in a real game you'd have a monster database
+
+        name_to_type = {
+            'goblin': 'normal',
+            'orc': 'warrior',
+            'wolf': 'beast',
+            'skeleton': 'undead',
+            'fire elemental': 'elemental',
+            'ice mage': 'mage',
+            'troll': 'tank',
+            'dragon': 'giant',
+            'assassin': 'rogue'
+        }
+
+        enemy_type = name_to_type.get(name.lower(), 'normal')
+
+        # Create enemy with appropriate type
+        from game.models import Enemy
+        return Enemy(name.title(), level, enemy_type)
+
+    def _calculate_encounter_threat(self, hero, enemy):
+        """Calculate threat level of encounter"""
+        if not hero or not enemy:
+            return "unknown"
+
+        # Simple threat calculation based on level difference and enemy type
+        level_diff = enemy.level - hero.level
+
+        if enemy.enemy_type == 'elemental':
+            base_threat = 'deadly'
+        elif enemy.enemy_type == 'dragon':
+            base_threat = 'deadly'
+        elif enemy.enemy_type in ['undead', 'beast']:
+            base_threat = 'dangerous'
+        elif enemy.enemy_type in ['warrior', 'mage', 'rogue']:
+            base_threat = 'normal'
+        elif enemy.enemy_type == 'giant':
+            base_threat = 'tough'
+        else:
+            base_threat = 'weak'
+
+        # Adjust based on level difference
+        if level_diff >= 3:
+            base_threat = 'deadly'
+        elif level_diff >= 1:
+            if base_threat == 'weak':
+                base_threat = 'normal'
+            elif base_threat != 'deadly':
+                base_threat = 'dangerous'
+        elif level_diff <= -3:
+            if base_threat == 'deadly':
+                base_threat = 'dangerous'
+            elif base_threat == 'dangerous':
+                base_threat = 'normal'
+            else:
+                base_threat = 'weak'
+
+        return base_threat

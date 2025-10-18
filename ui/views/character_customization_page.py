@@ -38,7 +38,7 @@ class CharacterPreviewWidget(QFrame):
 
         # Title
         title = QLabel("Character Preview")
-        title.setStyleSheet("font-size: 14px; font-weight: bold; color: #dc3545; text-align: center;")
+        title.setStyleSheet("font-size: 14px; font-weight: bold; color: #dc3545;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
@@ -55,7 +55,6 @@ class CharacterPreviewWidget(QFrame):
             QLabel {{
                 color: {Theme.FOREGROUND};
                 font-size: 12px;
-                text-align: center;
                 font-weight: bold;
             }}
         """)
@@ -92,10 +91,13 @@ class CharacterPreviewWidget(QFrame):
 class CustomizationSection(QGroupBox):
     """Section containing customization options for a category"""
 
+    options_changed = Signal(dict)  # Emits customization changes
+
     def __init__(self, title, category_type, parent=None):
         super().__init__(title, parent)
         self.category_type = category_type
-        self.options_changed = Signal(dict)  # Emits customization changes
+        self.section_layout = QVBoxLayout(self)  # Store layout reference
+        self.section_layout.setSpacing(Theme.SPACING_MD)
         self.init_ui()
 
     def init_ui(self):
@@ -117,8 +119,8 @@ class CustomizationSection(QGroupBox):
             }}
         """)
 
-        layout = QVBoxLayout(self)
-        layout.setSpacing(Theme.SPACING_MD)
+        # Layout already created in __init__, just set spacing
+        self.section_layout.setSpacing(Theme.SPACING_MD)
 
     def add_option(self, label_text, option_key, options_list):
         """Add a customization option dropdown"""
@@ -159,7 +161,7 @@ class CustomizationSection(QGroupBox):
         combo.currentIndexChanged.connect(lambda: self.on_option_changed(option_key, combo))
 
         option_layout.addWidget(combo)
-        self.layout().addLayout(option_layout)
+        self.section_layout.addLayout(option_layout)
 
         # Store reference for updates
         setattr(self, f"{option_key}_combo", combo)

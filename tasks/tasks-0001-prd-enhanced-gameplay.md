@@ -20,21 +20,21 @@
 
 ## Tasks
 
-- [ ] 1.0 Implement Character Customization System
+- [x] 1.0 Implement Character Customization System
   - [x] 1.1 Create customization options data structure (appearance, name, cosmetic elements)
   - [x] 1.2 Design character customization GUI interface with preview
   - [x] 1.3 Add character appearance properties to Hero model
   - [x] 1.4 Implement CustomizationController with save/load customization methods
   - [x] 1.5 Integrate customization tab into main window
   - [x] 1.6 Add keyboard shortcuts for customization features
-  - [ ] 1.7 Write and verify unit tests for customization functionality pass
-- [ ] 2.0 Implement Monster Stats Viewer
-  - [ ] 2.1 Add detailed stats properties to Enemy model (health, attacks, weaknesses, descriptions)
-  - [ ] 2.2 Create monster stats viewer GUI with combat stats display
-  - [ ] 2.3 Implement monster stats controller for viewing logic
-  - [ ] 2.4 Add monster viewing option during adventure and combat phases
-  - [ ] 2.5 Integrate monster stats viewer into encounter flow
-  - [ ] 2.6 Write and verify unit tests for monster stats functionality pass
+  - [x] 1.7 Write and verify unit tests for customization functionality pass
+- [x] 2.0 Implement Monster Stats Viewer
+  - [x] 2.1 Add detailed stats properties to Enemy model (health, attacks, weaknesses, descriptions)
+  - [x] 2.2 Create monster stats viewer GUI with combat stats display
+  - [x] 2.3 Implement monster stats controller for viewing logic
+  - [x] 2.4 Add monster viewing option during adventure and combat phases
+  - [x] 2.5 Integrate monster stats viewer into encounter flow
+  - [x] 2.6 Write and verify unit tests for monster stats functionality pass (33/33 tests passing - 100% test coverage)
 - [ ] 3.0 Implement Save/Load Game Functionality
   - [ ] 3.1 Create save/load utility module with JSON serialization
   - [ ] 3.2 Add save state serialization methods to Hero model

@@ -107,12 +107,14 @@ class TestCharacterCustomization(unittest.TestCase):
         # Test hair_color option (appearance)
         option_detail = self.customization_system.get_option_details('hair_color', 'brown')
         self.assertIsNotNone(option_detail, "Should return option details for valid hair_color option")
-        self.assertEqual(option_detail['name'], 'Brown')
+        if option_detail:  # Type guard for Pylance
+            self.assertEqual(option_detail['name'], 'Brown')
 
         # Test headgear option (cosmetic)
         cosmetic_detail = self.customization_system.get_option_details('headgear', 'cap')
         self.assertIsNotNone(cosmetic_detail, "Should return option details for valid headgear option")
-        self.assertEqual(cosmetic_detail['name'], 'Baseball Cap')
+        if cosmetic_detail:  # Type guard for Pylance
+            self.assertEqual(cosmetic_detail['name'], 'Baseball Cap')
 
         # Test invalid category/option
         self.assertIsNone(self.customization_system.get_option_details('invalid', 'brown'))
@@ -142,10 +144,8 @@ class TestCustomizationPersistence(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.original_saves_dir = None
 
-        # Mock the saves directory for testing
-        import game.customization
-        self.original_saves_dir = game.customization.customization_system.__class__.customization_file
-        # This is complex to mock, so we'll focus on core logic testing
+        # Note: Full persistence testing would require mocking file system
+        # For now, we focus on core validation and option access logic
 
     def tearDown(self):
         """Clean up test fixtures."""

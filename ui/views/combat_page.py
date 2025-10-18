@@ -176,13 +176,21 @@ class CombatPage(QWidget):
         self.use_item_btn = StyledButton("🧪 Use Item", variant="secondary")
         self.use_item_btn.setToolTip("Use a consumable item (I)")
 
+        self.view_stats_btn = StyledButton("📖 View Stats", variant="secondary")
+        self.view_stats_btn.setToolTip("View detailed enemy statistics and tactics (V)")
+
+        # Add accessibility information for the view stats button
+        self.view_stats_btn.setAccessibleName("View enemy stats button")
+        self.view_stats_btn.setAccessibleDescription("View detailed enemy statistics and tactics (V)")
+
         self.run_btn = StyledButton("🏃 Run", variant="destructive")
         self.run_btn.setToolTip("Attempt to flee from battle (R)")
 
         actions_layout.addWidget(self.attack_btn, 0, 0)
         actions_layout.addWidget(self.use_skill_btn, 0, 1)
         actions_layout.addWidget(self.use_item_btn, 1, 0)
-        actions_layout.addWidget(self.run_btn, 1, 1)
+        actions_layout.addWidget(self.view_stats_btn, 1, 1)
+        actions_layout.addWidget(self.run_btn, 2, 0, 1, 2)
 
         layout.addLayout(actions_layout)
 

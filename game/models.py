@@ -344,7 +344,7 @@ class Hero:
         self.name = name
 
 class Enemy:
-    """Advanced enemy with sophisticated combat mechanics."""
+    """Advanced enemy with detailed stats and battle mechanics for monster viewer."""
 
     def __init__(self, name, level, enemy_type='normal'):
         self.name = name
@@ -358,13 +358,55 @@ class Enemy:
         self.defense = int(3 + (level * 1.5))
         self.magic_attack = int(5 + (level * 1.5))
 
+        # Attack range and variability
+        self.attack_min = max(1, self.attack - 3)
+        self.attack_max = self.attack + 6
+        self.crit_chance = min(20, 5 + (level * 0.5))
+        self.crit_multiplier = 1.5
+
+        # Magic attack range
+        self.magic_attack_min = max(1, self.magic_attack - 2)
+        self.magic_attack_max = self.magic_attack + 4
+
+        # Combat behavior
+        self.attack_speed = 1.0 + (level * 0.1)  # Attacks per turn (can be > 1)
+        self.movement_speed = 1.0  # Speed multiplier
+        self.intelligence = 'normal'  # low, normal, high, cunning
+
+        # Elemental properties
+        self.elemental_type = 'none'  # fire, ice, lightning, poison, etc.
+        self.elemental_strength = 0  # Bonus damage with this element
+        self.elemental_weakness = []  # Elements that do extra damage
+        self.elemental_resistance = []  # Elements that do less damage
+        self.elemental_immunity = []  # Elements that do no damage
+
+        # Physical properties
+        self.size_category = 'medium'  # small, medium, large, huge, colossal
+        self.speed_rating = 'normal'  # slow, normal, fast, very_fast
+        self.armor_type = 'light'  # light, medium, heavy, magical
+
+        # Special abilities and attacks
+        self.special_abilities = []
+        self.special_attacks = []
+        self.passive_abilities = []
+
+        # Behavioral traits
+        self.behavior_patterns = []
+        self.combat_style = 'aggressive'  # aggressive, defensive, magical, supportive
+
+        # Descriptive information
+        self.description = ""
+        self.habitat = ""
+        self.rarity = 'common'  # common, uncommon, rare, legendary, boss
+        self.loot_drops = []
+        self.status_effects = []
+
         # Experience and gold rewards
         self.exp_reward = level * 25
         self.gold_reward = level * (5 + random.randint(0, 5))
 
-        # Special abilities
-        self.special_attacks = []
-        self.status_effects = []
+        # Threat assessment
+        self.threat_level = 'normal'  # weak, normal, tough, dangerous, deadly
 
         # Initialize enemy type specific traits
         self.initialize_enemy_type()
@@ -375,19 +417,247 @@ class Enemy:
             self.attack += 3
             self.defense += 2
             self.special_attacks = ['power_strike']
+
+            # Detailed stats
+            self.description = "A formidable warrior trained in the arts of melee combat. Their heavy armor provides excellent protection but slows their movement."
+            self.habitat = "Castles, battlegrounds, and mountain outposts"
+            self.size_category = 'medium'
+            self.speed_rating = 'slow'
+            self.armor_type = 'heavy'
+            self.combat_style = 'aggressive'
+            self.elemental_weakness = ['lightning', 'magic']
+            self.elemental_resistance = ['physical']
+            self.behavior_patterns = ['charges at start of combat', 'uses power strikes when health is high', 'defends when wounded']
+            self.special_abilities = [
+                {'name': 'Power Strike', 'description': 'A devastating overhead attack that deals 150% damage'},
+                {'name': 'Warrior Spirit', 'description': 'Passive: Increased defense when health drops below 50%'}
+            ]
+            self.passive_abilities = ['heavy armor expertise', 'melee weapon mastery']
+            self.rarity = 'uncommon'
+            self.threat_level = 'normal'
+            self.loot_drops = ['iron_sword', 'heavy_helmet', 'chainmail']
+
         elif self.enemy_type == 'mage':
             self.magic_attack += 5
             self.attack -= 2
             self.special_attacks = ['magic_missile', 'fireball']
+
+            # Detailed stats
+            self.description = "A scholarly practitioner of arcane arts. They wield powerful spells but are physically weak without proper protection."
+            self.habitat = "Ancient libraries, magical towers, and ritual chambers"
+            self.size_category = 'medium'
+            self.speed_rating = 'normal'
+            self.armor_type = 'light'
+            self.combat_style = 'magical'
+            self.elemental_weakness = ['physical', 'poison']
+            self.elemental_resistance = ['magic', 'fire', 'ice']
+            self.elemental_type = 'fire'  # Has innate fire magic
+            self.elemental_strength = 2
+            self.behavior_patterns = ['stays at range during combat', 'focuses on spell casting', 'vulnerable when mana is depleted']
+            self.special_abilities = [
+                {'name': 'Fireball', 'description': 'Launches a ball of flame that deals fire damage and may burn the target'},
+                {'name': 'Magic Missile', 'description': 'Fires multiple homing magical projectiles'},
+                {'name': 'Mana Shield', 'description': 'Passive: Converts some incoming damage to mana drain'}
+            ]
+            self.passive_abilities = ['spell focus', 'arcane knowledge']
+            self.rarity = 'rare'
+            self.threat_level = 'dangerous'
+            self.loot_drops = ['mage_robe', 'magic_staff', 'mana_crystal']
+
         elif self.enemy_type == 'rogue':
             self.attack += 2
             self.special_attacks = ['backstab', 'poison_strike']
+
+            # Detailed stats
+            self.description = "A stealthy assassin who strikes from the shadows. They are masters of ambush tactics and poison-based attacks."
+            self.habitat = "Dark alleys, forests, thieves' dens, and abandoned ruins"
+            self.size_category = 'medium'
+            self.speed_rating = 'fast'
+            self.armor_type = 'light'
+            self.combat_style = 'aggressive'
+            self.elemental_weakness = ['pure', 'magic']
+            self.elemental_resistance = ['poison']
+            self.behavior_patterns = ['avoids direct confrontation', 'strikes from behind', 'uses poison to weaken enemies']
+            self.special_abilities = [
+                {'name': 'Backstab', 'description': 'Attacks from behind for double damage'},
+                {'name': 'Poison Strike', 'description': 'Coats weapon in poison, causing damage over time'},
+                {'name': 'Smoke Bomb', 'description': 'Creates obscuring smoke to hide or escape'}
+            ]
+            self.passive_abilities = ['stealth', 'poison resistance']
+            self.rarity = 'uncommon'
+            self.threat_level = 'tough'
+            self.loot_drops = ['serrated_dagger', 'leather_boots', 'poison_vial']
+
         elif self.enemy_type == 'tank':
             self.max_health += 30
             self.defense += 5
             self.attack -= 2
             self.health = self.max_health
             self.special_attacks = ['shield_bash']
+
+            # Detailed stats
+            self.description = "A heavily armored defender built for endurance rather than speed. Their massive shields make them nearly impervious to damage."
+            self.habitat = "Fortresses, defensive walls, and siege encampments"
+            self.size_category = 'large'
+            self.speed_rating = 'slow'
+            self.armor_type = 'heavy'
+            self.combat_style = 'defensive'
+            self.elemental_weakness = ['lightning', 'corrosion']
+            self.elemental_resistance = ['physical']
+            self.elemental_immunity = ['fear']
+            self.behavior_patterns = ['holds defensive positions', 'absorbs damage for allies', 'stuns attackers with shield blows']
+            self.special_abilities = [
+                {'name': 'Shield Bash', 'description': 'Slams enemy with shield, dealing damage and chance to stun'},
+                {'name': 'Guardian Aura', 'description': 'Passive: Reduces damage to nearby allies'},
+                {'name': 'Fortress Stance', 'description': 'Greatly increased defense for one turn but cannot attack'}
+            ]
+            self.passive_abilities = ['iron constitution', 'shield mastery']
+            self.rarity = 'rare'
+            self.threat_level = 'tough'
+            self.loot_drops = ['tower_shield', 'plate_armor', 'health_potion']
+
+        elif self.enemy_type == 'giant':
+            self.max_health += 50
+            self.attack += 5
+            self.defense += 3
+            self.health = self.max_health
+            self.special_attacks = ['ground_slam', 'rock_throw']
+
+            # Detailed stats
+            self.description = "An enormous beast that towers over lesser foes. Their raw strength is unmatched, capable of shaking the ground itself."
+            self.habitat = "Mountain peaks, giant caves, and ancient ruins"
+            self.size_category = 'huge'
+            self.speed_rating = 'slow'
+            self.armor_type = 'medium'
+            self.combat_style = 'aggressive'
+            self.elemental_weakness = ['lightning', 'ice']
+            self.elemental_resistance = ['physical']
+            self.behavior_patterns = ['crushes smaller enemies', 'throws environmental objects', 'feared by smaller creatures']
+            self.special_abilities = [
+                {'name': 'Ground Slam', 'description': 'Slams fists into ground, causing area damage and stun'},
+                {'name': 'Rock Throw', 'description': 'Hurls massive boulders at distant targets'},
+                {'name': 'Giant Strength', 'description': 'Passive: Can throw or destroy obstacles'}
+            ]
+            self.passive_abilities = ['tremor sense', 'enormous strength']
+            self.rarity = 'rare'
+            self.threat_level = 'dangerous'
+            self.loot_drops = ['giant_club', 'boulder', 'treasure_chest']
+
+        elif self.enemy_type == 'undead':
+            self.attack += 1
+            self.special_attacks = ['life_drain', 'curse']
+            self.elemental_weakness = ['holy', 'fire']
+            self.elemental_immunity = ['poison', 'fear']
+
+            # Detailed stats
+            self.description = "A corrupted corpse animated by dark magic. Immune to pain and fear, they exist only to destroy the living."
+            self.habitat = "Graveyards, haunted ruins, and cursed battlefields"
+            self.size_category = 'medium'
+            self.speed_rating = 'slow'
+            self.armor_type = 'light'
+            self.combat_style = 'magical'
+            self.behavior_patterns = ['slow but relentless', 'sustained by dark energy', 'vulnerable to holy cleansing']
+            self.special_abilities = [
+                {'name': 'Life Drain', 'description': 'Siphons health from the living to sustain itself'},
+                {'name': 'Curse', 'description': 'Afflicts enemies with debilitating ailments'},
+                {'name': 'Unholy Resilience', 'description': 'Passive: Regenerates health slowly while in darkness'}
+            ]
+            self.passive_abilities = ['undead fortitude', 'curse immunity']
+            self.rarity = 'uncommon'
+            self.threat_level = 'tough'
+            self.loot_drops = ['tainted_armor', 'dark_amulet', 'sun_blessed_weapon']
+
+        elif self.enemy_type == 'beast':
+            self.attack += 4
+            self.attack_speed = 1.2
+            self.special_attacks = ['savage_bite', 'pounce']
+            self.movement_speed = 1.5
+
+            # Detailed stats
+            self.description = "A feral beast driven by instinct and hunger. They are incredibly fast and strike with animalistic ferocity."
+            self.habitat = "Forests, caves, and wild plains where prey is abundant"
+            self.size_category = 'large'
+            self.speed_rating = 'very_fast'
+            self.armor_type = 'light'
+            self.combat_style = 'aggressive'
+            self.elemental_weakness = ['fire', 'cold_iron']
+            self.elemental_resistance = ['nature']
+            self.behavior_patterns = ['circles prey rapidly', 'strikes unpredictably', 'retreats when injured']
+            self.special_abilities = [
+                {'name': 'Savage Bite', 'description': 'Sinks teeth into flesh, causing bleeding and disease risk'},
+                {'name': 'Pounce', 'description': 'Leaps great distances to surprise prey'},
+                {'name': 'Animal Instinct', 'description': 'Passive: Can detect hidden or invisible enemies'}
+            ]
+            self.passive_abilities = ['keen_senses', 'four-legged_speed']
+            self.rarity = 'common'
+            self.threat_level = 'normal'
+            self.loot_drops = ['beast_hide', 'sharp_claws', 'raw_meat']
+
+        elif self.enemy_type == 'elemental':
+            self.magic_attack += 10
+            self.elemental_type = random.choice(['fire', 'ice', 'lightning', 'earth'])
+            self.special_attacks = ['elemental_burst', 'summon_minions']
+            self.elemental_strength = 5
+            self.elemental_immunity = [self.elemental_type]
+
+            # Detailed stats
+            specific_descriptions = {
+                'fire': "A living inferno of pure elemental energy. Burns bright and hot, consuming all in its path.",
+                'ice': "A chilling embodiment of winter's wrath. Freezes its victims and shrouds them in ice.",
+                'lightning': "A crackling force of electrical energy. Strikes with blinding speed and paralyzing force.",
+                'earth': "A massive construct of stone and mineral. Unyielding stone given malicious will."
+            }
+            self.description = specific_descriptions.get(self.elemental_type, "A manifestation of pure elemental power.")
+            self.habitat = f"Planes of {self.elemental_type}, corrupted natural areas, and magical rifts"
+            self.size_category = 'large'
+            self.speed_rating = {'fire': 'very_fast', 'ice': 'slow', 'lightning': 'very_fast', 'earth': 'slow'}[self.elemental_type]
+            self.armor_type = 'magical'
+            self.combat_style = 'magical'
+            self.elemental_weakness = [self.get_elemental_weakness()]
+            self.behavior_patterns = [f'draws power from {self.elemental_type} sources', 'weakens when elemental energy is disrupted', 'can be banished to elemental planes']
+            self.special_abilities = [
+                {'name': 'Elemental Burst', 'description': f'Explosion of {self.elemental_type} energy dealing massive damage'},
+                {'name': 'Summon Minions', 'description': f'Creates lesser {self.elemental_type} elementals to aid in battle'},
+                {'name': f'{self.elemental_type.title()} Affinity', 'description': f'Immune to {self.elemental_type} and deals bonus {self.elemental_type} damage'}
+            ]
+            self.rarity = 'legendary'
+            self.threat_level = 'deadly'
+            self.loot_drops = [f'elemental_essence_{self.elemental_type}', f'storm_heart', f'elemental_breaker']
+
+        else:  # Default 'normal' enemy
+            self.description = "A common adversary encountered in the wild. Not particularly remarkable, but still dangerous in numbers."
+            self.habitat = "Roads, fields, and forests throughout the realm"
+            self.size_category = 'medium'
+            self.speed_rating = 'normal'
+            self.armor_type = 'light'
+            self.combat_style = 'aggressive'
+            self.behavior_patterns = ['fights directly', 'forms groups for safety', 'flees when outnumbered']
+            self.special_abilities = []
+            self.passive_abilities = ['basic_combat_training']
+            self.rarity = 'common'
+            self.threat_level = 'weak'
+            self.loot_drops = ['basic_sword', 'cloth_armor', 'copper_coins']
+
+        # Calculate attack ranges after enemy type modifications
+        self.attack_min = max(1, self.attack - 3)
+        self.attack_max = self.attack + 6
+        self.magic_attack_min = max(1, self.magic_attack - 2)
+        self.magic_attack_max = self.magic_attack + 4
+
+    def get_elemental_weakness(self):
+        """Get the opposing elemental weakness based on elemental type."""
+        elemental_opposites = {
+            'fire': 'water',
+            'ice': 'fire',
+            'lightning': 'earth',
+            'earth': 'lightning',
+            'water': 'lightning',
+            'poison': 'holy',
+            'holy': 'dark',
+            'dark': 'holy',
+            'nature': 'fire'
+        }
+        return elemental_opposites.get(self.elemental_type, 'none')
 
     def take_damage(self, damage, damage_type='physical'):
         """Advanced damage taking with type considerations."""

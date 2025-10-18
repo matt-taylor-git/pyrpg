@@ -29,7 +29,8 @@ from .controllers import (
     ShopController,
     InventoryController,
     StatsController,
-    CustomizationController
+    CustomizationController,
+    MonsterStatsController
 )
 from .components.log_display import LogDisplay
 from .theme import Theme
@@ -157,6 +158,7 @@ class RPGGame(QMainWindow):
         self.inventory_controller = InventoryController(self.hero)
         self.stats_controller = StatsController(self.hero)
         self.customization_controller = CustomizationController(self.hero)
+        self.monster_stats_controller = MonsterStatsController(self.hero)
 
         # Connect controller signals to UI updates
         self.adventure_controller.status_message.connect(self.log_message)
@@ -196,6 +198,7 @@ class RPGGame(QMainWindow):
         self.combat_page.attack_btn.clicked.connect(self.combat_attack)
         self.combat_page.use_skill_btn.clicked.connect(self.combat_use_skill)
         self.combat_page.use_item_btn.clicked.connect(self.combat_use_item)
+        self.combat_page.view_stats_btn.clicked.connect(self.view_enemy_stats)
         self.combat_page.run_btn.clicked.connect(self.combat_run)
 
         self.shop_page.sell_btn.clicked.connect(self.sell_items)
@@ -605,14 +608,217 @@ class RPGGame(QMainWindow):
         QTimer.singleShot(1000, self.trigger_random_encounter)
 
     def trigger_random_encounter(self):
-        """Trigger a random enemy encounter"""
+        """Trigger a random enemy encounter with encounter preview"""
         if self.hero:
             # Get a random enemy for this encounter
             from game.game import get_random_enemy
-            self.current_enemy = get_random_enemy(self.hero.level)
+            self.encounter_enemy = get_random_enemy(self.hero.level)
 
-            # Show combat interface
+            # Show encounter preview dialog
+            self.show_encounter_preview()
+            return
+
+    def show_encounter_preview(self):
+        """Show encounter preview dialog before entering combat"""
+        if not self.encounter_enemy:
             self.show_combat_interface()
+            return
+
+        from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
+        from PySide6.QtCore import Qt
+
+        # Create encounter dialog
+        encounter_dialog = QDialog(self)
+        encounter_dialog.setWindowTitle("⚠️ Enemy Encountered!")
+        encounter_dialog.setModal(True)
+        encounter_dialog.setFixedSize(500, 400)
+        encounter_dialog.setStyleSheet(f"""
+            QDialog {{
+                background-color: {Theme.BACKGROUND.name()};
+                border: 2px solid {Theme.BORDER.name()};
+                border-radius: 8px;
+            }}
+        """)
+
+        layout = QVBoxLayout(encounter_dialog)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+
+        # Encounter title
+        title_label = QLabel("⚠️ A Wild Enemy Approaches!")
+        title_font = encounter_dialog.font()
+        title_font.setPointSize(16)
+        title_font.setBold(True)
+        title_label.setFont(title_font)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet(f"color: {Theme.FOREGROUND.name()}; margin-bottom: 10px;")
+        layout.addWidget(title_label)
+
+        # Enemy info frame
+        enemy_frame = QFrame()
+        enemy_frame.setStyleSheet(f"""
+            QFrame {{
+                border: 2px solid {Theme.ACCENT.name()};
+                border-radius: 8px;
+                background-color: {Theme.CARD.name()};
+                padding: 10px;
+            }}
+        """)
+
+        frame_layout = QVBoxLayout(enemy_frame)
+
+        # Enemy display
+        enemy_display_layout = QHBoxLayout()
+
+        # Enemy sprite/emoji
+        enemy_sprite_label = QLabel("👹")
+        sprite_font = encounter_dialog.font()
+        sprite_font.setPointSize(48)
+        enemy_sprite_label.setFont(sprite_font)
+        enemy_sprite_label.setStyleSheet(f"""
+            QLabel {{
+                color: {Theme.DESTRUCTIVE.name()};
+                padding: 10px;
+                background-color: {Theme.MUTED.name()};
+                border-radius: 8px;
+                min-width: 80px;
+                max-width: 80px;
+                text-align: center;
+            }}
+        """)
+        enemy_sprite_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        enemy_display_layout.addWidget(enemy_sprite_label)
+
+        # Enemy info
+        enemy_info_layout = QVBoxLayout()
+        enemy_info_layout.setSpacing(5)
+
+        enemy_name_label = QLabel(f"<b>{self.encounter_enemy.name}</b>")
+        name_font = encounter_dialog.font()
+        name_font.setPointSize(14)
+        enemy_name_label.setFont(name_font)
+        enemy_name_label.setStyleSheet(f"color: {Theme.FOREGROUND.name()};")
+        enemy_info_layout.addWidget(enemy_name_label)
+
+        enemy_level_label = QLabel(f"Level {self.encounter_enemy.level} • {self.encounter_enemy.enemy_type.title()}")
+        enemy_level_label.setStyleSheet(f"color: {Theme.MUTED_FOREGROUND.name()};")
+        enemy_info_layout.addWidget(enemy_level_label)
+
+        # Quick stats preview
+        stats_layout = QHBoxLayout()
+        stats_layout.setSpacing(15)
+
+        health_label = QLabel(f"❤️ Health: {self.encounter_enemy.health}/{self.encounter_enemy.max_health}")
+        health_label.setStyleSheet(f"color: {Theme.SECONDARY.name()};")
+
+        threat_label = QLabel(f"⚔️ Threat: {self.monster_stats_controller._calculate_encounter_threat(self.hero, self.encounter_enemy).title()}")
+        threat_label.setStyleSheet(f"color: {Theme.DESTRUCTIVE.name()};")
+
+        stats_layout.addWidget(health_label)
+        stats_layout.addWidget(threat_label)
+        stats_layout.addStretch()
+
+        enemy_info_layout.addLayout(stats_layout)
+        enemy_info_layout.addStretch()
+        enemy_display_layout.addLayout(enemy_info_layout)
+
+        frame_layout.addLayout(enemy_display_layout)
+
+        # Quick elemental info if applicable
+        if self.encounter_enemy.elemental_weakness or self.encounter_enemy.elemental_resistance:
+            elemental_layout = QHBoxLayout()
+            elemental_layout.setSpacing(10)
+
+            if self.encounter_enemy.elemental_weakness:
+                weaknesses = ", ".join(self.encounter_enemy.elemental_weakness[:2])  # Show top 2
+                weak_label = QLabel(f"🤕 Weak to: {weaknesses}")
+                weak_label.setStyleSheet(f"color: {Theme.DESTRUCTIVE.name()}; font-size: 11px;")
+                elemental_layout.addWidget(weak_label)
+
+            if self.encounter_enemy.elemental_resistance:
+                resistances = ", ".join(self.encounter_enemy.elemental_resistance[:2])  # Show top 2
+                res_label = QLabel(f"🛡️ Resistant: {resistances}")
+                res_label.setStyleSheet(f"color: {Theme.ACCENT.name()}; font-size: 11px;")
+                elemental_layout.addWidget(res_label)
+
+            elemental_layout.addStretch()
+            frame_layout.addLayout(elemental_layout)
+
+        layout.addWidget(enemy_frame)
+
+        # Action buttons
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(10)
+
+        # View Details button
+        view_details_btn = StyledButton("📖 View Details", variant="secondary")
+        view_details_btn.setToolTip("View detailed monster statistics")
+        view_details_btn.clicked.connect(lambda: self.show_encounter_details(encounter_dialog))
+        buttons_layout.addWidget(view_details_btn)
+
+        # Spacer
+        buttons_layout.addStretch()
+
+        # Fight button
+        fight_btn = StyledButton("⚔️ Fight!", variant="primary")
+        fight_btn.setToolTip("Engage the enemy in combat")
+        fight_btn.clicked.connect(encounter_dialog.accept)  # Accept will close and proceed
+        buttons_layout.addWidget(fight_btn)
+
+        # Run button
+        run_btn = StyledButton("🏃 Run Away", variant="destructive")
+        run_btn.setToolTip("Avoid the encounter")
+        run_btn.clicked.connect(encounter_dialog.reject)  # Reject will flee
+        buttons_layout.addWidget(run_btn)
+
+        layout.addLayout(buttons_layout)
+
+        # Show dialog and handle result
+        result = encounter_dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            # Player chose to fight
+            self.current_enemy = self.encounter_enemy
+            self.show_combat_interface()
+        else:
+            # Player chose to run
+            self.log_message("You avoid the encounter and continue exploring.")
+            self.encounter_enemy = None
+
+    def show_encounter_details(self, parent_dialog):
+        """Show detailed monster stats from encounter preview"""
+        if not self.encounter_enemy:
+            return
+
+        # Create monster stats viewer dialog
+        from PySide6.QtWidgets import QDialog, QVBoxLayout
+        from ui.views.monster_stats_page import MonsterStatsViewer
+
+        # Create details dialog
+        details_dialog = QDialog(parent_dialog)
+        details_dialog.setWindowTitle(f"{self.encounter_enemy.name} - Monster Details")
+        details_dialog.setModal(True)
+        details_dialog.setMinimumSize(600, 500)
+        details_dialog.setMaximumSize(900, 700)
+
+        # Create the monster stats viewer
+        stats_viewer = MonsterStatsViewer(details_dialog, self.encounter_enemy)
+
+        # Set up dialog layout
+        layout = QVBoxLayout(details_dialog)
+        layout.addWidget(stats_viewer)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # Connect controller signals
+        self.monster_stats_controller.enemy_displayed.connect(
+            lambda enemy: stats_viewer.display_enemy_stats(enemy)
+        )
+
+        # Show the stats via controller
+        self.monster_stats_controller.view_enemy_stats(self.encounter_enemy)
+
+        # Show dialog
+        details_dialog.exec()
 
     def show_combat_interface(self):
         """Show the combat interface with current enemy - Enhanced formatting"""
@@ -887,6 +1093,44 @@ class RPGGame(QMainWindow):
             # Enemy gets a turn after using item - pass tuple for action
             self.process_combat_round(("use_item", item))
 
+    def view_enemy_stats(self):
+        """Show detailed enemy statistics using the monster stats viewer"""
+        if not self.current_enemy:
+            self.log_message("No enemy to view stats for!")
+            return
+
+        # Create a dialog window to show monster stats
+        from PySide6.QtWidgets import QDialog, QVBoxLayout
+        from ui.views.monster_stats_page import MonsterStatsViewer
+
+        # Create dialog
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"{self.current_enemy.name} - Monster Stats")
+        dialog.setModal(True)  # Block interaction with main window
+        dialog.setMinimumSize(800, 600)
+        dialog.setMaximumSize(1000, 800)
+
+        # Create the monster stats viewer
+        stats_viewer = MonsterStatsViewer(dialog, self.current_enemy)
+
+        # Set up dialog layout
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(stats_viewer)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # Connect controller signals
+        self.monster_stats_controller.enemy_displayed.connect(
+            lambda enemy: stats_viewer.display_enemy_stats(enemy)
+        )
+
+        # Show the stats via controller
+        self.monster_stats_controller.view_enemy_stats(self.current_enemy)
+
+        # Show dialog
+        dialog.exec()
+
+        self.log_message(f"Closed stats viewer for {self.current_enemy.name}")
+
     def increase_stat(self, stat_name):
         """Increase a character's stat using available stat points"""
         if not self.hero:
@@ -961,7 +1205,11 @@ class RPGGame(QMainWindow):
         self.shortcuts.append(shortcut)
 
         shortcut = QShortcut(QKeySequence("R"), self)
-        shortcut.activated.connect(lambda: self.combat_run() if self.current_state == GameState.COMBAT else None)
+        shortcut.activated.connect(lambda: self.combat_run() if self.current_state == GameState.COMBAT and self.combat_page else None)
+        self.shortcuts.append(shortcut)
+
+        shortcut = QShortcut(QKeySequence("V"), self)
+        shortcut.activated.connect(lambda: self.view_enemy_stats() if self.current_state == GameState.COMBAT and self.combat_page else None)
         self.shortcuts.append(shortcut)
 
         # Adventure shortcuts
