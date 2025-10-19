@@ -30,12 +30,12 @@ Since this is a new C++ project, all files will be created from scratch. The Pyt
   - [x] 1.4 Create a basic `main.cpp` that initializes a `QApplication`.
   - [x] 1.5 Create a placeholder `MainWindow` class and display it.
 
-- [ ] 2.0 Port Core Game Logic and Data Models
-  - [ ] 2.1 Create C++ header files (`.h`) for all data models (Player, Character, Monster, Item) based on `game/models.py`.
-  - [ ] 2.2 Implement the corresponding source files (`.cpp`) for the data models.
-  - [ ] 2.3 Port the core game logic from `game/game.py` into a `Game` class in C++.
-  - [ ] 2.4 Port item definitions and logic from `game/items.py`.
-  - [ ] 2.5 Add basic unit tests for the data models and core game logic.
+- [x] 2.0 Port Core Game Logic and Data Models
+  - [x] 2.1 Create C++ header files (`.h`) for all data models (Player, Character, Monster, Item) based on `game/models.py`.
+  - [x] 2.2 Implement the corresponding source files (`.cpp`) for the data models.
+  - [x] 2.3 Port the core game logic from `game/game.py` into a `Game` class in C++.
+  - [x] 2.4 Port item definitions and logic from `game/items.py`.
+  - [x] 2.5 Add basic unit tests for the data models and core game logic.
 
 - [ ] 3.0 Implement UI Shell and Core Components
   - [ ] 3.1 Implement the `MainWindow` to use a `QStackedWidget` to manage the different game views.

@@ -1,5 +1,5 @@
 #include <QTest>
-#include "../src/MainWindow.h"
+#include "MainWindow.h"
 
 class TestMainWindow : public QObject
 {
@@ -16,4 +16,4 @@ void TestMainWindow::testWindowTitle()
 }
 
 QTEST_MAIN(TestMainWindow)
-#include "test_main.moc"
+#include "test_mainwindow.moc"

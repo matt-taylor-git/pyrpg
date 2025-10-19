@@ -22,6 +22,13 @@ enable_testing()
 add_executable(pyrpg-qt
     src/main.cpp
     src/MainWindow.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+    src/models/Character.cpp
+    src/models/Player.cpp
+    src/models/Monster.cpp
+    src/game/Game.cpp
+    src/game/factories/ItemFactory.cpp
 )
 
 # Link against the Qt modules
@@ -30,12 +37,18 @@ target_link_libraries(pyrpg-qt PRIVATE Qt6::Widgets)
 target_include_directories(pyrpg-qt PRIVATE src)
 
 # --- Tests ---
-add_executable(run-tests
-    tests/test_main.cpp
-    src/MainWindow.cpp
-    src/MainWindow.h
-)
-target_link_libraries(run-tests PRIVATE Qt6::Widgets Qt6::Test)
-target_include_directories(run-tests PRIVATE src)
+enable_testing()
+
+# Test for MainWindow
+add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp)
+target_link_libraries(test_mainwindow PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_mainwindow PRIVATE src)
+add_test(NAME MainWindowTest COMMAND test_mainwindow)
+
+# Test for Data Models
+add_executable(test_models tests/test_models.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/game/factories/ItemFactory.cpp)
+target_link_libraries(test_models PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_models PRIVATE src)
+add_test(NAME ModelsTest COMMAND test_models)
 
 add_test(NAME basic_tests COMMAND run-tests)
