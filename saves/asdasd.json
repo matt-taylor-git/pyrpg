@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "last_saved": "2025-10-18T18:55:39.784877+00:00"
+  },
+  "hero": {
+    "name": "asdfasdf",
+    "level": 1,
+    "health": 100,
+    "max_health": 100,
+    "mana": 50,
+    "max_mana": 50,
+    "strength": 12,
+    "dexterity": 10,
+    "intelligence": 8,
+    "vitality": 10,
+    "equipment": {
+      "weapon": {
+        "name": "Rusty Sword",
+        "item_type": "weapon",
+        "rarity": "common",
+        "slot": "weapon",
+        "attack_bonus": 3,
+        "defense_bonus": 0,
+        "effect": null,
+        "power": 0,
+        "value": 10,
+        "description": "A worn but functional blade"
+      },
+      "armor": {
+        "name": "Cloth Tunic",
+        "item_type": "armor",
+        "rarity": "common",
+        "slot": "armor",
+        "attack_bonus": 0,
+        "defense_bonus": 2,
+        "effect": null,
+        "power": 0,
+        "value": 8,
+        "description": "Simple protective clothing"
+      },
+      "accessory": null
+    },
+    "inventory": [],
+    "gold": 100,
+    "experience": 0,
+    "experience_to_level": 100,
+    "skill_points": 0,
+    "stat_points": 0,
+    "status_effects": [],
+    "buffs": [],
+    "unlocked_skills": [
+      {
+        "name": "Power Strike",
+        "skill_type": "physical",
+        "damage": 20,
+        "mana_cost": 10,
+        "description": "A powerful physical attack."
+      },
+      {
+        "name": "Fireball",
+        "skill_type": "magic",
+        "damage": 30,
+        "mana_cost": 20,
+        "description": "A fiery magic attack."
+      }
+    ],
+    "skill_cooldowns": {},
+    "customization": {
+      "name": "asdfasdf",
+      "appearance": {
+        "hair_color": "brown",
+        "hair_style": "medium",
+        "skin_tone": "medium",
+        "eye_color": "brown"
+      },
+      "cosmetic": {
+        "headgear": "none",
+        "accessory": "none",
+        "facial_hair": "none"
+      }
+    }
+  },
+  "inventory": [],
+  "equipment": {},
+  "game_progress": {
+    "chapter": 1,
+    "bosses_defeated": 0
+  },
+  "settings": {
+    "music_volume": 75,
+    "sfx_volume": 60
+  },
+  "session_stats": {
+    "play_time": 0,
+    "enemies_killed": 0
+  }
+}

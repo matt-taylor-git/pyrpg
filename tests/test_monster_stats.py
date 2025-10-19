@@ -4,6 +4,7 @@ Tests enemy model enhancements and monster stats viewer/controller system.
 """
 import unittest
 from unittest.mock import MagicMock, patch
+from typing import cast
 from game.models import Enemy
 from ui.controllers import MonsterStatsController
 
@@ -153,11 +154,12 @@ class TestMonsterStatsController(unittest.TestCase):
 
     def test_compare_with_hero_no_hero(self):
         """Test hero comparison fails with no hero."""
-        self.controller.hero = None
+        # Create a controller without a hero for this test
+        controller_no_hero = MonsterStatsController(None)
         enemy = Enemy("Orc", 3, "warrior")
 
-        with patch.object(self.controller, 'error_occurred') as mock_error:
-            self.controller.compare_with_hero(enemy)
+        with patch.object(controller_no_hero, 'error_occurred') as mock_error:
+            controller_no_hero.compare_with_hero(enemy)
             mock_error.emit.assert_called_once()
             self.assertEqual(mock_error.emit.call_args[0][0], "Error")
 
@@ -168,13 +170,14 @@ class TestMonsterStatsController(unittest.TestCase):
         preview = self.controller.get_encounter_preview(enemy)
         self.assertIsNotNone(preview)
 
-        required_keys = ['name', 'level', 'health', 'attack', 'weaknesses', 'threat_level', 'immediate_danger']
-        for key in required_keys:
-            self.assertIn(key, preview, f"Preview missing key: {key}")
+        if preview is not None:
+            required_keys = ['name', 'level', 'health', 'attack', 'weaknesses', 'threat_level', 'immediate_danger']
+            for key in required_keys:
+                self.assertIn(key, preview, f"Preview missing key: {key}")
 
-        self.assertEqual(preview['name'], enemy.name)
-        self.assertEqual(preview['level'], enemy.level)
-        self.assertTrue(isinstance(preview['threat_level'], str))
+            self.assertEqual(preview['name'], enemy.name)
+            self.assertEqual(preview['level'], enemy.level)
+            self.assertTrue(isinstance(preview['threat_level'], str))
 
     def test_get_encounter_preview_none_enemy(self):
         """Test encounter preview with None enemy."""
@@ -186,8 +189,9 @@ class TestMonsterStatsController(unittest.TestCase):
         result = self.controller.load_monster_by_name("Goblin", 2)
         self.assertTrue(result)
         self.assertIsNotNone(self.controller.current_enemy)
-        self.assertEqual(self.controller.current_enemy.name, "Goblin")
-        self.assertEqual(self.controller.current_enemy.level, 2)
+        if self.controller.current_enemy:
+            self.assertEqual(self.controller.current_enemy.name, "Goblin")
+            self.assertEqual(self.controller.current_enemy.level, 2)
 
     def test_load_monster_by_name_invalid(self):
         """Test loading invalid monster name."""
@@ -213,6 +217,7 @@ class TestMonsterStatsController(unittest.TestCase):
         self.assertEqual(len(known), 1)
         # Verify the monster has the same key attributes
         stored_monster = known[0]
+        self.assertIsNotNone(stored_monster)
         self.assertEqual(stored_monster.name, enemy.name)
         self.assertEqual(stored_monster.level, enemy.level)
         self.assertEqual(stored_monster.enemy_type, enemy.enemy_type)
@@ -314,24 +319,34 @@ class TestMonsterStatsGUI(unittest.TestCase):
         """Set up test fixtures."""
         self.enemy = Enemy("Fire Elemental", 3, "elemental")
 
-    @patch('PySide6.QtWidgets.QDialog')
-    @patch('ui.views.monster_stats_page.MonsterStatsViewer.display_enemy_stats')
-    def test_monster_stats_viewer_initialization(self, mock_display, mock_dialog):
+    def test_monster_stats_viewer_initialization(self):
         """Test that monster stats viewer can be initialized."""
         from ui.views.monster_stats_page import MonsterStatsViewer
 
-        mock_dialog_instance = MagicMock()
-        mock_dialog.return_value = mock_dialog_instance
+        # Check if we're in a headless environment (no display available)
+        import os
+        headless = os.environ.get('DISPLAY', '') == '' and os.environ.get('WAYLAND_DISPLAY', '') == ''
 
-        try:
-            viewer = MonsterStatsViewer(None, self.enemy)
-            # If no exceptions raised, initialization was successful
-            self.assertIsNotNone(viewer)
-        except Exception as e:
-            # If we're in a headless environment, GUI components may fail
-            # In that case, just check that the class exists and can be imported
-            from ui.views.monster_stats_page import MonsterStatsViewer
-            self.assertTrue(hasattr(MonsterStatsViewer, '__init__'))
+        if headless:
+            # In headless environment, just test that the class can be imported
+            try:
+                # Test that the class exists and can be imported
+                self.assertIsNotNone(MonsterStatsViewer)
+                self.assertTrue(hasattr(MonsterStatsViewer, '__init__'))
+
+                # Skip method checks in headless mode due to mocking complexity
+                # The important thing is that the class can be imported without errors
+
+            except Exception as e:
+                self.fail(f"MonsterStatsViewer class should be importable in headless mode: {e}")
+        else:
+            # In GUI environment, test full initialization
+            try:
+                viewer = MonsterStatsViewer(None, self.enemy)
+                self.assertIsNotNone(viewer)
+                self.assertIsNotNone(viewer.current_enemy)
+            except Exception as e:
+                self.fail(f"MonsterStatsViewer should initialize properly in GUI environment: {e}")
 
     def test_enemy_display_data_structure(self):
         """Test that enemies have all display elements needed by GUI."""
@@ -397,13 +412,14 @@ class TestIntegration(unittest.TestCase):
         self.assertIsNotNone(preview)
 
         # Verify preview data types
-        self.assertEqual(type(preview['name']), str)
-        self.assertEqual(type(preview['level']), int)
-        self.assertEqual(type(preview['health']), str)
-        self.assertEqual(type(preview['attack']), str)
-        self.assertEqual(type(preview['weaknesses']), list)
-        self.assertEqual(type(preview['threat_level']), str)
-        self.assertEqual(type(preview['immediate_danger']), bool)
+        if preview is not None:
+            self.assertEqual(type(preview['name']), str)
+            self.assertEqual(type(preview['level']), int)
+            self.assertEqual(type(preview['health']), str)
+            self.assertEqual(type(preview['attack']), str)
+            self.assertEqual(type(preview['weaknesses']), list)
+            self.assertEqual(type(preview['threat_level']), str)
+            self.assertEqual(type(preview['immediate_danger']), bool)
 
 
 if __name__ == '__main__':

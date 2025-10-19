@@ -22,6 +22,7 @@ from .views.shop_page import ShopPage
 from .views.combat_page import CombatPage
 from .views.new_game_view import NewGameView
 from .views.character_customization_page import CharacterCustomizationPage
+from .views.save_load_page import SaveLoadPage
 from .components import AchievementSystem
 from .controllers import (
     AdventureController,
@@ -139,12 +140,14 @@ class RPGGame(QMainWindow):
         self.shop_page = ShopPage()
         self.combat_page = CombatPage()
         self.customization_page = CharacterCustomizationPage()
+        self.save_load_page = SaveLoadPage()
 
         self.tab_widget.addTab(self.adventure_page, "🏠 Adventure")
         self.tab_widget.addTab(self.combat_page, "⚔️ Battle")
         self.tab_widget.addTab(self.stats_page, "📊 Stats")
         self.tab_widget.addTab(self.inventory_page, "🎒 Inventory")
         self.tab_widget.addTab(self.shop_page, "🏪 Shop")
+        self.tab_widget.addTab(self.save_load_page, "💾 Save/Load")
         self.tab_widget.addTab(self.customization_page, "👤 Character")
 
         # Connect tab changes
@@ -161,6 +164,14 @@ class RPGGame(QMainWindow):
         self.customization_controller = CustomizationController(self.hero)
         self.monster_stats_controller = MonsterStatsController(self.hero)
         self.save_load_controller = SaveLoadController(self.hero)
+
+        # Populate save/load page with available saves
+        try:
+            available_saves = self.save_load_controller.get_available_saves()
+            self.save_load_page.update_save_files(available_saves)
+        except Exception as e:
+            # Don't crash if save loading fails - just leave the page empty
+            print(f"Warning: Could not load save files: {e}")
 
         # Connect controller signals to UI updates
         self.adventure_controller.status_message.connect(self.log_message)
@@ -190,6 +201,18 @@ class RPGGame(QMainWindow):
         )
         self.customization_page.load_requested.connect(
             self.customization_controller.load_customization
+        )
+
+        # Connect save/load page to controller
+        self.save_load_page.save_requested.connect(self.on_save_requested)
+        self.save_load_page.load_requested.connect(self.on_load_requested)
+        self.save_load_page.delete_requested.connect(self.on_delete_requested)
+        # Connect controller to page for feedback
+        self.save_load_controller.save_operation_completed.connect(
+            lambda slot, success: self.handle_save_result(slot, success)
+        )
+        self.save_load_controller.load_operation_completed.connect(
+            lambda slot, success: self.handle_load_result(slot, success)
         )
 
         # Connect UI elements to controllers (clean separation)
@@ -278,7 +301,7 @@ class RPGGame(QMainWindow):
             self.save_load_controller.save_game("manual")
             self.log_message("⚡ Game saved successfully!")
         except Exception as e:
-            self.error(f"Failed to quick save: {str(e)}")
+            self.log_message(f"❌ Failed to quick save: {str(e)}")
             QMessageBox.warning(self, "Save Failed", f"Could not save game: {str(e)}")
         finally:
             self.setEnabled(True)
@@ -424,6 +447,22 @@ class RPGGame(QMainWindow):
         """Refresh the list of available saves"""
         # This will be called when the refresh signal is emitted from the save/load interface
         pass
+
+    def handle_save_result(self, slot_name, success):
+        """Handle save operation result feedback"""
+        if success:
+            self.save_load_page.show_save_success(slot_name)
+            self.log_message(f"📁 Game saved successfully to '{slot_name}'!")
+        else:
+            self.save_load_page.show_save_error(slot_name, "Save operation failed")
+            QMessageBox.warning(self, "Save Failed", f"Could not save to '{slot_name}'.")
+
+    def handle_load_result(self, slot_name, success):
+        """Handle load operation result feedback"""
+        if success:
+            self.save_load_page.show_load_success(slot_name)
+        else:
+            self.save_load_page.show_load_error(slot_name, "Load operation failed")
 
     def update_controllers_with_new_hero(self):
         """Update all controllers when hero changes (for load operations)"""

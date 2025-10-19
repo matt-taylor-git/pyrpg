@@ -19,14 +19,17 @@ class SaveFileItem(QListWidgetItem):
 
     def __init__(self, save_info):
         super().__init__()
-        self.save_info = save_info
+        self.setData(Qt.ItemDataRole.UserRole, save_info)
         self.update_display()
 
     def update_display(self):
         """Update the display text and formatting"""
+        save_info = self.data(Qt.ItemDataRole.UserRole)
+        if not save_info:
+            return
 
         # Format last saved time
-        last_saved = self.save_info.get('last_saved', 'Unknown')
+        last_saved = save_info.get('last_saved', 'Unknown')
         if last_saved != 'Unknown':
             try:
                 # Parse ISO format and format nicely
@@ -36,18 +39,18 @@ class SaveFileItem(QListWidgetItem):
                 pass
 
         # Create display text
-        display_text = f"📁 {self.save_info.get('hero_name', 'Unknown')} - Lv.{self.save_info.get('hero_level', '?')} ({last_saved})"
+        display_text = f"📁 {save_info.get('hero_name', 'Unknown')} - Lv.{save_info.get('hero_level', '?')} ({last_saved})"
 
         # Get subtitle info
         subtitle_info = []
-        if self.save_info.get('hero_class'):
-            subtitle_info.append(f"Class: {self.save_info.get('hero_class')}")
-        if self.save_info.get('playtime', 0) > 0:
-            play_hours = int(self.save_info.get('playtime', 0) / 3600)
+        if save_info.get('hero_class'):
+            subtitle_info.append(f"Class: {save_info.get('hero_class')}")
+        if save_info.get('playtime', 0) > 0:
+            play_hours = int(save_info.get('playtime', 0) / 3600)
             if play_hours > 0:
                 subtitle_info.append(f"Playtime: {play_hours}h")
-        if self.save_info.get('playtime', 0) < 3600:
-            play_mins = int(self.save_info.get('playtime', 0) / 60)
+        if save_info.get('playtime', 0) < 3600:
+            play_mins = int(save_info.get('playtime', 0) / 60)
             if play_mins > 0:
                 subtitle_info.append(f"Playtime: {play_mins}m")
 
@@ -57,16 +60,16 @@ class SaveFileItem(QListWidgetItem):
         self.setText(display_text)
 
         # Set tooltip with additional info
-        tooltip = f"""Slot: {self.save_info.get('slot', 'Unknown')}
-Character: {self.save_info.get('hero_name', 'Unknown')}
-Level: {self.save_info.get('hero_level', '1')}
+        tooltip = f"""Slot: {save_info.get('slot', 'Unknown')}
+Character: {save_info.get('hero_name', 'Unknown')}
+Level: {save_info.get('hero_level', '1')}
 {subtitle}
 Last Saved: {last_saved}"""
 
         self.setToolTip(tooltip)
 
         # Style based on recent saves
-        self.setForeground(Qt.white)
+        self.setForeground(Qt.GlobalColor.white)
 
         # Mark as bold if this is a recent save (last 24 hours would be ideal, but we don't have creation time)
 
@@ -130,17 +133,18 @@ class SaveSlotDialog(QDialog):
 
         # Examples
         examples = QLabel("Examples: 'My Hero', 'Chapter 2', 'Boss Fight Pre'...")
-        examples.setStyleSheet(f"color: {Theme.SECONDARY_TEXT}; font-size: 11px; font-style: italic;")
+        examples.setStyleSheet(f"color: {Theme.MUTED_FOREGROUND}; font-size: 11px; font-style: italic;")
         layout.addWidget(examples)
 
         # Buttons
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         button_box.accepted.connect(self.accept_slot)
         button_box.rejected.connect(self.reject)
 
-        # Customize button styles
+        # Buttons will be styled through their object names and global stylesheet
         for button in button_box.buttons():
-            button.setStyleSheet(StyledButton.get_button_style("primary" if button.text() == "OK" else "secondary"))
+            variant = "primary" if button.text() == "OK" else "secondary"
+            button.setObjectName(variant)
 
         layout.addWidget(button_box)
 
@@ -206,7 +210,7 @@ class OverwriteConfirmationDialog(QDialog):
         # Warning icon - text based since no image
         warning_label = QLabel("⚠️")
         warning_label.setStyleSheet("font-size: 48px;")
-        warning_layout.addWidget(warning_label, alignment=Qt.AlignCenter)
+        warning_layout.addWidget(warning_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         text_layout = QVBoxLayout()
 
@@ -231,7 +235,7 @@ class OverwriteConfirmationDialog(QDialog):
                 pass
 
         last_saved_label = QLabel(f"Last saved: {last_saved}")
-        last_saved_label.setStyleSheet(f"color: {Theme.SECONDARY_TEXT}; font-style: italic;")
+        last_saved_label.setStyleSheet(f"color: {Theme.MUTED_FOREGROUND}; font-style: italic;")
         text_layout.addWidget(last_saved_label)
 
         warning_layout.addLayout(text_layout)
@@ -239,7 +243,7 @@ class OverwriteConfirmationDialog(QDialog):
 
         # Instruction text
         instruction = QLabel("This action cannot be undone. Make sure you have a backup if needed.")
-        instruction.setStyleSheet(f"color: {Theme.SECONDARY_TEXT}; font-style: italic; margin-top: 12px;")
+        instruction.setStyleSheet(f"color: {Theme.MUTED_FOREGROUND}; font-style: italic; margin-top: 12px;")
         instruction.setWordWrap(True)
         layout.addWidget(instruction)
 
@@ -272,6 +276,7 @@ class SaveLoadPage(QWidget):
     save_requested = Signal(str)  # slot_name
     load_requested = Signal(str)  # slot_name
     delete_requested = Signal(str)  # slot_name
+    refresh_requested = Signal()  # Request to refresh save list
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -290,12 +295,12 @@ class SaveLoadPage(QWidget):
 
         title = QLabel("💾 Save & Load Game")
         title.setStyleSheet("font-size: 24px; font-weight: bold; color: #28a745;")
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(title)
 
         subtitle = QLabel("Manage your game progress and explore different paths")
-        subtitle.setStyleSheet(f"color: {Theme.SECONDARY_TEXT}; font-style: italic;")
-        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setStyleSheet(f"color: {Theme.MUTED_FOREGROUND}; font-style: italic;")
+        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(subtitle)
 
         header.main_layout.addLayout(header_layout)
@@ -333,7 +338,7 @@ class SaveLoadPage(QWidget):
                 background-color: {Theme.PRIMARY};
             }}
             QListWidget::item:hover {{
-                background-color: {Theme.HOVER};
+                background-color: {Theme.MUTED};
             }}
         """)
 
@@ -347,7 +352,7 @@ class SaveLoadPage(QWidget):
         list_controls.setSpacing(Theme.SPACING_MD)
 
         refresh_btn = StyledButton("🔄 Refresh", variant="secondary", size="small")
-        refresh_btn.clicked.connect(lambda: self.refresh_requested.emit())
+        refresh_btn.clicked.connect(self.refresh_requested)
         list_controls.addWidget(refresh_btn)
 
         list_controls.addStretch()
@@ -439,9 +444,6 @@ class SaveLoadPage(QWidget):
         # Connect selection changes
         self.saves_list.itemSelectionChanged.connect(self.on_selection_changed)
 
-        # Connect refresh signal (will be connected to controller)
-        self.refresh_requested = Signal()  # Request to refresh save list
-
     def update_save_files(self, save_files):
         """Update the list of save files"""
         self.save_files = save_files
@@ -454,8 +456,9 @@ class SaveLoadPage(QWidget):
     def get_selected_save_info(self):
         """Get the currently selected save file info"""
         current_item = self.saves_list.currentItem()
-        if current_item and hasattr(current_item, 'save_info'):
-            return current_item.save_info
+        if current_item:
+            # Retrieve the save_info stored in the UserRole data
+            return current_item.data(Qt.ItemDataRole.UserRole)
         return None
 
     def on_selection_changed(self):
@@ -470,17 +473,18 @@ class SaveLoadPage(QWidget):
 
     def on_save_double_clicked(self, item):
         """Handle double-click on save file (load)"""
-        if hasattr(item, 'save_info'):
-            slot_name = item.save_info.get('slot')
+        save_info = item.data(Qt.ItemDataRole.UserRole)
+        if save_info:
+            slot_name = save_info.get('slot')
             if slot_name:
                 # Confirm load action
                 result = QMessageBox.question(
                     self, "Load Game?",
                     f"Do you want to load '{slot_name}'?\n\nAny unsaved progress will be lost.",
-                    QMessageBox.Yes | QMessageBox.No
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
 
-                if result == QMessageBox.Yes:
+                if result == QMessageBox.StandardButton.Yes:
                     self.load_requested.emit(slot_name)
 
     def on_quick_save(self):
@@ -490,9 +494,9 @@ class SaveLoadPage(QWidget):
             result = QMessageBox.question(
                 self, "Overwrite Quick Save?",
                 "A quick save already exists. Overwrite it?",
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            if result != QMessageBox.Yes:
+            if result != QMessageBox.StandardButton.Yes:
                 return
 
         self.save_requested.emit("quick")
@@ -506,10 +510,10 @@ class SaveLoadPage(QWidget):
         result = QMessageBox.question(
             self, "Load Quick Save?",
             "Load from quick save?\n\nAny unsaved progress will be lost.",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
-        if result == QMessageBox.Yes:
+        if result == QMessageBox.StandardButton.Yes:
             self.load_requested.emit("quick")
 
     def on_save_selected(self):
@@ -521,7 +525,7 @@ class SaveLoadPage(QWidget):
         # Confirm overwrite
         dialog = OverwriteConfirmationDialog(save_info, self)
         result = dialog.exec()
-        if result == QDialog.Accepted and dialog.confirmed:
+        if result == QDialog.DialogCode.Accepted and dialog.confirmed:
             self.save_requested.emit(save_info['slot'])
 
     def on_load_selected(self):
@@ -534,10 +538,10 @@ class SaveLoadPage(QWidget):
         result = QMessageBox.question(
             self, "Load Game?",
             f"Do you want to load '{save_info['slot']}'?\n\nAny unsaved progress will be lost.",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
-        if result == QMessageBox.Yes:
+        if result == QMessageBox.StandardButton.Yes:
             self.load_requested.emit(save_info['slot'])
 
     def on_delete_requested(self):
@@ -550,11 +554,11 @@ class SaveLoadPage(QWidget):
         result = QMessageBox.question(
             self, "Delete Save?",
             f"Are you sure you want to delete '{save_info['slot']}'?\n\nThis action cannot be undone.",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No  # Default to No for safety
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No  # Default to No for safety
         )
 
-        if result == QMessageBox.Yes:
+        if result == QMessageBox.StandardButton.Yes:
             self.delete_requested.emit(save_info['slot'])
 
     def on_new_save(self):
@@ -565,7 +569,7 @@ class SaveLoadPage(QWidget):
         dialog = SaveSlotDialog(existing_slots, self)
         result = dialog.exec()
 
-        if result == QDialog.Accepted and dialog.selected_slot:
+        if result == QDialog.DialogCode.Accepted and dialog.selected_slot:
             self.save_requested.emit(dialog.selected_slot)
 
     def has_quick_save(self):

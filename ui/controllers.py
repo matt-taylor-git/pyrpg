@@ -5,6 +5,7 @@ These controllers handle the interaction between UI components and game models.
 """
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox
+from typing import List
 from game.models import Hero, Enemy
 
 
@@ -190,7 +191,7 @@ class StatsController(BaseController):
         elif stat_name == 'speed':
             self.hero.dexterity += 1
             # Recalculate crit/dodge chances
-            self.hero.update_secondary_stats()
+            self.hero.refresh_derived_stats()
         else:
             return
 
@@ -430,15 +431,15 @@ class MonsterStatsController(BaseController):
 
         return preview_data
 
-    def get_known_monsters(self):
+    def get_known_monsters(self) -> List[Enemy]:
         """Get list of all known monsters for browsing"""
         return list(self.known_monsters.values())
 
-    def get_monsters_by_rarity(self, rarity):
+    def get_monsters_by_rarity(self, rarity) -> List[Enemy]:
         """Get monsters filtered by rarity"""
         return [monster for monster in self.known_monsters.values() if monster.rarity == rarity]
 
-    def get_monsters_by_type(self, enemy_type):
+    def get_monsters_by_type(self, enemy_type) -> List[Enemy]:
         """Get monsters filtered by type"""
         return [monster for monster in self.known_monsters.values() if monster.enemy_type == enemy_type]
 
@@ -563,7 +564,16 @@ class SaveLoadController(BaseController):
         # Initialize save/load manager with proper directory handling
         from game.save_load import SaveLoadManager
         self.save_manager = SaveLoadManager(save_directory)
-        self.__init_auto_save()
+
+        # Game state attributes (moved from Hero model)
+        self._game_progress = {'chapter': 1, 'bosses_defeated': 0}
+        self._game_settings = {'music_volume': 75, 'sfx_volume': 60}
+        self._session_stats = {'play_time': 0, 'enemies_killed': 0}
+
+        # Auto-save settings (moved from Hero model)
+        self._auto_save_enabled = True
+        self._auto_save_interval = 5  # Default 5 minutes
+        self.last_auto_save_time = 0
 
     def save_game(self, slot_name="manual"):
         """Save current game state"""
@@ -578,10 +588,10 @@ class SaveLoadController(BaseController):
             game_state = GameState()
             game_state.hero = self.hero
 
-            # Add progress and settings (these would come from other controllers)
-            game_state.game_progress = getattr(self.hero, '_game_progress', {'chapter': 1, 'bosses_defeated': 0})
-            game_state.settings = getattr(self.hero, '_game_settings', {'music_volume': 75, 'sfx_volume': 60})
-            game_state.session_stats = getattr(self.hero, '_session_stats', {'play_time': 0, 'enemies_killed': 0})
+            # Add progress and settings (now stored on the controller)
+            game_state.game_progress = self._game_progress
+            game_state.settings = self._game_settings
+            game_state.session_stats = self._session_stats
 
             # Save using save manager
             success = self._perform_save(game_state, slot_name)
@@ -609,10 +619,10 @@ class SaveLoadController(BaseController):
                 # Restore hero state
                 self.hero = loaded_state.hero
 
-                # Store additional state on hero for other controllers to access
-                self.hero._game_progress = loaded_state.game_progress
-                self.hero._game_settings = loaded_state.settings
-                self.hero._session_stats = loaded_state.session_stats
+                # Store additional state on controller
+                self._game_progress = loaded_state.game_progress
+                self._game_settings = loaded_state.settings
+                self._session_stats = loaded_state.session_stats
 
                 self.status_message.emit(f"📁 Game loaded from slot '{slot_name}'!")
                 self.load_operation_completed.emit(slot_name, True)
@@ -689,6 +699,9 @@ class SaveLoadController(BaseController):
 
     def _fallback_save(self, game_state, slot_name):
         """Fallback save implementation using basic JSON"""
+        if not self.hero:
+            return False
+
         try:
             import json
             import os
@@ -770,29 +783,20 @@ class SaveLoadController(BaseController):
             print(f"Fallback load error: {e}")
             return None
 
-    # Auto-save functionality
-    def __init_auto_save(self):
-        """Initialize auto-save components"""
-        # Auto-save settings will be stored in hero settings
-        self.auto_save_settings = {
-            'enabled': True,
-            'interval_minutes': 5,  # Default 5 minutes
-        }
-        self.last_auto_save_time = 0
+
 
     def is_auto_save_enabled(self):
         """Check if auto-save is enabled"""
-        return getattr(self.hero, '_auto_save_enabled', True) if self.hero else True
+        return self._auto_save_enabled
 
     def set_auto_save_enabled(self, enabled):
         """Enable or disable auto-save"""
-        if self.hero:
-            self.hero._auto_save_enabled = enabled
+        self._auto_save_enabled = enabled
         self.auto_save_enabled.emit(enabled)
 
     def get_auto_save_interval(self):
         """Get current auto-save interval in minutes"""
-        return getattr(self.hero, '_auto_save_interval', 5) if self.hero else 5
+        return self._auto_save_interval
 
     def set_auto_save_interval(self, minutes):
         """Set auto-save interval in minutes"""
@@ -800,8 +804,7 @@ class SaveLoadController(BaseController):
             self.error_occurred.emit("Invalid Interval", "Auto-save interval must be between 1-60 minutes.")
             return False
 
-        if self.hero:
-            self.hero._auto_save_interval = minutes
+        self._auto_save_interval = minutes
 
         self.status_message.emit(f"⏰ Auto-save interval set to {minutes} minutes")
         return True

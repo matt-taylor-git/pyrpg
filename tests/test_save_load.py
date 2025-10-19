@@ -7,10 +7,18 @@ import unittest
 import os
 import tempfile
 import shutil
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from game.save_load import GameState, SaveLoadManager, save_game_state, load_game_state
 from game.models import Hero, Item
 from game.customization import customization_system
+
+# Mock PySide6 signals to avoid UI dependencies in unit tests
+import sys
+from unittest.mock import MagicMock
+sys.modules['PySide6.QtWidgets'] = MagicMock()
+sys.modules['PySide6.QtCore'] = MagicMock()
+sys.modules['PySide6.QtGui'] = MagicMock()
+sys.modules['PySide6'] = sys.modules['PySide6.QtCore'] = sys.modules['PySide6.QtWidgets'] = sys.modules['PySide6.QtGui']
 
 
 class TestGameState(unittest.TestCase):
@@ -75,7 +83,8 @@ class TestGameState(unittest.TestCase):
 
         # Verify results
         self.assertIsNotNone(self.game_state.hero)
-        self.assertEqual(self.game_state.hero.name, 'TestHero')
+        if self.game_state.hero:
+            self.assertEqual(self.game_state.hero.name, 'TestHero')
         self.assertEqual(len(self.game_state.inventory), 1)
         self.assertEqual(self.game_state.game_progress['chapter'], 1)
         self.assertEqual(self.game_state.settings['volume'], 50)
@@ -139,10 +148,10 @@ class TestSaveLoadManager(unittest.TestCase):
 
     def test_save_game_invalid_input(self):
         """Test saving with invalid input fails"""
-        result = self.save_manager.save_game(None, "test_slot")
+        result = self.save_manager.save_game(None, "test_slot")  # type: ignore
         self.assertFalse(result)
 
-        result = self.save_manager.save_game("not a gamestate", "test_slot")
+        result = self.save_manager.save_game("not a gamestate", "test_slot")  # type: ignore
         self.assertFalse(result)
 
     def test_load_game_success(self):
@@ -154,8 +163,11 @@ class TestSaveLoadManager(unittest.TestCase):
         loaded_state = self.save_manager.load_game("test_slot")
 
         self.assertIsNotNone(loaded_state)
+        self.assertIsInstance(loaded_state, GameState)
         self.assertTrue(loaded_state.is_valid())
-        self.assertEqual(loaded_state.hero.name, "TestHero")
+        loaded_hero = loaded_state.hero
+        self.assertIsNotNone(loaded_hero)
+        self.assertEqual(loaded_hero.name, "TestHero")
 
     def test_load_game_nonexistent_file(self):
         """Test loading nonexistent file returns None"""
@@ -258,10 +270,12 @@ class TestSaveLoadIntegration(unittest.TestCase):
         # Load the game
         loaded_state = save_manager.load_game("integration_test")
         self.assertIsNotNone(loaded_state)
+        self.assertIsInstance(loaded_state, GameState)
         self.assertTrue(loaded_state.is_valid())
 
         # Verify hero data
         loaded_hero = loaded_state.hero
+        self.assertIsNotNone(loaded_hero)
         self.assertEqual(loaded_hero.name, "IntegrationHero")
         self.assertEqual(loaded_hero.level, 3)
         self.assertEqual(loaded_hero.experience, 99)
@@ -325,7 +339,10 @@ class TestConvenienceFunctions(unittest.TestCase):
         loaded_state = load_game_state("convenience_test")
 
         self.assertIsNotNone(loaded_state)
-        self.assertEqual(loaded_state.hero.name, "ConvenienceHero")
+        self.assertIsInstance(loaded_state, GameState)
+        loaded_hero = loaded_state.hero
+        self.assertIsNotNone(loaded_hero)
+        self.assertEqual(loaded_hero.name, "ConvenienceHero")
 
     def test_get_available_saves_convenience_function(self):
         """Test convenience function get_available_saves"""
@@ -359,10 +376,6 @@ class TestAutoSaveFunctionality(unittest.TestCase):
 
         self.hero = Hero("AutoSaveHero")
         self.controller = SaveLoadController(self.hero, save_directory=self.temp_dir)
-
-        # Set up auto-save settings
-        self.controller.hero._auto_save_enabled = True
-        self.controller.hero._auto_save_interval = 5  # 5 minutes
 
         # Create game state
         from game.save_load import GameState
@@ -458,8 +471,8 @@ class TestAutoSaveFunctionality(unittest.TestCase):
 
         # Should be positive and around 2 minutes (120 seconds)
         self.assertIsNotNone(result)
-        self.assertGreater(result, 0)
-        self.assertLess(result, 300)  # Should be less than 5 minutes
+        self.assertGreater(result, int(0))  # type: ignore
+        self.assertLess(result, int(300))  # Should be less than 5 minutes # type: ignore
 
     def test_round_trip_with_auto_save_data(self):
         """Test that auto-save settings are preserved during game state transitions"""
