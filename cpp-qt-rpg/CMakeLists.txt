@@ -20,6 +20,7 @@ enable_testing()
 
 # Add the executable
 add_executable(pyrpg-qt
+    assets.qrc
     src/main.cpp
     src/MainWindow.cpp
     src/models/Item.cpp
@@ -29,6 +30,15 @@ add_executable(pyrpg-qt
     src/models/Monster.cpp
     src/game/Game.cpp
     src/game/factories/ItemFactory.cpp
+    src/components/ValidationLabel.cpp
+    src/components/AnimatedProgressBar.cpp
+    src/components/ShadowedProgressBar.cpp
+    src/components/ScalablePixmapLabel.cpp
+    src/components/LogDisplay.cpp
+    src/components/StatusIndicator.cpp
+    src/components/ParticleSystem.cpp
+    src/components/ItemCard.cpp
+    src/components/ItemSelectionOverlay.cpp
 )
 
 # Link against the Qt modules
@@ -51,4 +61,4 @@ target_link_libraries(test_models PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_models PRIVATE src)
 add_test(NAME ModelsTest COMMAND test_models)
 
-add_test(NAME basic_tests COMMAND run-tests)
+

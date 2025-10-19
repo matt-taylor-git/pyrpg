@@ -37,10 +37,10 @@ Since this is a new C++ project, all files will be created from scratch. The Pyt
   - [x] 2.4 Port item definitions and logic from `game/items.py`.
   - [x] 2.5 Add basic unit tests for the data models and core game logic.
 
-- [ ] 3.0 Implement UI Shell and Core Components
-  - [ ] 3.1 Implement the `MainWindow` to use a `QStackedWidget` to manage the different game views.
-  - [ ] 3.2 Re-implement the custom widgets from `ui/custom_widgets.py` and `ui/components/` in C++/Qt.
-  - [ ] 3.3 Load and apply the existing `styles.qss` stylesheet to the `QApplication`.
+- [x] 3.0 Implement UI Shell and Core Components
+  - [x] 3.1 Implement the `MainWindow` to use a `QStackedWidget` to manage the different game views.
+  - [x] 3.2 Re-implement the custom widgets from `ui/custom_widgets.py` and `ui/components/` in C++/Qt.
+  - [x] 3.3 Load and apply the existing `styles.qss` stylesheet to the `QApplication`.
 
 - [ ] 4.0 Implement Game Views and UI Logic
   - [ ] 4.1 Create C++ classes for each view from the `ui/views/` directory (e.g., `NewGameView`, `CharacterCustomizationPage`, `CombatPage`).
