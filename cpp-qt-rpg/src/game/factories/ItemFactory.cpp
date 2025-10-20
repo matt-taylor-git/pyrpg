@@ -47,3 +47,22 @@ QMap<QString, Item*> ItemFactory::getShopItems()
     items.insert("Leather Armor", new Item("Leather Armor", "armor", "common", "armor", 0, 5, "", 0, 60, "+5 Defense"));
     return items;
 }
+
+Item* ItemFactory::createItem(const QString &name)
+{
+    static QMap<QString, Item> allItems;
+    if (allItems.isEmpty()) {
+        // Initialize all possible items
+        allItems.insert("Health Potion", Item("Health Potion", "consumable", "common", "", 0, 0, "heal", 50, 25, "Restores 50 HP"));
+        allItems.insert("Mana Potion", Item("Mana Potion", "consumable", "common", "", 0, 0, "restore_mana", 30, 20, "Restores 30 MP"));
+        allItems.insert("Iron Sword", Item("Iron Sword", "weapon", "common", "weapon", 8, 0, "", 0, 75, "+8 Attack Power"));
+        allItems.insert("Magic Sword", Item("Magic Sword", "weapon", "rare", "weapon", 15, 0, "", 0, 200, "+15 Attack Power"));
+        allItems.insert("Leather Armor", Item("Leather Armor", "armor", "common", "armor", 0, 5, "", 0, 60, "+5 Defense"));
+    }
+
+    if (allItems.contains(name)) {
+        return new Item(allItems[name]);
+    }
+
+    return nullptr; // Or a default item
+}

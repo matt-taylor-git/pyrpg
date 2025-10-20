@@ -34,6 +34,11 @@ private slots:
     void handleStatsClicked();
     void handleRunClicked();
     void handleViewStatsClicked();
+    void handleQuickSave();
+    void handleQuickLoad();
+    void handleSaveToFile(const QString &filePath);
+    void handleLoadFromFile(const QString &filePath);
+    void handleNewSave();
 
 private:
     QStackedWidget *stackedWidget;

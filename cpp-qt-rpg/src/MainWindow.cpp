@@ -62,6 +62,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Save Load Page
     m_saveLoadPage = new SaveLoadPage();
+    connect(m_saveLoadPage, &SaveLoadPage::quickSaveRequested, this, &MainWindow::handleQuickSave);
+    connect(m_saveLoadPage, &SaveLoadPage::quickLoadRequested, this, &MainWindow::handleQuickLoad);
+    connect(m_saveLoadPage, &SaveLoadPage::saveToFileRequested, this, &MainWindow::handleSaveToFile);
+    connect(m_saveLoadPage, &SaveLoadPage::loadFromFileRequested, this, &MainWindow::handleLoadFromFile);
+    connect(m_saveLoadPage, &SaveLoadPage::newSaveRequested, this, &MainWindow::handleNewSave);
     stackedWidget->addWidget(m_saveLoadPage);
 
     // Shop Page
@@ -129,6 +134,44 @@ void MainWindow::handleViewStatsClicked()
 {
     m_statsPage->updateStats(m_game->getPlayer());
     stackedWidget->setCurrentWidget(m_statsPage);
+}
+
+void MainWindow::handleQuickSave()
+{
+    // For quick save, use a default file path, e.g., quicksave.dat
+    QString filePath = "quicksave.dat";
+    if (m_game->saveGame(filePath)) {
+        // Optionally show success message
+    }
+}
+
+void MainWindow::handleQuickLoad()
+{
+    QString filePath = "quicksave.dat";
+    if (m_game->loadGame(filePath)) {
+        // After loading, perhaps update UI or go to adventure page
+        stackedWidget->setCurrentWidget(m_adventurePage);
+    }
+}
+
+void MainWindow::handleSaveToFile(const QString &filePath)
+{
+    if (m_game->saveGame(filePath)) {
+        // Optionally show success message
+    }
+}
+
+void MainWindow::handleLoadFromFile(const QString &filePath)
+{
+    if (m_game->loadGame(filePath)) {
+        stackedWidget->setCurrentWidget(m_adventurePage);
+    }
+}
+
+void MainWindow::handleNewSave()
+{
+    // Perhaps start a new game or something, but for now, maybe go to new game view
+    stackedWidget->setCurrentWidget(m_newGameView);
 }
 
 MainWindow::~MainWindow()

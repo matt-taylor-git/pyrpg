@@ -6,6 +6,7 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QFrame>
+#include <QFileDialog>
 
 SaveLoadPage::SaveLoadPage(QWidget *parent) : QWidget(parent)
 {
@@ -53,4 +54,42 @@ void SaveLoadPage::setupUi()
     contentLayout->addWidget(actionsSection);
 
     mainLayout->addLayout(contentLayout);
+
+    // Connect buttons
+    connect(m_quickSaveButton, &QPushButton::clicked, this, &SaveLoadPage::onQuickSaveClicked);
+    connect(m_quickLoadButton, &QPushButton::clicked, this, &SaveLoadPage::onQuickLoadClicked);
+    connect(m_saveSelectedButton, &QPushButton::clicked, this, &SaveLoadPage::onSaveSelectedClicked);
+    connect(m_loadSelectedButton, &QPushButton::clicked, this, &SaveLoadPage::onLoadSelectedClicked);
+    connect(m_newSaveButton, &QPushButton::clicked, this, &SaveLoadPage::onNewSaveClicked);
+}
+
+void SaveLoadPage::onQuickSaveClicked()
+{
+    emit quickSaveRequested();
+}
+
+void SaveLoadPage::onQuickLoadClicked()
+{
+    emit quickLoadRequested();
+}
+
+void SaveLoadPage::onSaveSelectedClicked()
+{
+    QString filePath = QFileDialog::getSaveFileName(this, "Save Game", "", "Game Save Files (*.dat)");
+    if (!filePath.isEmpty()) {
+        emit saveToFileRequested(filePath);
+    }
+}
+
+void SaveLoadPage::onLoadSelectedClicked()
+{
+    QString filePath = QFileDialog::getOpenFileName(this, "Load Game", "", "Game Save Files (*.dat)");
+    if (!filePath.isEmpty()) {
+        emit loadFromFileRequested(filePath);
+    }
+}
+
+void SaveLoadPage::onNewSaveClicked()
+{
+    emit newSaveRequested();
 }

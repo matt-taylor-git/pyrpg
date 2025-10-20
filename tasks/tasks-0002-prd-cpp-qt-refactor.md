@@ -48,11 +48,11 @@ Since this is a new C++ project, all files will be created from scratch. The Pyt
   - [x] 4.3 Connect UI element signals (e.g., button clicks) to slots in the game logic or view controllers.
   - [x] 4.4 Port the UI controller logic from `ui/controllers.py` into the respective view classes or dedicated C++ controller classes.
 
-- [ ] 5.0 Implement Persistence and Asset Management
-  - [ ] 5.1 Implement a `SaveManager` class with `saveGame` and `loadGame` methods using `QDataStream` for binary serialization.
-  - [ ] 5.2 Integrate the `SaveManager` with the UI (e.g., Save/Load buttons in the main menu).
-  - [ ] 5.3 Create a Qt Resource file (`assets.qrc`) and add all game assets to it.
-  - [ ] 5.4 Modify the UI code to load images and other resources from the Qt resource system.
+- [x] 5.0 Implement Persistence and Asset Management
+  - [x] 5.1 Implement a `SaveManager` class with `saveGame` and `loadGame` methods using `QDataStream` for binary serialization.
+  - [x] 5.2 Integrate the `SaveManager` with the UI (e.g., Save/Load buttons in the main menu).
+  - [x] 5.3 Create a Qt Resource file (`assets.qrc`) and add all game assets to it.
+  - [x] 5.4 Modify the UI code to load images and other resources from the Qt resource system.
 
 - [ ] 6.0 Finalize, Package, and Test
   - [ ] 6.1 Replace generic file dialogs with `QFileDialog` for native save/load prompts.

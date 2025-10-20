@@ -18,3 +18,20 @@ Player* Game::getPlayer()
 {
     return player;
 }
+
+bool Game::saveGame(const QString &filePath)
+{
+    if (!player) return false;
+    return saveManager.saveGame(player, filePath);
+}
+
+bool Game::loadGame(const QString &filePath)
+{
+    Player *loadedPlayer = saveManager.loadGame(filePath);
+    if (!loadedPlayer) return false;
+    if (player) {
+        delete player;
+    }
+    player = loadedPlayer;
+    return true;
+}

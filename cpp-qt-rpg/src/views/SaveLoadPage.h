@@ -12,6 +12,20 @@ class SaveLoadPage : public QWidget
 public:
     explicit SaveLoadPage(QWidget *parent = nullptr);
 
+signals:
+    void quickSaveRequested();
+    void quickLoadRequested();
+    void saveToFileRequested(const QString &filePath);
+    void loadFromFileRequested(const QString &filePath);
+    void newSaveRequested();
+
+private slots:
+    void onQuickSaveClicked();
+    void onQuickLoadClicked();
+    void onSaveSelectedClicked();
+    void onLoadSelectedClicked();
+    void onNewSaveClicked();
+
 private:
     void setupUi();
 
