@@ -42,11 +42,11 @@ Since this is a new C++ project, all files will be created from scratch. The Pyt
   - [x] 3.2 Re-implement the custom widgets from `ui/custom_widgets.py` and `ui/components/` in C++/Qt.
   - [x] 3.3 Load and apply the existing `styles.qss` stylesheet to the `QApplication`.
 
-- [ ] 4.0 Implement Game Views and UI Logic
-  - [ ] 4.1 Create C++ classes for each view from the `ui/views/` directory (e.g., `NewGameView`, `CharacterCustomizationPage`, `CombatPage`).
-  - [ ] 4.2 Implement the UI layout and widgets for each view, mirroring the Python implementation.
-  - [ ] 4.3 Connect UI element signals (e.g., button clicks) to slots in the game logic or view controllers.
-  - [ ] 4.4 Port the UI controller logic from `ui/controllers.py` into the respective view classes or dedicated C++ controller classes.
+- [x] 4.0 Implement Game Views and UI Logic
+  - [x] 4.1 Create C++ classes for each view from the `ui/views/` directory (e.g., `NewGameView`, `CharacterCustomizationPage`, `CombatPage`).
+  - [x] 4.2 Implement the UI layout and widgets for each view, mirroring the Python implementation.
+  - [x] 4.3 Connect UI element signals (e.g., button clicks) to slots in the game logic or view controllers.
+  - [x] 4.4 Port the UI controller logic from `ui/controllers.py` into the respective view classes or dedicated C++ controller classes.
 
 - [ ] 5.0 Implement Persistence and Asset Management
   - [ ] 5.1 Implement a `SaveManager` class with `saveGame` and `loadGame` methods using `QDataStream` for binary serialization.

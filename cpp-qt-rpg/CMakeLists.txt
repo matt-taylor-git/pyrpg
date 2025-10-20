@@ -39,6 +39,17 @@ add_executable(pyrpg-qt
     src/components/ParticleSystem.cpp
     src/components/ItemCard.cpp
     src/components/ItemSelectionOverlay.cpp
+    src/components/CharacterPreviewWidget.cpp
+    src/components/CustomizationSection.cpp
+    src/views/AdventurePage.cpp
+    src/views/CharacterCustomizationPage.cpp
+    src/views/CombatPage.cpp
+    src/views/InventoryPage.cpp
+    src/views/MonsterStatsPage.cpp
+    src/views/NewGameView.cpp
+    src/views/SaveLoadPage.cpp
+    src/views/ShopPage.cpp
+    src/views/StatsPage.cpp
 )
 
 # Link against the Qt modules
@@ -50,7 +61,27 @@ target_include_directories(pyrpg-qt PRIVATE src)
 enable_testing()
 
 # Test for MainWindow
-add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp)
+add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
+    src/views/NewGameView.cpp
+    src/views/AdventurePage.cpp
+    src/views/CharacterCustomizationPage.cpp
+    src/views/CombatPage.cpp
+    src/views/InventoryPage.cpp
+    src/views/MonsterStatsPage.cpp
+    src/views/SaveLoadPage.cpp
+    src/views/ShopPage.cpp
+    src/views/StatsPage.cpp
+    src/components/ValidationLabel.cpp
+    src/components/CharacterPreviewWidget.cpp
+    src/components/CustomizationSection.cpp
+    src/game/Game.cpp
+    src/models/Player.cpp
+    src/models/Character.cpp
+    src/models/Monster.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+    src/game/factories/ItemFactory.cpp
+)
 target_link_libraries(test_mainwindow PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_mainwindow PRIVATE src)
 add_test(NAME MainWindowTest COMMAND test_mainwindow)

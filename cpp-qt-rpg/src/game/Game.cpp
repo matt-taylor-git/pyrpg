@@ -13,3 +13,8 @@ void Game::newGame(const QString &playerName)
     }
     player = new Player(playerName);
 }
+
+Player* Game::getPlayer()
+{
+    return player;
+}

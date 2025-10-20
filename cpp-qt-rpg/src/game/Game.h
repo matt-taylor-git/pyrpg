@@ -11,10 +11,11 @@ class Game : public QObject
 
 public:
     explicit Game(QObject *parent = nullptr);
-
-    Player *player;
-
     void newGame(const QString &playerName);
+    Player* getPlayer();
+
+private:
+    Player *player;
 
 private:
     // This will hold the main game state logic
