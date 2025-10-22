@@ -43,3 +43,4 @@ sample/
 .gemini-clipboard
 .cache/
 .pytest_cache/
+archive_python.sh

@@ -1,6 +1,6 @@
-# PyRPG Adventure
+# PyRPG Qt - C++ Edition
 
-A modern Python RPG game with a beautiful GUI built using PySide6 (Qt for Python).
+A modern turn-based RPG game built with Qt6 and C++17. This project was refactored from Python/PySide6 to C++ for improved performance and native platform integration.
 
 ## Features
 
@@ -25,31 +25,35 @@ The game features:
 
 ## Installation
 
+### Prerequisites
+- Qt6 (Widgets module)
+- CMake 3.16 or higher
+- C++17 compatible compiler
+
+### Building
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/YOUR_USERNAME/pyrpg.git
-cd pyrpg
+cd pyrpg/cpp-qt-rpg
 ```
 
-2. Create a virtual environment:
+2. Build the project:
 ```bash
-python -m venv venv
+mkdir -p build && cd build
+cmake ..
+make
 ```
 
-3. Activate the virtual environment:
-- On macOS/Linux: `source venv/bin/activate`
-- On Windows: `venv\Scripts\activate`
-
-4. Install dependencies:
+3. Run the game:
 ```bash
-pip install PySide6
+./pyrpg-qt
 ```
 
-## Usage
-
-Run the game:
+### Running Tests
 ```bash
-python main.py
+cd build
+ctest
 ```
 
 ## Game Controls
@@ -70,21 +74,36 @@ During combat you can:
 
 ## Technologies
 
-- **Python 3.x**
-- **PySide6** - Qt for Python GUI framework
-- **Object-Oriented Design** - Clean MVC architecture
-- **Modern UI Components** - Custom widgets and overlays
+- **C++17** - Modern C++ standard
+- **Qt6 Widgets** - Cross-platform GUI framework
+- **CMake** - Build system with Qt automation (AUTOMOC, AUTOUIC, AUTORCC)
+- **Qt Test** - Unit testing framework
+- **QDataStream** - Game state serialization
 
 ## Project Structure
 
 ```
 pyrpg/
-├── main.py              # Main application entry point
-├── models.py            # Hero, Enemy, and Item classes
-├── game.py              # Game logic and utilities
-├── ui_components.py     # Reusable UI components
-└── README.md
+└── cpp-qt-rpg/
+    ├── src/              # Source code
+    │   ├── game/        # Game logic (Player, Monster, Game controller)
+    │   ├── views/       # UI views (Combat, Inventory, Stats, Shop, etc.)
+    │   ├── components/  # Custom UI components
+    │   ├── persistence/ # Save/load system
+    │   └── theme/       # Styling and theme constants
+    ├── assets/          # Game assets (images, stylesheets)
+    ├── tests/           # Unit tests
+    ├── CMakeLists.txt   # Build configuration
+    └── CLAUDE.md        # Development guide
 ```
+
+## Development
+
+For detailed development information, architecture overview, and coding guidelines, see [cpp-qt-rpg/CLAUDE.md](cpp-qt-rpg/CLAUDE.md).
+
+## History
+
+This project was originally developed in Python with PySide6 and has been refactored to C++ with Qt6 for improved performance. The Python implementation is preserved in the git history.
 
 ## License
 
