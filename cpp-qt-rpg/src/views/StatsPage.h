@@ -15,6 +15,9 @@ public:
     explicit StatsPage(QWidget *parent = nullptr);
     void updateStats(Player *player);
 
+signals:
+    void backRequested();
+
 private:
     void setupUi();
     QWidget* createCharacterInfoCard();

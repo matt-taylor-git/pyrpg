@@ -8,17 +8,28 @@
 
 class Game : public QObject
 {
-    Q_OBJECT
+Q_OBJECT
 
 public:
-    explicit Game(QObject *parent = nullptr);
-    void newGame(const QString &playerName);
-    Player* getPlayer();
-    bool saveGame(const QString &filePath);
+explicit Game(QObject *parent = nullptr);
+void newGame(const QString &playerName);
+Player* getPlayer();
+Monster* getCurrentMonster();
+bool saveGame(const QString &filePath);
     bool loadGame(const QString &filePath);
+
+// Combat
+void startCombat();
+    QString playerAttack();
+    QString monsterAttack();
+bool isCombatOver();
+    QString getCombatResult();
 
 private:
     Player *player;
+    Monster *currentMonster;
+    bool combatActive;
+    QString combatLog;
     SaveManager saveManager;
 
 private:

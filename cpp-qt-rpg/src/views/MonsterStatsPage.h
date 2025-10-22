@@ -12,6 +12,9 @@ class MonsterStatsPage : public QWidget
 public:
     explicit MonsterStatsPage(QWidget *parent = nullptr);
 
+signals:
+    void backRequested();
+
 private:
     void setupUi();
     void createHeaderSection(QVBoxLayout *parentLayout);

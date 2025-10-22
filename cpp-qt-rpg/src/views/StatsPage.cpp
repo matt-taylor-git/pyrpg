@@ -16,15 +16,26 @@ StatsPage::StatsPage(QWidget *parent) : QWidget(parent)
 
 void StatsPage::setupUi()
 {
-    QHBoxLayout *mainLayout = new QHBoxLayout(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(Theme::SPACING_LG, Theme::SPACING_LG, Theme::SPACING_LG, Theme::SPACING_LG);
     mainLayout->setSpacing(Theme::SPACING_LG);
 
+    // Back button
+    QPushButton *backButton = new QPushButton("⬅️ Back");
+    backButton->setMinimumHeight(40);
+    connect(backButton, &QPushButton::clicked, this, &StatsPage::backRequested);
+    mainLayout->addWidget(backButton, 0, Qt::AlignLeft);
+
+    QHBoxLayout *contentLayout = new QHBoxLayout();
+    contentLayout->setSpacing(Theme::SPACING_LG);
+
     QWidget *charInfoCard = createCharacterInfoCard();
-    mainLayout->addWidget(charInfoCard, 1);
+    contentLayout->addWidget(charInfoCard, 1);
 
     QWidget *statsAllocCard = createStatsAllocationCard();
-    mainLayout->addWidget(statsAllocCard, 1);
+    contentLayout->addWidget(statsAllocCard, 1);
+
+    mainLayout->addLayout(contentLayout);
 }
 
 QWidget* StatsPage::createCharacterInfoCard()

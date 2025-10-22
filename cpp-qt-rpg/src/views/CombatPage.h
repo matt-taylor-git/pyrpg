@@ -7,18 +7,21 @@ class QLabel;
 class QProgressBar;
 class QPushButton;
 class QTextEdit;
+class Player;
+class Monster;
 
 class CombatPage : public QWidget
 {
-    Q_OBJECT
+Q_OBJECT
 public:
-    explicit CombatPage(QWidget *parent = nullptr);
+explicit CombatPage(QWidget *parent = nullptr);
+    void updateCombatState(Player *player, Monster *monster, const QString &log);
 
 signals:
-    void attackClicked();
-    void skillClicked();
-    void itemClicked();
-    void statsClicked();
+void attackClicked();
+void skillClicked();
+void itemClicked();
+void statsClicked();
     void runClicked();
 
 private:

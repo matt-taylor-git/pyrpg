@@ -44,6 +44,7 @@ add_executable(pyrpg-qt
     src/components/ScalablePixmapLabel.cpp
     src/components/LogDisplay.cpp
     src/components/StatusIndicator.cpp
+    src/views/MainMenu.cpp
     src/views/AdventurePage.cpp
     src/views/CharacterCustomizationPage.cpp
     src/views/CombatPage.cpp
@@ -65,6 +66,7 @@ enable_testing()
 
 # Test for MainWindow
 add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
+    src/views/MainMenu.cpp
     src/views/NewGameView.cpp
     src/views/AdventurePage.cpp
     src/views/CharacterCustomizationPage.cpp
@@ -109,5 +111,31 @@ add_executable(test_persistence tests/test_persistence.cpp
 target_link_libraries(test_persistence PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_persistence PRIVATE src)
 add_test(NAME PersistenceTest COMMAND test_persistence)
+
+# --- Packaging ---
+
+include(CPack)
+
+set(CPACK_PACKAGE_NAME "PyrpgQt")
+set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A turn-based RPG game")
+set(CPACK_PACKAGE_VENDOR "Gemini")
+set(CPACK_PACKAGE_CONTACT "support@gemini.com")
+
+# Platform-specific configurations
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_DISPLAY_NAME "PyrpgQt")
+    set(CPACK_NSIS_PACKAGE_NAME "PyrpgQt")
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+elseif(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+    set(CPACK_DMG_VOLUME_NAME "PyrpgQt")
+    set(CPACK_DMG_FORMAT "UDBZ")
+else() # Linux
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Gemini")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6 (>= 6.0), libqt6core6 (>= 6.0)")
+endif()
 
 

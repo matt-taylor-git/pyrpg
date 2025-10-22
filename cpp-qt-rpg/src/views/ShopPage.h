@@ -13,6 +13,9 @@ class ShopPage : public QWidget
 public:
     explicit ShopPage(QWidget *parent = nullptr);
 
+signals:
+    void leaveRequested();
+
 private:
     void setupUi();
 

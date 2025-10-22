@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "views/MainMenu.h"
 #include "views/NewGameView.h"
 #include "views/CharacterCustomizationPage.h"
 #include "views/AdventurePage.h"
@@ -21,10 +22,12 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget = new QStackedWidget(this);
     setCentralWidget(stackedWidget);
 
-    // Main Menu View (placeholder)
-    QWidget *mainMenuView = new QWidget();
-    mainMenuView->setStyleSheet("background-color: #333;");
-    stackedWidget->addWidget(mainMenuView);
+    // Main Menu
+    m_mainMenu = new MainMenu();
+    connect(m_mainMenu, &MainMenu::newGameRequested, this, &MainWindow::handleMainMenuNewGame);
+    connect(m_mainMenu, &MainMenu::loadGameRequested, this, &MainWindow::handleMainMenuLoadGame);
+    connect(m_mainMenu, &MainMenu::exitRequested, this, &MainWindow::handleMainMenuExit);
+    stackedWidget->addWidget(m_mainMenu);
 
     // New Game View
     m_newGameView = new NewGameView();
@@ -54,10 +57,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Inventory Page
     m_inventoryPage = new InventoryPage();
+    connect(m_inventoryPage, &InventoryPage::backRequested, this, &MainWindow::handleInventoryBack);
     stackedWidget->addWidget(m_inventoryPage);
 
     // Monster Stats Page
     m_monsterStatsPage = new MonsterStatsPage();
+    connect(m_monsterStatsPage, &MonsterStatsPage::backRequested, this, &MainWindow::handleMonsterStatsBack);
     stackedWidget->addWidget(m_monsterStatsPage);
 
     // Save Load Page
@@ -67,18 +72,21 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_saveLoadPage, &SaveLoadPage::saveToFileRequested, this, &MainWindow::handleSaveToFile);
     connect(m_saveLoadPage, &SaveLoadPage::loadFromFileRequested, this, &MainWindow::handleLoadFromFile);
     connect(m_saveLoadPage, &SaveLoadPage::newSaveRequested, this, &MainWindow::handleNewSave);
+    connect(m_saveLoadPage, &SaveLoadPage::backRequested, this, &MainWindow::handleSaveLoadBack);
     stackedWidget->addWidget(m_saveLoadPage);
 
     // Shop Page
     m_shopPage = new ShopPage();
+    connect(m_shopPage, &ShopPage::leaveRequested, this, &MainWindow::handleShopLeave);
     stackedWidget->addWidget(m_shopPage);
 
     // Stats Page
     m_statsPage = new StatsPage();
+    connect(m_statsPage, &StatsPage::backRequested, this, &MainWindow::handleStatsBack);
     stackedWidget->addWidget(m_statsPage);
 
     // Set the initial view
-    stackedWidget->setCurrentWidget(m_statsPage);
+    stackedWidget->setCurrentWidget(m_mainMenu);
 
     m_game = new Game();
 }
@@ -91,6 +99,8 @@ void MainWindow::handleCharacterCreation(const QString &name)
 
 void MainWindow::handleExploreClicked()
 {
+m_game->startCombat();
+    m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), "");
     stackedWidget->setCurrentWidget(m_combatPage);
 }
 
@@ -107,12 +117,28 @@ void MainWindow::handleQuitClicked()
 
 void MainWindow::handleAttackClicked()
 {
-    stackedWidget->setCurrentWidget(m_inventoryPage);
+QString log = m_game->playerAttack();
+m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
+
+    if (m_game->isCombatOver()) {
+        if (m_game->getCombatResult() == "Victory") {
+            // Award XP or something
+        }
+        stackedWidget->setCurrentWidget(m_adventurePage);
+    } else {
+        // Monster turn
+        QString monsterLog = m_game->monsterAttack();
+        m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), monsterLog);
+
+        if (m_game->isCombatOver()) {
+            stackedWidget->setCurrentWidget(m_adventurePage);
+        }
+    }
 }
 
 void MainWindow::handleSkillClicked()
 {
-    stackedWidget->setCurrentWidget(m_inventoryPage);
+    // Placeholder: Stay in combat
 }
 
 void MainWindow::handleItemClicked()
@@ -149,7 +175,6 @@ void MainWindow::handleQuickLoad()
 {
     QString filePath = "quicksave.dat";
     if (m_game->loadGame(filePath)) {
-        // After loading, perhaps update UI or go to adventure page
         stackedWidget->setCurrentWidget(m_adventurePage);
     }
 }
@@ -170,8 +195,48 @@ void MainWindow::handleLoadFromFile(const QString &filePath)
 
 void MainWindow::handleNewSave()
 {
-    // Perhaps start a new game or something, but for now, maybe go to new game view
     stackedWidget->setCurrentWidget(m_newGameView);
+}
+
+void MainWindow::handleMainMenuNewGame()
+{
+    stackedWidget->setCurrentWidget(m_newGameView);
+}
+
+void MainWindow::handleMainMenuLoadGame()
+{
+    stackedWidget->setCurrentWidget(m_saveLoadPage);
+}
+
+void MainWindow::handleMainMenuExit()
+{
+    close();
+}
+
+void MainWindow::handleInventoryBack()
+{
+    // Assume back to combat
+    stackedWidget->setCurrentWidget(m_combatPage);
+}
+
+void MainWindow::handleShopLeave()
+{
+    stackedWidget->setCurrentWidget(m_adventurePage);
+}
+
+void MainWindow::handleStatsBack()
+{
+    stackedWidget->setCurrentWidget(m_adventurePage);
+}
+
+void MainWindow::handleMonsterStatsBack()
+{
+    stackedWidget->setCurrentWidget(m_combatPage);
+}
+
+void MainWindow::handleSaveLoadBack()
+{
+    stackedWidget->setCurrentWidget(m_mainMenu);
 }
 
 MainWindow::~MainWindow()

@@ -43,6 +43,7 @@ void ShopPage::setupUi()
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     m_sellButton = new QPushButton("Sell Items");
     m_leaveButton = new QPushButton("Leave Shop");
+    connect(m_leaveButton, &QPushButton::clicked, this, &ShopPage::leaveRequested);
     buttonLayout->addStretch();
     buttonLayout->addWidget(m_sellButton);
     buttonLayout->addWidget(m_leaveButton);

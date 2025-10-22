@@ -4,6 +4,7 @@
 #include <QMainWindow>
 
 class QStackedWidget;
+class MainMenu;
 class NewGameView;
 class CharacterCustomizationPage;
 class AdventurePage;
@@ -39,9 +40,18 @@ private slots:
     void handleSaveToFile(const QString &filePath);
     void handleLoadFromFile(const QString &filePath);
     void handleNewSave();
+    void handleMainMenuNewGame();
+    void handleMainMenuLoadGame();
+    void handleMainMenuExit();
+    void handleInventoryBack();
+    void handleShopLeave();
+    void handleStatsBack();
+    void handleMonsterStatsBack();
+    void handleSaveLoadBack();
 
 private:
     QStackedWidget *stackedWidget;
+    MainMenu *m_mainMenu;
     NewGameView *m_newGameView;
     CharacterCustomizationPage *m_characterCustomizationPage;
     AdventurePage *m_adventurePage;

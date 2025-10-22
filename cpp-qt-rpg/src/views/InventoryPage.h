@@ -5,6 +5,7 @@
 
 class QLabel;
 class QGridLayout;
+class QPushButton;
 
 class InventoryPage : public QWidget
 {
@@ -12,11 +13,15 @@ class InventoryPage : public QWidget
 public:
     explicit InventoryPage(QWidget *parent = nullptr);
 
+signals:
+    void backRequested();
+
 private:
     void setupUi();
 
     QLabel *m_goldLabel;
     QGridLayout *m_inventoryGridLayout;
+    QPushButton *m_backButton;
 };
 
 #endif // INVENTORYPAGE_H

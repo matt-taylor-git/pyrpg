@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QScrollArea>
 #include <QGridLayout>
+#include <QPushButton>
 
 InventoryPage::InventoryPage(QWidget *parent) : QWidget(parent)
 {
@@ -33,6 +34,12 @@ void InventoryPage::setupUi()
     m_inventoryGridLayout = new QGridLayout(scrollContent);
     scrollArea->setWidget(scrollContent);
     mainLayout->addWidget(scrollArea);
+
+    // Back button
+    m_backButton = new QPushButton("⬅️ Back");
+    m_backButton->setMinimumHeight(40);
+    connect(m_backButton, &QPushButton::clicked, this, &InventoryPage::backRequested);
+    mainLayout->addWidget(m_backButton, 0, Qt::AlignCenter);
 
     // Placeholder for empty inventory
     QLabel *emptyLabel = new QLabel("Your inventory is empty.");

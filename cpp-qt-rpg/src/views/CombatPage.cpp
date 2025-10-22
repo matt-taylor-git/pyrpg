@@ -1,5 +1,7 @@
 #include "CombatPage.h"
 #include "../theme/Theme.h"
+#include "../models/Player.h"
+#include "../models/Monster.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -98,6 +100,22 @@ QWidget* CombatPage::createArenaCard()
     layout->addLayout(actionsLayout);
 
     return card;
+}
+
+void CombatPage::updateCombatState(Player *player, Monster *monster, const QString &log)
+{
+    if (player) {
+        m_heroHealthBar->setMaximum(player->maxHealth);
+        m_heroHealthBar->setValue(player->health);
+    }
+    if (monster) {
+        m_enemyHealthBar->setMaximum(monster->maxHealth);
+        m_enemyHealthBar->setValue(monster->health);
+        // Update name if needed
+    }
+    if (!log.isEmpty()) {
+        m_battleLog->append(log);
+    }
 }
 
 QWidget* CombatPage::createLogCard()

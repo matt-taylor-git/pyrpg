@@ -18,6 +18,7 @@ signals:
     void saveToFileRequested(const QString &filePath);
     void loadFromFileRequested(const QString &filePath);
     void newSaveRequested();
+    void backRequested();
 
 private slots:
     void onQuickSaveClicked();

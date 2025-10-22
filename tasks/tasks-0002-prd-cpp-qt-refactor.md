@@ -54,8 +54,8 @@ Since this is a new C++ project, all files will be created from scratch. The Pyt
   - [x] 5.3 Create a Qt Resource file (`assets.qrc`) and add all game assets to it.
   - [x] 5.4 Modify the UI code to load images and other resources from the Qt resource system.
 
-- [ ] 6.0 Finalize, Package, and Test
-  - [ ] 6.1 Replace generic file dialogs with `QFileDialog` for native save/load prompts.
-  - [ ] 6.2 Configure CPack within the `CMakeLists.txt` to generate platform-specific installers/packages.
-  - [ ] 6.3 Build and run the application on Windows, macOS, and Linux to ensure cross-platform compatibility.
-  - [ ] 6.4 Conduct a full manual test of the application, comparing it against the original Python version to ensure feature parity.
+- [x] 6.0 Finalize, Package, and Test
+  - [x] 6.1 Replace generic file dialogs with `QFileDialog` for native save/load prompts.
+  - [x] 6.2 Configure CPack within the `CMakeLists.txt` to generate platform-specific installers/packages.
+  - [x] 6.3 Build and run the application on Windows, macOS, and Linux to ensure cross-platform compatibility.
+  - [x] 6.4 Conduct a full manual test of the application, comparing it against the original Python version to ensure feature parity.
