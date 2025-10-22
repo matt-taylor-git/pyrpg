@@ -42,20 +42,20 @@ Since this is a new C++ project, all files will be created from scratch. The Pyt
   - [x] 3.2 Re-implement the custom widgets from `ui/custom_widgets.py` and `ui/components/` in C++/Qt.
   - [x] 3.3 Load and apply the existing `styles.qss` stylesheet to the `QApplication`.
 
-- [ ] 4.0 Implement Game Views and UI Logic
-  - [ ] 4.1 Create C++ classes for each view from the `ui/views/` directory (e.g., `NewGameView`, `CharacterCustomizationPage`, `CombatPage`).
-  - [ ] 4.2 Implement the UI layout and widgets for each view, mirroring the Python implementation.
-  - [ ] 4.3 Connect UI element signals (e.g., button clicks) to slots in the game logic or view controllers.
-  - [ ] 4.4 Port the UI controller logic from `ui/controllers.py` into the respective view classes or dedicated C++ controller classes.
+- [x] 4.0 Implement Game Views and UI Logic
+  - [x] 4.1 Create C++ classes for each view from the `ui/views/` directory (e.g., `NewGameView`, `CharacterCustomizationPage`, `CombatPage`).
+  - [x] 4.2 Implement the UI layout and widgets for each view, mirroring the Python implementation.
+  - [x] 4.3 Connect UI element signals (e.g., button clicks) to slots in the game logic or view controllers.
+  - [x] 4.4 Port the UI controller logic from `ui/controllers.py` into the respective view classes or dedicated C++ controller classes.
 
-- [ ] 5.0 Implement Persistence and Asset Management
-  - [ ] 5.1 Implement a `SaveManager` class with `saveGame` and `loadGame` methods using `QDataStream` for binary serialization.
-  - [ ] 5.2 Integrate the `SaveManager` with the UI (e.g., Save/Load buttons in the main menu).
-  - [ ] 5.3 Create a Qt Resource file (`assets.qrc`) and add all game assets to it.
-  - [ ] 5.4 Modify the UI code to load images and other resources from the Qt resource system.
+- [x] 5.0 Implement Persistence and Asset Management
+  - [x] 5.1 Implement a `SaveManager` class with `saveGame` and `loadGame` methods using `QDataStream` for binary serialization.
+  - [x] 5.2 Integrate the `SaveManager` with the UI (e.g., Save/Load buttons in the main menu).
+  - [x] 5.3 Create a Qt Resource file (`assets.qrc`) and add all game assets to it.
+  - [x] 5.4 Modify the UI code to load images and other resources from the Qt resource system.
 
-- [ ] 6.0 Finalize, Package, and Test
-  - [ ] 6.1 Replace generic file dialogs with `QFileDialog` for native save/load prompts.
-  - [ ] 6.2 Configure CPack within the `CMakeLists.txt` to generate platform-specific installers/packages.
-  - [ ] 6.3 Build and run the application on Windows, macOS, and Linux to ensure cross-platform compatibility.
-  - [ ] 6.4 Conduct a full manual test of the application, comparing it against the original Python version to ensure feature parity.
+- [x] 6.0 Finalize, Package, and Test
+  - [x] 6.1 Replace generic file dialogs with `QFileDialog` for native save/load prompts.
+  - [x] 6.2 Configure CPack within the `CMakeLists.txt` to generate platform-specific installers/packages.
+  - [x] 6.3 Build and run the application on Windows, macOS, and Linux to ensure cross-platform compatibility.
+  - [x] 6.4 Conduct a full manual test of the application, comparing it against the original Python version to ensure feature parity.

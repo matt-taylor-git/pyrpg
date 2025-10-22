@@ -41,3 +41,5 @@ Thumbs.db
 .clinerules/
 sample/
 .gemini-clipboard
+.cache/
+.pytest_cache/

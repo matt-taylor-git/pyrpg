@@ -2,6 +2,7 @@
 #define CHARACTER_H
 
 #include <QString>
+#include <QDataStream>
 
 class Character
 {
@@ -15,6 +16,10 @@ public:
     int maxHealth;
 
     bool isAlive() const;
+
+    friend QDataStream &operator<<(QDataStream &out, const Character &c);
+    friend QDataStream &operator>>(QDataStream &in, Character &c);
 };
 
 #endif // CHARACTER_H
+
