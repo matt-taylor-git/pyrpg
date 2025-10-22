@@ -44,8 +44,18 @@ void AdventurePage::setupUi()
     connect(viewStatsButton, &QPushButton::clicked, this, &AdventurePage::viewStatsClicked);
     viewStatsButton->setMinimumHeight(60);
 
+    QPushButton* inventoryButton = new QPushButton("🎒 Inventory");
+    connect(inventoryButton, &QPushButton::clicked, this, &AdventurePage::inventoryClicked);
+    inventoryButton->setMinimumHeight(60);
+
+    QPushButton* shopButton = new QPushButton("🏪 Shop");
+    connect(shopButton, &QPushButton::clicked, this, &AdventurePage::shopClicked);
+    shopButton->setMinimumHeight(60);
+
     buttonLayout->addWidget(m_exploreButton);
     buttonLayout->addWidget(m_restButton);
+    buttonLayout->addWidget(inventoryButton);
+    buttonLayout->addWidget(shopButton);
     buttonLayout->addWidget(viewStatsButton);
     buttonLayout->addWidget(m_quitButton);
 

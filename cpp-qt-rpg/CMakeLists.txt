@@ -27,6 +27,8 @@ add_executable(pyrpg-qt
     src/models/Monster.cpp
     src/game/Game.cpp
     src/game/factories/ItemFactory.cpp
+    src/game/factories/SkillFactory.cpp
+    src/game/factories/MonsterFactory.cpp
     src/persistence/SaveManager.cpp
     src/components/ValidationLabel.cpp
     src/components/AnimatedProgressBar.cpp
@@ -41,6 +43,9 @@ add_executable(pyrpg-qt
     src/components/ScalablePixmapLabel.cpp
     src/components/LogDisplay.cpp
     src/components/StatusIndicator.cpp
+    src/components/SkillSelectionDialog.cpp
+    src/components/CombatItemDialog.cpp
+    src/components/CombatResultDialog.cpp
     src/views/MainMenu.cpp
     src/views/AdventurePage.cpp
     src/views/CharacterCustomizationPage.cpp
@@ -76,6 +81,9 @@ add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
     src/components/ValidationLabel.cpp
     src/components/CharacterPreviewWidget.cpp
     src/components/CustomizationSection.cpp
+    src/components/SkillSelectionDialog.cpp
+    src/components/CombatItemDialog.cpp
+    src/components/CombatResultDialog.cpp
     src/game/Game.cpp
     src/models/Player.cpp
     src/models/Character.cpp
@@ -83,6 +91,8 @@ add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
     src/models/Item.cpp
     src/models/Skill.cpp
     src/game/factories/ItemFactory.cpp
+    src/game/factories/SkillFactory.cpp
+    src/game/factories/MonsterFactory.cpp
     src/persistence/SaveManager.cpp
 )
 target_link_libraries(test_mainwindow PRIVATE Qt6::Widgets Qt6::Test)
@@ -90,7 +100,7 @@ target_include_directories(test_mainwindow PRIVATE src)
 add_test(NAME MainWindowTest COMMAND test_mainwindow)
 
 # Test for Data Models
-add_executable(test_models tests/test_models.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/game/factories/ItemFactory.cpp)
+add_executable(test_models tests/test_models.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp)
 target_link_libraries(test_models PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_models PRIVATE src)
 add_test(NAME ModelsTest COMMAND test_models)
@@ -104,6 +114,8 @@ add_executable(test_persistence tests/test_persistence.cpp
     src/models/Item.cpp
     src/models/Skill.cpp
     src/game/factories/ItemFactory.cpp
+    src/game/factories/SkillFactory.cpp
+    src/game/factories/MonsterFactory.cpp
 )
 target_link_libraries(test_persistence PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_persistence PRIVATE src)

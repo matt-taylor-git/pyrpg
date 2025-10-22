@@ -18,6 +18,12 @@ public:
 signals:
     void backRequested();
 
+private slots:
+    void handleStrengthUpgrade();
+    void handleDefenseUpgrade();
+    void handleMagicUpgrade();
+    void handleSpeedUpgrade();
+
 private:
     void setupUi();
     QWidget* createCharacterInfoCard();
@@ -42,6 +48,9 @@ private:
     QPushButton *m_magicPlusButton;
     QLabel *m_speedValue;
     QPushButton *m_speedPlusButton;
+
+    // Current player reference
+    Player *m_currentPlayer;
 };
 
 #endif // STATSPAGE_H

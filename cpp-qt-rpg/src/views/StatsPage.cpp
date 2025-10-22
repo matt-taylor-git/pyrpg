@@ -9,7 +9,8 @@
 #include <QPushButton>
 #include <QFrame>
 
-StatsPage::StatsPage(QWidget *parent) : QWidget(parent)
+StatsPage::StatsPage(QWidget *parent)
+    : QWidget(parent), m_currentPlayer(nullptr)
 {
     setupUi();
 }
@@ -92,6 +93,12 @@ QWidget* StatsPage::createStatsAllocationCard()
     layout->addWidget(createStatRow("Magic", "Enhances spell power", m_magicValue, m_magicPlusButton));
     layout->addWidget(createStatRow("Speed", "Determines turn order", m_speedValue, m_speedPlusButton));
 
+    // Connect stat upgrade buttons
+    connect(m_strengthPlusButton, &QPushButton::clicked, this, &StatsPage::handleStrengthUpgrade);
+    connect(m_defensePlusButton, &QPushButton::clicked, this, &StatsPage::handleDefenseUpgrade);
+    connect(m_magicPlusButton, &QPushButton::clicked, this, &StatsPage::handleMagicUpgrade);
+    connect(m_speedPlusButton, &QPushButton::clicked, this, &StatsPage::handleSpeedUpgrade);
+
     return card;
 }
 
@@ -121,6 +128,8 @@ void StatsPage::updateStats(Player *player)
 {
     if (!player) return;
 
+    m_currentPlayer = player;
+
     m_levelBadge->setText(QString("Level %1").arg(player->level));
     m_charNameLabel->setText(player->name);
 
@@ -141,7 +150,7 @@ void StatsPage::updateStats(Player *player)
     m_pointsBadge->setText(QString("%1 Points Available").arg(player->statPoints));
 
     m_strengthValue->setText(QString::number(player->strength));
-    m_defenseValue->setText(QString::number(player->dexterity)); // Assuming defense is dexterity for now
+    m_defenseValue->setText(QString::number(player->vitality)); // Defense is vitality
     m_magicValue->setText(QString::number(player->intelligence));
     m_speedValue->setText(QString::number(player->dexterity));
 
@@ -150,4 +159,48 @@ void StatsPage::updateStats(Player *player)
     m_defensePlusButton->setEnabled(canUpgrade);
     m_magicPlusButton->setEnabled(canUpgrade);
     m_speedPlusButton->setEnabled(canUpgrade);
+}
+
+void StatsPage::handleStrengthUpgrade()
+{
+    if (!m_currentPlayer || m_currentPlayer->statPoints <= 0) return;
+
+    m_currentPlayer->strength += 1;
+    m_currentPlayer->statPoints -= 1;
+    updateStats(m_currentPlayer);
+}
+
+void StatsPage::handleDefenseUpgrade()
+{
+    if (!m_currentPlayer || m_currentPlayer->statPoints <= 0) return;
+
+    m_currentPlayer->vitality += 1;
+    m_currentPlayer->statPoints -= 1;
+
+    // Recalculate max health based on vitality
+    m_currentPlayer->maxHealth = 50 + (m_currentPlayer->vitality * 10);
+
+    updateStats(m_currentPlayer);
+}
+
+void StatsPage::handleMagicUpgrade()
+{
+    if (!m_currentPlayer || m_currentPlayer->statPoints <= 0) return;
+
+    m_currentPlayer->intelligence += 1;
+    m_currentPlayer->statPoints -= 1;
+
+    // Recalculate max mana based on intelligence
+    m_currentPlayer->maxMana = 30 + (m_currentPlayer->intelligence * 10);
+
+    updateStats(m_currentPlayer);
+}
+
+void StatsPage::handleSpeedUpgrade()
+{
+    if (!m_currentPlayer || m_currentPlayer->statPoints <= 0) return;
+
+    m_currentPlayer->dexterity += 1;
+    m_currentPlayer->statPoints -= 1;
+    updateStats(m_currentPlayer);
 }

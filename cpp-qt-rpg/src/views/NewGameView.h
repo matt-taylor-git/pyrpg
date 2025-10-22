@@ -9,6 +9,7 @@ class QPushButton;
 class QVBoxLayout;
 class QHBoxLayout;
 class QFrame;
+class QComboBox;
 class ValidationLabel; // Forward declaration
 
 class NewGameView : public QWidget
@@ -18,7 +19,7 @@ public:
     explicit NewGameView(QWidget *parent = nullptr);
 
 signals:
-    void characterCreated(const QString &name);
+    void characterCreated(const QString &name, const QString &characterClass);
 
 private slots:
     void validateNameInput();
@@ -31,6 +32,7 @@ private:
     QLabel *m_subtitle;
     QFrame *m_createCard;
     QLineEdit *m_nameInput;
+    QComboBox *m_classSelector;
     ValidationLabel *m_validationLabel;
     QPushButton *m_startButton;
     QLabel *m_footerLabel;

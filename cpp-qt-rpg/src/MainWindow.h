@@ -25,7 +25,7 @@ public:
     ~MainWindow();
 
 private slots:
-    void handleCharacterCreation(const QString &name);
+    void handleCharacterCreation(const QString &name, const QString &characterClass);
     void handleExploreClicked();
     void handleRestClicked();
     void handleQuitClicked();
@@ -48,6 +48,9 @@ private slots:
     void handleStatsBack();
     void handleMonsterStatsBack();
     void handleSaveLoadBack();
+    void handleCombatEnd(int oldLevel);
+    void handleInventoryClicked();
+    void handleShopClicked();
 
 private:
     QStackedWidget *stackedWidget;

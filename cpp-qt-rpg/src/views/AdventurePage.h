@@ -16,6 +16,8 @@ signals:
     void restClicked();
     void quitClicked();
     void viewStatsClicked();
+    void inventoryClicked();
+    void shopClicked();
 
 private:
     void setupUi();

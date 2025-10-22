@@ -32,7 +32,9 @@ private:
     // Arena widgets
     QLabel *m_heroSpriteLabel;
     QLabel *m_enemySpriteLabel;
+    QLabel *m_monsterNameLabel;
     QProgressBar *m_heroHealthBar;
+    QProgressBar *m_heroManaBar;
     QProgressBar *m_enemyHealthBar;
     QPushButton *m_attackButton;
     QPushButton *m_skillButton;

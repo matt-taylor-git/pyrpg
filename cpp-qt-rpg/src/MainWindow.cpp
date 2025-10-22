@@ -10,8 +10,16 @@
 #include "views/ShopPage.h"
 #include "views/StatsPage.h"
 #include "game/Game.h"
+#include "components/SkillSelectionDialog.h"
+#include "components/CombatItemDialog.h"
+#include "components/CombatResultDialog.h"
+#include "models/Player.h"
+#include "models/Monster.h"
+#include "models/Skill.h"
+#include "models/Item.h"
 #include <QStackedWidget>
 #include <QWidget>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -44,6 +52,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_adventurePage, &AdventurePage::restClicked, this, &MainWindow::handleRestClicked);
     connect(m_adventurePage, &AdventurePage::quitClicked, this, &MainWindow::handleQuitClicked);
     connect(m_adventurePage, &AdventurePage::viewStatsClicked, this, &MainWindow::handleViewStatsClicked);
+    connect(m_adventurePage, &AdventurePage::inventoryClicked, this, &MainWindow::handleInventoryClicked);
+    connect(m_adventurePage, &AdventurePage::shopClicked, this, &MainWindow::handleShopClicked);
     stackedWidget->addWidget(m_adventurePage);
 
     // Combat Page
@@ -91,9 +101,9 @@ MainWindow::MainWindow(QWidget *parent)
     m_game = new Game();
 }
 
-void MainWindow::handleCharacterCreation(const QString &name)
+void MainWindow::handleCharacterCreation(const QString &name, const QString &characterClass)
 {
-    m_game->newGame(name);
+    m_game->newGame(name, characterClass);
     stackedWidget->setCurrentWidget(m_adventurePage);
 }
 
@@ -106,7 +116,24 @@ m_game->startCombat();
 
 void MainWindow::handleRestClicked()
 {
-    // Placeholder: Go to shop for now
+    // Rest to restore health/mana
+    Player *player = m_game->getPlayer();
+    if (player) {
+        player->health = player->maxHealth;
+        player->mana = player->maxMana;
+        QMessageBox::information(this, "Rest", "You rest and restore your health and mana!");
+    }
+}
+
+void MainWindow::handleInventoryClicked()
+{
+    m_inventoryPage->updateInventory(m_game->getPlayer());
+    stackedWidget->setCurrentWidget(m_inventoryPage);
+}
+
+void MainWindow::handleShopClicked()
+{
+    m_shopPage->updateShop(m_game->getPlayer());
     stackedWidget->setCurrentWidget(m_shopPage);
 }
 
@@ -117,38 +144,96 @@ void MainWindow::handleQuitClicked()
 
 void MainWindow::handleAttackClicked()
 {
-QString log = m_game->playerAttack();
-m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
+    int oldLevel = m_game->getPlayer()->level;
+    QString log = m_game->playerAttack();
+    m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
 
     if (m_game->isCombatOver()) {
-        if (m_game->getCombatResult() == "Victory") {
-            // Award XP or something
-        }
-        stackedWidget->setCurrentWidget(m_adventurePage);
+        handleCombatEnd(oldLevel);
     } else {
         // Monster turn
         QString monsterLog = m_game->monsterAttack();
         m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), monsterLog);
 
         if (m_game->isCombatOver()) {
-            stackedWidget->setCurrentWidget(m_adventurePage);
+            handleCombatEnd(oldLevel);
         }
     }
 }
 
 void MainWindow::handleSkillClicked()
 {
-    // Placeholder: Stay in combat
+    // Open skill selection dialog
+    SkillSelectionDialog dialog(m_game->getPlayer(), this);
+    if (dialog.exec() == QDialog::Accepted) {
+        Skill *selectedSkill = dialog.getSelectedSkill();
+        if (selectedSkill) {
+            int oldLevel = m_game->getPlayer()->level;
+            QString log = m_game->playerUseSkill(selectedSkill);
+            m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
+
+            if (m_game->isCombatOver()) {
+                handleCombatEnd(oldLevel);
+            } else {
+                // Monster turn
+                QString monsterLog = m_game->monsterAttack();
+                m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), monsterLog);
+
+                if (m_game->isCombatOver()) {
+                    handleCombatEnd(oldLevel);
+                }
+            }
+        }
+    }
 }
 
 void MainWindow::handleItemClicked()
 {
-    stackedWidget->setCurrentWidget(m_inventoryPage);
+    // Open combat item dialog
+    CombatItemDialog dialog(m_game->getPlayer(), this);
+    if (dialog.exec() == QDialog::Accepted) {
+        Item *selectedItem = dialog.getSelectedItem();
+        if (selectedItem) {
+            QString log = m_game->playerUseItem(selectedItem);
+            m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
+            // Item use doesn't end player's turn, no monster attack
+        }
+    }
 }
 
 void MainWindow::handleStatsClicked()
 {
-    stackedWidget->setCurrentWidget(m_monsterStatsPage);
+    // Show player stats, not monster stats
+    m_statsPage->updateStats(m_game->getPlayer());
+    stackedWidget->setCurrentWidget(m_statsPage);
+}
+
+void MainWindow::handleCombatEnd(int oldLevel)
+{
+    m_game->endCombat();
+    bool victory = m_game->getCombatResult() == "Victory";
+
+    if (victory) {
+        Monster *monster = m_game->getCurrentMonster();
+        bool leveledUp = m_game->getPlayer()->level > oldLevel;
+
+        // Show combat result dialog
+        CombatResultDialog resultDialog(
+            true,
+            monster ? monster->expReward : 0,
+            monster ? monster->goldReward : 0,
+            "",  // Loot message will be in combat log
+            leveledUp,
+            this
+        );
+        resultDialog.exec();
+    } else {
+        // Defeat
+        CombatResultDialog resultDialog(false, 0, 0, "", false, this);
+        resultDialog.exec();
+    }
+
+    stackedWidget->setCurrentWidget(m_adventurePage);
 }
 
 void MainWindow::handleRunClicked()
@@ -215,8 +300,8 @@ void MainWindow::handleMainMenuExit()
 
 void MainWindow::handleInventoryBack()
 {
-    // Assume back to combat
-    stackedWidget->setCurrentWidget(m_combatPage);
+    // Back to adventure page
+    stackedWidget->setCurrentWidget(m_adventurePage);
 }
 
 void MainWindow::handleShopLeave()

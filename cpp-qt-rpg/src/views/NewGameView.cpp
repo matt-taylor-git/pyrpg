@@ -7,6 +7,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QFrame>
+#include <QComboBox>
 #include <QGraphicsDropShadowEffect>
 #include <QColor>
 
@@ -95,6 +96,27 @@ void NewGameView::setupUi()
     connect(m_nameInput, &QLineEdit::textChanged, this, &NewGameView::validateNameInput);
     detailsLayout->addWidget(m_nameInput);
 
+    // Class Selection
+    QLabel *classTitle = new QLabel("Choose Your Class");
+    classTitle->setStyleSheet("font-size: 16px; font-weight: bold; color: #f1f0f2;");
+    detailsLayout->addWidget(classTitle);
+
+    m_classSelector = new QComboBox();
+    m_classSelector->addItem("⚔️ Warrior - High strength and vitality");
+    m_classSelector->addItem("🔮 Mage - Powerful magic and mana");
+    m_classSelector->addItem("🗡️ Rogue - High dexterity and speed");
+    m_classSelector->setStyleSheet(QString(
+        "QComboBox {"
+        "    font-size: 14px;"
+        "    padding: 12px;"
+        "    border: 2px solid %1;"
+        "    border-radius: 8px;"
+        "    background-color: %2;"
+        "    color: %3;"
+        "}"
+    ).arg(Theme::BORDER.name()).arg(Theme::CARD.name()).arg(Theme::FOREGROUND.name()));
+    detailsLayout->addWidget(m_classSelector);
+
     // Validation Label
     m_validationLabel = new ValidationLabel();
     detailsLayout->addWidget(m_validationLabel);
@@ -164,6 +186,17 @@ void NewGameView::validateNameInput()
 void NewGameView::startGame()
 {
     if (m_startButton->isEnabled()) {
-        emit characterCreated(m_nameInput->text().trimmed());
+        QString selectedClass;
+        int classIndex = m_classSelector->currentIndex();
+        if (classIndex == 0) {
+            selectedClass = "Warrior";
+        } else if (classIndex == 1) {
+            selectedClass = "Mage";
+        } else if (classIndex == 2) {
+            selectedClass = "Rogue";
+        } else {
+            selectedClass = "Hero";
+        }
+        emit characterCreated(m_nameInput->text().trimmed(), selectedClass);
     }
 }

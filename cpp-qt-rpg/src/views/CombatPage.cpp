@@ -54,30 +54,49 @@ QWidget* CombatPage::createArenaCard()
 
     m_heroSpriteLabel = new QLabel("🛡️ HERO");
     m_heroSpriteLabel->setAlignment(Qt::AlignCenter);
-    m_heroSpriteLabel->setMinimumSize(80, 80);
+    m_heroSpriteLabel->setMinimumSize(100, 100);
     m_enemySpriteLabel = new QLabel("👹 ENEMY");
     m_enemySpriteLabel->setAlignment(Qt::AlignCenter);
-    m_enemySpriteLabel->setMinimumSize(80, 80);
+    m_enemySpriteLabel->setMinimumSize(100, 100);
 
     spritesLayout->addWidget(m_heroSpriteLabel);
     spritesLayout->addWidget(new QLabel("⚔️"));
     spritesLayout->addWidget(m_enemySpriteLabel);
     layout->addWidget(spritesContainer);
 
+    // Monster name/level display
+    m_monsterNameLabel = new QLabel("Unknown Monster");
+    m_monsterNameLabel->setAlignment(Qt::AlignCenter);
+    m_monsterNameLabel->setStyleSheet(QString("font-size: 16px; font-weight: bold; color: %1;").arg(Theme::FOREGROUND.name()));
+    layout->addWidget(m_monsterNameLabel);
+
+    // Hero stats
+    layout->addWidget(new QLabel("❤️ Hero Health"));
     m_heroHealthBar = new QProgressBar();
     m_heroHealthBar->setRange(0, 100);
     m_heroHealthBar->setValue(100);
     m_heroHealthBar->setTextVisible(true);
     m_heroHealthBar->setFormat("100 / 100 HP");
-    layout->addWidget(new QLabel("❤️ Hero Health"));
+    m_heroHealthBar->setStyleSheet("QProgressBar { border: 2px solid grey; border-radius: 5px; text-align: center; } QProgressBar::chunk { background-color: #dc3545; }");
     layout->addWidget(m_heroHealthBar);
 
+    layout->addWidget(new QLabel("💙 Hero Mana"));
+    m_heroManaBar = new QProgressBar();
+    m_heroManaBar->setRange(0, 100);
+    m_heroManaBar->setValue(100);
+    m_heroManaBar->setTextVisible(true);
+    m_heroManaBar->setFormat("100 / 100 MP");
+    m_heroManaBar->setStyleSheet("QProgressBar { border: 2px solid grey; border-radius: 5px; text-align: center; } QProgressBar::chunk { background-color: #3b82f6; }");
+    layout->addWidget(m_heroManaBar);
+
+    // Enemy stats
+    layout->addWidget(new QLabel("💀 Enemy Health"));
     m_enemyHealthBar = new QProgressBar();
     m_enemyHealthBar->setRange(0, 100);
     m_enemyHealthBar->setValue(100);
     m_enemyHealthBar->setTextVisible(true);
     m_enemyHealthBar->setFormat("100 / 100 HP");
-    layout->addWidget(new QLabel("💀 Enemy Health"));
+    m_enemyHealthBar->setStyleSheet("QProgressBar { border: 2px solid grey; border-radius: 5px; text-align: center; } QProgressBar::chunk { background-color: #ef4444; }");
     layout->addWidget(m_enemyHealthBar);
 
     QGridLayout *actionsLayout = new QGridLayout();
@@ -107,11 +126,33 @@ void CombatPage::updateCombatState(Player *player, Monster *monster, const QStri
     if (player) {
         m_heroHealthBar->setMaximum(player->maxHealth);
         m_heroHealthBar->setValue(player->health);
+        m_heroHealthBar->setFormat(QString("%1 / %2 HP").arg(player->health).arg(player->maxHealth));
+
+        m_heroManaBar->setMaximum(player->maxMana);
+        m_heroManaBar->setValue(player->mana);
+        m_heroManaBar->setFormat(QString("%1 / %2 MP").arg(player->mana).arg(player->maxMana));
+
+        // Try to load character sprite
+        QString spritePath = QString(":/assets/%1.png").arg(player->characterClass.toLower());
+        QPixmap sprite(spritePath);
+        if (!sprite.isNull()) {
+            m_heroSpriteLabel->setPixmap(sprite.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        }
     }
     if (monster) {
         m_enemyHealthBar->setMaximum(monster->maxHealth);
         m_enemyHealthBar->setValue(monster->health);
-        // Update name if needed
+        m_enemyHealthBar->setFormat(QString("%1 / %2 HP").arg(monster->health).arg(monster->maxHealth));
+
+        // Update monster name and level
+        m_monsterNameLabel->setText(QString("%1 (Level %2)").arg(monster->name).arg(monster->level));
+
+        // Try to load monster sprite based on enemyType
+        QString spritePath = QString(":/assets/%1.png").arg(monster->enemyType);
+        QPixmap sprite(spritePath);
+        if (!sprite.isNull()) {
+            m_enemySpriteLabel->setPixmap(sprite.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        }
     }
     if (!log.isEmpty()) {
         m_battleLog->append(log);
