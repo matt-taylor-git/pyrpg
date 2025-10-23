@@ -78,7 +78,7 @@ void MenuOverlay::setupUi()
     QLabel *titleLabel = new QLabel("Menu");
     QFont titleFont;
     titleFont.setPointSize(Theme::FONT_SIZE_XL);
-    titleFont.setWeight(Theme::FONT_WEIGHT_SEMIBOLD);
+    titleFont.setWeight(static_cast<QFont::Weight>(Theme::FONT_WEIGHT_SEMIBOLD));
     titleLabel->setFont(titleFont);
     titleLabel->setStyleSheet(QString("color: %1;").arg(Theme::ACCENT.name()));
 

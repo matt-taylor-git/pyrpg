@@ -54,9 +54,7 @@ void TestMainWindow::testMenuOverlayContentUpdate()
     MenuOverlay overlay;
 
     // Create a player with some items
-    Player player;
-    player.name = "TestPlayer";
-    player.characterClass = "Warrior";
+    Player player("TestPlayer", "Warrior");
     player.level = 5;
     player.health = 100;
     player.maxHealth = 100;
@@ -74,8 +72,7 @@ void TestMainWindow::testMenuOverlayContentUpdate()
 void TestMainWindow::testMenuOverlayRapidToggle()
 {
     MenuOverlay overlay;
-    Player player;
-    player.name = "TestPlayer";
+    Player player("TestPlayer");
     overlay.updateContent(&player);
 
     // Rapidly toggle the overlay multiple times
@@ -114,7 +111,7 @@ void TestMainWindow::testMenuOverlayEdgeCases()
 void TestMainWindow::testMenuOverlayAnimationState()
 {
     MenuOverlay overlay;
-    Player player;
+    Player player("TestPlayer");
     overlay.updateContent(&player);
 
     // Show overlay and immediately try to hide it
@@ -132,7 +129,7 @@ void TestMainWindow::testMenuOverlayAnimationState()
 void TestMainWindow::testMenuOverlayFocusManagement()
 {
     MenuOverlay overlay;
-    Player player;
+    Player player("TestPlayer");
     overlay.updateContent(&player);
 
     // Create a widget to hold focus

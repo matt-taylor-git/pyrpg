@@ -163,7 +163,7 @@ QFrame* AdventurePage::createCardFrame(const QString &title)
     QLabel *cardTitle = new QLabel(title);
     QFont titleFont;
     titleFont.setPointSize(Theme::FONT_SIZE_LG);
-    titleFont.setWeight(Theme::FONT_WEIGHT_SEMIBOLD);
+    titleFont.setWeight(static_cast<QFont::Weight>(Theme::FONT_WEIGHT_SEMIBOLD));
     cardTitle->setFont(titleFont);
     cardTitle->setStyleSheet(QString("color: %1; margin-bottom: %2px;")
                                  .arg(Theme::ACCENT.name())
@@ -186,7 +186,7 @@ QPushButton* AdventurePage::createActionButton(const QString &text, const QStrin
 
     QFont buttonFont;
     buttonFont.setPointSize(Theme::FONT_SIZE_MD);
-    buttonFont.setWeight(Theme::FONT_WEIGHT_MEDIUM);
+    buttonFont.setWeight(static_cast<QFont::Weight>(Theme::FONT_WEIGHT_MEDIUM));
     button->setFont(buttonFont);
 
     return button;
