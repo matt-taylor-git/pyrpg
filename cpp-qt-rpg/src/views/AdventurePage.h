@@ -4,6 +4,7 @@
 #include <QWidget>
 
 class QPushButton;
+class QFrame;
 
 class AdventurePage : public QWidget
 {
@@ -21,6 +22,8 @@ signals:
 
 private:
     void setupUi();
+    QFrame* createCardFrame(const QString &title);
+    QPushButton* createActionButton(const QString &text, const QString &tooltip, bool isPrimary);
 
     QPushButton *m_exploreButton;
     QPushButton *m_restButton;
