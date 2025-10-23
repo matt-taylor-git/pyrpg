@@ -22,7 +22,7 @@ void AdventurePage::setupUi()
     // Title section
     QLabel *titleLabel = new QLabel("Adventure Awaits");
     QFont titleFont;
-    titleFont.setPointSize(28);
+    titleFont.setPointSize(Theme::FONT_SIZE_XXL);
     titleFont.setBold(true);
     titleLabel->setFont(titleFont);
     titleLabel->setStyleSheet(QString("color: %1;").arg(Theme::PRIMARY.name()));
@@ -31,7 +31,7 @@ void AdventurePage::setupUi()
 
     QLabel *subtitleLabel = new QLabel("Choose your next action");
     QFont subtitleFont;
-    subtitleFont.setPointSize(14);
+    subtitleFont.setPointSize(Theme::FONT_SIZE_MD);
     subtitleLabel->setFont(subtitleFont);
     subtitleLabel->setStyleSheet(QString("color: %1; margin-bottom: %2px;").arg(Theme::MUTED_FOREGROUND.name()).arg(Theme::SPACING_MD));
     subtitleLabel->setAlignment(Qt::AlignCenter);
@@ -58,7 +58,9 @@ void AdventurePage::setupUi()
     primaryGrid->addWidget(m_exploreButton, 0, 0);
     primaryGrid->addWidget(m_restButton, 0, 1);
 
-    primaryCard->layout()->addItem(primaryGrid);
+    if (QVBoxLayout *cardLayout = qobject_cast<QVBoxLayout*>(primaryCard->layout())) {
+        cardLayout->addLayout(primaryGrid);
+    }
     contentLayout->addWidget(primaryCard);
 
     // Character Management Card
@@ -67,16 +69,18 @@ void AdventurePage::setupUi()
     characterGrid->setSpacing(Theme::SPACING_MD);
     characterGrid->setContentsMargins(Theme::SPACING_MD, Theme::SPACING_MD, Theme::SPACING_MD, Theme::SPACING_MD);
 
-    QPushButton* inventoryButton = createActionButton("🎒 Inventory", "View and manage your items", false);
-    connect(inventoryButton, &QPushButton::clicked, this, &AdventurePage::inventoryClicked);
+    m_inventoryButton = createActionButton("🎒 Inventory", "View and manage your items", false);
+    connect(m_inventoryButton, &QPushButton::clicked, this, &AdventurePage::inventoryClicked);
 
-    QPushButton* viewStatsButton = createActionButton("📊 View Stats", "Check your character statistics", false);
-    connect(viewStatsButton, &QPushButton::clicked, this, &AdventurePage::viewStatsClicked);
+    m_viewStatsButton = createActionButton("📊 View Stats", "Check your character statistics", false);
+    connect(m_viewStatsButton, &QPushButton::clicked, this, &AdventurePage::viewStatsClicked);
 
-    characterGrid->addWidget(inventoryButton, 0, 0);
-    characterGrid->addWidget(viewStatsButton, 0, 1);
+    characterGrid->addWidget(m_inventoryButton, 0, 0);
+    characterGrid->addWidget(m_viewStatsButton, 0, 1);
 
-    characterCard->layout()->addItem(characterGrid);
+    if (QVBoxLayout *cardLayout = qobject_cast<QVBoxLayout*>(characterCard->layout())) {
+        cardLayout->addLayout(characterGrid);
+    }
     contentLayout->addWidget(characterCard);
 
     // Other Actions Card
@@ -85,17 +89,19 @@ void AdventurePage::setupUi()
     otherGrid->setSpacing(Theme::SPACING_MD);
     otherGrid->setContentsMargins(Theme::SPACING_MD, Theme::SPACING_MD, Theme::SPACING_MD, Theme::SPACING_MD);
 
-    QPushButton* shopButton = createActionButton("🏪 Shop", "Buy and sell items", false);
-    connect(shopButton, &QPushButton::clicked, this, &AdventurePage::shopClicked);
+    m_shopButton = createActionButton("🏪 Shop", "Buy and sell items", false);
+    connect(m_shopButton, &QPushButton::clicked, this, &AdventurePage::shopClicked);
 
     m_quitButton = createActionButton("🚪 Quit Game", "Exit to main menu", false);
     m_quitButton->setObjectName("destructive");
     connect(m_quitButton, &QPushButton::clicked, this, &AdventurePage::quitClicked);
 
-    otherGrid->addWidget(shopButton, 0, 0);
+    otherGrid->addWidget(m_shopButton, 0, 0);
     otherGrid->addWidget(m_quitButton, 0, 1);
 
-    otherCard->layout()->addItem(otherGrid);
+    if (QVBoxLayout *cardLayout = qobject_cast<QVBoxLayout*>(otherCard->layout())) {
+        cardLayout->addLayout(otherGrid);
+    }
     contentLayout->addWidget(otherCard);
 
     mainLayout->addWidget(contentWidget);
@@ -105,8 +111,9 @@ void AdventurePage::setupUi()
 QFrame* AdventurePage::createCardFrame(const QString &title)
 {
     QFrame *card = new QFrame();
+    card->setObjectName("card");
     card->setStyleSheet(QString(
-        "QFrame { "
+        "QFrame#card { "
         "background-color: %1; "
         "border: %2px solid %3; "
         "border-radius: %4px; "
@@ -122,7 +129,7 @@ QFrame* AdventurePage::createCardFrame(const QString &title)
 
     QLabel *cardTitle = new QLabel(title);
     QFont titleFont;
-    titleFont.setPointSize(16);
+    titleFont.setPointSize(Theme::FONT_SIZE_LG);
     titleFont.setWeight(Theme::FONT_WEIGHT_SEMIBOLD);
     cardTitle->setFont(titleFont);
     cardTitle->setStyleSheet(QString("color: %1; margin-bottom: %2px;")
@@ -145,7 +152,7 @@ QPushButton* AdventurePage::createActionButton(const QString &text, const QStrin
     }
 
     QFont buttonFont;
-    buttonFont.setPointSize(14);
+    buttonFont.setPointSize(Theme::FONT_SIZE_MD);
     buttonFont.setWeight(Theme::FONT_WEIGHT_MEDIUM);
     button->setFont(buttonFont);
 

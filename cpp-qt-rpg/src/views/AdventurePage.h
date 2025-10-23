@@ -28,6 +28,9 @@ private:
     QPushButton *m_exploreButton;
     QPushButton *m_restButton;
     QPushButton *m_quitButton;
+    QPushButton *m_inventoryButton;
+    QPushButton *m_viewStatsButton;
+    QPushButton *m_shopButton;
 };
 
 #endif // ADVENTUREPAGE_H
