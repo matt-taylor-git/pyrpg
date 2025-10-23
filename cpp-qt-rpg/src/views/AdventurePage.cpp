@@ -19,7 +19,11 @@ void AdventurePage::setupUi()
     mainLayout->setContentsMargins(Theme::SPACING_XL, Theme::SPACING_XL, Theme::SPACING_XL, Theme::SPACING_XL);
     mainLayout->setSpacing(Theme::SPACING_XL);
 
-    // Title section
+    // Title section with menu button
+    QHBoxLayout *titleLayout = new QHBoxLayout();
+
+    titleLayout->addStretch();
+
     QLabel *titleLabel = new QLabel("Adventure Awaits");
     QFont titleFont;
     titleFont.setPointSize(Theme::FONT_SIZE_XXL);
@@ -27,7 +31,36 @@ void AdventurePage::setupUi()
     titleLabel->setFont(titleFont);
     titleLabel->setStyleSheet(QString("color: %1;").arg(Theme::PRIMARY.name()));
     titleLabel->setAlignment(Qt::AlignCenter);
-    mainLayout->addWidget(titleLabel);
+    titleLayout->addWidget(titleLabel);
+
+    titleLayout->addStretch();
+
+    // Menu button in top-right
+    m_menuButton = new QPushButton("☰");
+    m_menuButton->setToolTip("Open Menu (ESC)");
+    m_menuButton->setFixedSize(40, 40);
+    m_menuButton->setObjectName("menuButton");
+    QFont menuFont;
+    menuFont.setPointSize(20);
+    m_menuButton->setFont(menuFont);
+    m_menuButton->setStyleSheet(QString(
+        "QPushButton#menuButton { "
+        "background-color: %1; "
+        "color: %2; "
+        "border: 1px solid %3; "
+        "border-radius: 8px; "
+        "} "
+        "QPushButton#menuButton:hover { "
+        "background-color: %4; "
+        "}"
+    ).arg(Theme::ACCENT.name())
+     .arg(Theme::ACCENT_FOREGROUND.name())
+     .arg(Theme::BORDER.name())
+     .arg(Theme::PRIMARY.name()));
+    connect(m_menuButton, &QPushButton::clicked, this, &AdventurePage::menuButtonClicked);
+    titleLayout->addWidget(m_menuButton, 0, Qt::AlignRight);
+
+    mainLayout->addLayout(titleLayout);
 
     QLabel *subtitleLabel = new QLabel("Choose your next action");
     QFont subtitleFont;

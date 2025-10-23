@@ -19,6 +19,7 @@ signals:
     void viewStatsClicked();
     void inventoryClicked();
     void shopClicked();
+    void menuButtonClicked();
 
 private:
     void setupUi();
@@ -31,6 +32,7 @@ private:
     QPushButton *m_inventoryButton;
     QPushButton *m_viewStatsButton;
     QPushButton *m_shopButton;
+    QPushButton *m_menuButton;
 };
 
 #endif // ADVENTUREPAGE_H
