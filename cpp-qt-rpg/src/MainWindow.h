@@ -15,6 +15,7 @@ class SaveLoadPage;
 class ShopPage;
 class StatsPage;
 class Game;
+class MenuOverlay;
 
 class MainWindow : public QMainWindow
 {
@@ -51,6 +52,11 @@ private slots:
     void handleCombatEnd(int oldLevel);
     void handleInventoryClicked();
     void handleShopClicked();
+    void handleMenuButtonClicked();
+
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     QStackedWidget *stackedWidget;
@@ -65,6 +71,7 @@ private:
     ShopPage *m_shopPage;
     StatsPage *m_statsPage;
     Game *m_game;
+    MenuOverlay *m_menuOverlay;
 };
 
 #endif // MAINWINDOW_H

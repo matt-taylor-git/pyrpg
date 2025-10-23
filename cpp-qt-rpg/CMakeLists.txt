@@ -46,6 +46,7 @@ add_executable(pyrpg-qt
     src/components/SkillSelectionDialog.cpp
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
+    src/components/MenuOverlay.cpp
     src/views/MainMenu.cpp
     src/views/AdventurePage.cpp
     src/views/CharacterCustomizationPage.cpp
@@ -84,6 +85,7 @@ add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
     src/components/SkillSelectionDialog.cpp
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
+    src/components/MenuOverlay.cpp
     src/game/Game.cpp
     src/models/Player.cpp
     src/models/Character.cpp

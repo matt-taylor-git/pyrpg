@@ -13,6 +13,7 @@
 #include "components/SkillSelectionDialog.h"
 #include "components/CombatItemDialog.h"
 #include "components/CombatResultDialog.h"
+#include "components/MenuOverlay.h"
 #include "models/Player.h"
 #include "models/Monster.h"
 #include "models/Skill.h"
@@ -20,6 +21,8 @@
 #include <QStackedWidget>
 #include <QWidget>
 #include <QMessageBox>
+#include <QKeyEvent>
+#include <QResizeEvent>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -54,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_adventurePage, &AdventurePage::viewStatsClicked, this, &MainWindow::handleViewStatsClicked);
     connect(m_adventurePage, &AdventurePage::inventoryClicked, this, &MainWindow::handleInventoryClicked);
     connect(m_adventurePage, &AdventurePage::shopClicked, this, &MainWindow::handleShopClicked);
+    connect(m_adventurePage, &AdventurePage::menuButtonClicked, this, &MainWindow::handleMenuButtonClicked);
     stackedWidget->addWidget(m_adventurePage);
 
     // Combat Page
@@ -99,6 +103,11 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget->setCurrentWidget(m_mainMenu);
 
     m_game = new Game();
+
+    // Menu Overlay (floating overlay, not in stacked widget)
+    m_menuOverlay = new MenuOverlay(this);
+    m_menuOverlay->setGeometry(0, 0, width(), height());
+    m_menuOverlay->hide();
 }
 
 void MainWindow::handleCharacterCreation(const QString &name, const QString &characterClass)
@@ -322,6 +331,51 @@ void MainWindow::handleMonsterStatsBack()
 void MainWindow::handleSaveLoadBack()
 {
     stackedWidget->setCurrentWidget(m_mainMenu);
+}
+
+void MainWindow::handleMenuButtonClicked()
+{
+    // Only show menu if player exists (game is in progress)
+    if (m_game && m_game->getPlayer() && m_menuOverlay) {
+        m_menuOverlay->updateContent(m_game->getPlayer());
+        m_menuOverlay->showOverlay();
+    }
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    // Only handle ESC if we're on the adventure page or combat page (in-game)
+    if (event->key() == Qt::Key_Escape && m_menuOverlay) {
+        QWidget *currentWidget = stackedWidget->currentWidget();
+
+        // Check if menu overlay is visible
+        if (m_menuOverlay->isVisible()) {
+            m_menuOverlay->hideOverlay();
+            event->accept();
+            return;
+        }
+
+        // Show menu if we're in-game (on adventure or combat page) and player exists
+        if ((currentWidget == m_adventurePage || currentWidget == m_combatPage) &&
+            m_game && m_game->getPlayer()) {
+            m_menuOverlay->updateContent(m_game->getPlayer());
+            m_menuOverlay->showOverlay();
+            event->accept();
+            return;
+        }
+    }
+
+    QMainWindow::keyPressEvent(event);
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    QMainWindow::resizeEvent(event);
+
+    // Keep menu overlay sized to match the window
+    if (m_menuOverlay) {
+        m_menuOverlay->setGeometry(0, 0, width(), height());
+    }
 }
 
 MainWindow::~MainWindow()
