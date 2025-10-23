@@ -336,7 +336,7 @@ void MainWindow::handleSaveLoadBack()
 void MainWindow::handleMenuButtonClicked()
 {
     // Only show menu if player exists (game is in progress)
-    if (m_game && m_game->getPlayer()) {
+    if (m_game && m_game->getPlayer() && m_menuOverlay) {
         m_menuOverlay->updateContent(m_game->getPlayer());
         m_menuOverlay->showOverlay();
     }
@@ -345,7 +345,7 @@ void MainWindow::handleMenuButtonClicked()
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     // Only handle ESC if we're on the adventure page or combat page (in-game)
-    if (event->key() == Qt::Key_Escape) {
+    if (event->key() == Qt::Key_Escape && m_menuOverlay) {
         QWidget *currentWidget = stackedWidget->currentWidget();
 
         // Check if menu overlay is visible

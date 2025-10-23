@@ -29,6 +29,9 @@ public:
 signals:
     void overlayHidden();
 
+private slots:
+    void handleItemChanged();
+
 protected:
     void paintEvent(QPaintEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
@@ -49,6 +52,8 @@ private:
     ShopPage *m_shopPage;
 
     qreal m_opacity;
+    Player *m_currentPlayer;
+    QWidget *m_previousFocusWidget;
 };
 
 #endif // MENUOVERLAY_H

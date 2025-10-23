@@ -14,10 +14,13 @@
 #include <QMouseEvent>
 #include <QLabel>
 #include <QFont>
+#include <QApplication>
 
 MenuOverlay::MenuOverlay(QWidget *parent)
     : QWidget(parent)
     , m_opacity(0.0)
+    , m_currentPlayer(nullptr)
+    , m_previousFocusWidget(nullptr)
 {
     setAttribute(Qt::WA_TransparentForMouseEvents, false);
     setAttribute(Qt::WA_NoSystemBackground);
@@ -28,6 +31,20 @@ MenuOverlay::MenuOverlay(QWidget *parent)
 
     m_animation = new QPropertyAnimation(this, "opacity");
     m_animation->setDuration(200);
+
+    // Set up permanent connection for animation finished signal
+    connect(m_animation, &QPropertyAnimation::finished, this, [this]() {
+        // Only hide and emit signal if we were animating to 0 (hiding)
+        if (m_animation->endValue().toReal() == 0.0) {
+            hide();
+            // Restore focus to previous widget
+            if (m_previousFocusWidget) {
+                m_previousFocusWidget->setFocus();
+                m_previousFocusWidget = nullptr;
+            }
+            emit overlayHidden();
+        }
+    });
 
     hide();
 }
@@ -139,6 +156,10 @@ void MenuOverlay::setupUi()
     connect(m_statsPage, &StatsPage::backRequested, this, &MenuOverlay::hideOverlay);
     connect(m_shopPage, &ShopPage::leaveRequested, this, &MenuOverlay::hideOverlay);
 
+    // Connect item change signals to refresh content
+    connect(m_inventoryPage, &InventoryPage::itemEquipped, this, &MenuOverlay::handleItemChanged);
+    connect(m_shopPage, &ShopPage::itemPurchased, this, &MenuOverlay::handleItemChanged);
+
     // Add tabs
     m_tabWidget->addTab(m_inventoryPage, "🎒 Inventory");
     m_tabWidget->addTab(m_statsPage, "📊 Stats");
@@ -159,6 +180,12 @@ void MenuOverlay::setupUi()
 
 void MenuOverlay::showOverlay()
 {
+    // Stop any in-progress animation to prevent race conditions
+    m_animation->stop();
+
+    // Store the currently focused widget so we can restore it later
+    m_previousFocusWidget = QApplication::focusWidget();
+
     show();
     raise();
     setFocus();
@@ -167,11 +194,18 @@ void MenuOverlay::showOverlay()
 
 void MenuOverlay::hideOverlay()
 {
+    // Check if we're already hiding - prevent redundant animations
+    if (m_animation->state() == QAbstractAnimation::Running &&
+        m_animation->endValue().toReal() == 0.0) {
+        return;  // Already hiding
+    }
+
     animateHide();
 }
 
 void MenuOverlay::updateContent(Player *player)
 {
+    m_currentPlayer = player;
     if (player) {
         m_inventoryPage->updateInventory(player);
         m_statsPage->updateStats(player);
@@ -234,11 +268,14 @@ void MenuOverlay::animateHide()
     m_animation->stop();
     m_animation->setStartValue(m_opacity);
     m_animation->setEndValue(0.0);
-
-    connect(m_animation, &QPropertyAnimation::finished, this, [this]() {
-        hide();
-        emit overlayHidden();
-    }, Qt::SingleShotConnection);
-
     m_animation->start();
+    // Note: The finished signal is handled by the permanent connection in the constructor
+}
+
+void MenuOverlay::handleItemChanged()
+{
+    // Refresh all tabs when inventory or shop changes
+    if (m_currentPlayer) {
+        updateContent(m_currentPlayer);
+    }
 }
