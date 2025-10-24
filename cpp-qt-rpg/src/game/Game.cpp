@@ -84,6 +84,7 @@ QString Game::playerAttack()
         combatLog += QString(" %1 defeated!").arg(currentMonster->name);
     }
 
+    checkCombatEndAfterAction();
     return combatLog;
 }
 
@@ -126,6 +127,7 @@ QString Game::playerUseSkill(Skill* skill)
         combatLog += QString(" %1 defeated!").arg(currentMonster->name);
     }
 
+    checkCombatEndAfterAction();
     return combatLog;
 }
 
@@ -165,6 +167,7 @@ QString Game::monsterAttack()
         combatLog += " You are defeated!";
     }
 
+    checkCombatEndAfterAction();
     return combatLog;
 }
 
@@ -251,4 +254,16 @@ void Game::giveCombatRewards()
     }
 
     combatLog += QString("\nGained %1 EXP and %2 gold!").arg(expGained).arg(goldGained);
+}
+void Game::checkCombatEndAfterAction()
+{
+    if (!combatActive) return;
+
+    bool playerWon = (currentMonster && currentMonster->health <= 0);
+    bool playerLost = (player && player->health <= 0);
+
+    if (playerWon || playerLost) {
+        endCombat();
+        emit combatEnded(playerWon);
+    }
 }

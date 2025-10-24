@@ -1,6 +1,8 @@
 #include <QTest>
+#include <QSignalSpy>
 #include "models/Player.h"
 #include "models/Monster.h"
+#include "game/Game.h"
 #include "game/factories/ItemFactory.h"
 
 class TestModels : public QObject
@@ -11,6 +13,8 @@ private slots:
     void testPlayerCreation();
     void testMonsterCreation();
     void testItemFactory();
+    void testCombatVictory();
+    void testCombatDefeat();
 };
 
 void TestModels::testPlayerCreation()
@@ -36,6 +40,62 @@ void TestModels::testItemFactory()
     QVERIFY(shopItems.contains("Health Potion"));
     QCOMPARE(shopItems["Health Potion"]->value, 25);
     qDeleteAll(shopItems);
+}
+
+void TestModels::testCombatVictory()
+{
+    Game game;
+    game.newGame("TestHero");
+
+    // Create a weak monster for easy victory
+    Monster* weakMonster = new Monster("Weakling", 1);
+    weakMonster->health = 1; // Very low health
+    weakMonster->maxHealth = 1;
+    weakMonster->expReward = 10;
+    weakMonster->goldReward = 10;
+
+    // Manually set up combat (normally done by startCombat)
+    game.player->health = 100;
+    game.currentMonster = weakMonster;
+    game.combatActive = true;
+
+    QSignalSpy spy(&game, &Game::combatEnded);
+
+    // Attack should kill the monster
+    QString result = game.playerAttack();
+
+    QVERIFY(result.contains("defeated"));
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.at(0).at(0).toBool(), true); // playerWon should be true
+    QVERIFY(!game.combatActive);
+    QCOMPARE(game.player->experience, 10);
+    QCOMPARE(game.player->gold, 110); // Started with 100 + 10 reward
+}
+
+void TestModels::testCombatDefeat()
+{
+    Game game;
+    game.newGame("TestHero");
+
+    // Create a monster that will kill the player
+    Monster* strongMonster = new Monster("Boss", 10);
+    strongMonster->attack = 200; // Very high damage
+
+    // Manually set up combat
+    game.player->health = 1; // Player almost dead
+    game.currentMonster = strongMonster;
+    game.combatActive = true;
+
+    QSignalSpy spy(&game, &Game::combatEnded);
+
+    // Monster attack should kill the player
+    QString result = game.monsterAttack();
+
+    QVERIFY(result.contains("defeated"));
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.at(0).at(0).toBool(), false); // playerWon should be false
+    QVERIFY(!game.combatActive);
+    QCOMPARE(game.player->health, 0);
 }
 
 QTEST_MAIN(TestModels)

@@ -159,6 +159,15 @@ void CombatPage::updateCombatState(Player *player, Monster *monster, const QStri
     }
 }
 
+void CombatPage::setCombatActive(bool active)
+{
+    m_attackButton->setEnabled(active);
+    m_skillButton->setEnabled(active);
+    m_itemButton->setEnabled(active);
+    m_statsButton->setEnabled(active);
+    m_runButton->setEnabled(active);
+}
+
 QWidget* CombatPage::createLogCard()
 {
     QFrame *card = new QFrame();

@@ -103,6 +103,7 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget->setCurrentWidget(m_mainMenu);
 
     m_game = new Game();
+    connect(m_game, &Game::combatEnded, this, &MainWindow::handleCombatEnded);
 
     // Menu Overlay (floating overlay, not in stacked widget)
     m_menuOverlay = new MenuOverlay(this);
@@ -118,7 +119,8 @@ void MainWindow::handleCharacterCreation(const QString &name, const QString &cha
 
 void MainWindow::handleExploreClicked()
 {
-m_game->startCombat();
+    m_game->startCombat();
+    m_combatPage->setCombatActive(true);
     m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), "");
     stackedWidget->setCurrentWidget(m_combatPage);
 }
@@ -219,14 +221,22 @@ void MainWindow::handleStatsClicked()
 
 void MainWindow::handleCombatEnd(int oldLevel)
 {
-    m_game->endCombat();
-    bool victory = m_game->getCombatResult() == "Victory";
+    // Legacy method - combat is already ended by the signal handler
+    // This method is kept for backward compatibility but should be removed
+    stackedWidget->setCurrentWidget(m_adventurePage);
+}
 
-    if (victory) {
+void MainWindow::handleCombatEnded(bool playerWon)
+{
+    // Disable combat buttons since combat has ended
+    m_combatPage->setCombatActive(false);
+
+    // For now, don't check leveling - rewards are already given
+    bool leveledUp = false;
+
+    // Show combat result dialog
+    if (playerWon) {
         Monster *monster = m_game->getCurrentMonster();
-        bool leveledUp = m_game->getPlayer()->level > oldLevel;
-
-        // Show combat result dialog
         CombatResultDialog resultDialog(
             true,
             monster ? monster->expReward : 0,

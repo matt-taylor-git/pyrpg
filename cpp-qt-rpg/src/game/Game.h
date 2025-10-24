@@ -29,6 +29,9 @@ bool isCombatOver();
     QString getCombatResult();
     void endCombat();
 
+signals:
+    void combatEnded(bool playerWon);
+
 private:
     Player *player;
     Monster *currentMonster;
@@ -36,10 +39,13 @@ private:
     QString combatLog;
     SaveManager saveManager;
 
+    friend class TestModels;
+
     // Combat helpers
     int calculateDamage(int baseDamage, int attackerLevel, int defenderDefense, bool isCritical = false);
     bool rollCritical(int dexterity);
     void giveCombatRewards();
+    void checkCombatEndAfterAction();
 };
 
 #endif // GAME_H

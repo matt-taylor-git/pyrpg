@@ -102,7 +102,7 @@ target_include_directories(test_mainwindow PRIVATE src)
 add_test(NAME MainWindowTest COMMAND test_mainwindow)
 
 # Test for Data Models
-add_executable(test_models tests/test_models.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp)
+add_executable(test_models tests/test_models.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/Game.cpp src/persistence/SaveManager.cpp)
 target_link_libraries(test_models PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_models PRIVATE src)
 add_test(NAME ModelsTest COMMAND test_models)

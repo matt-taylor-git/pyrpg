@@ -50,6 +50,7 @@ private slots:
     void handleMonsterStatsBack();
     void handleSaveLoadBack();
     void handleCombatEnd(int oldLevel);
+    void handleCombatEnded(bool playerWon);
     void handleInventoryClicked();
     void handleShopClicked();
     void handleMenuButtonClicked();

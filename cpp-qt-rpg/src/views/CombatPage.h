@@ -15,7 +15,8 @@ class CombatPage : public QWidget
 Q_OBJECT
 public:
 explicit CombatPage(QWidget *parent = nullptr);
-    void updateCombatState(Player *player, Monster *monster, const QString &log);
+void updateCombatState(Player *player, Monster *monster, const QString &log);
+    void setCombatActive(bool active);
 
 signals:
 void attackClicked();
