@@ -135,7 +135,17 @@ void MainWindow::handleRestClicked()
 
 void MainWindow::handleQuitClicked()
 {
-    close();
+    // Add confirmation dialog to prevent accidental exits
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        "Quit Game",
+        "Are you sure you want to quit? Any unsaved progress will be lost.",
+        QMessageBox::Yes | QMessageBox::No
+    );
+
+    if (reply == QMessageBox::Yes) {
+        close();
+    }
 }
 
 void MainWindow::handleAttackClicked()
@@ -349,10 +359,19 @@ void MainWindow::handleSaveLoadBack()
 void MainWindow::handleMenuButtonClicked()
 {
     // Show menu overlay from CombatPage (only when player exists)
-    if (m_game && m_game->getPlayer() && m_menuOverlay) {
-        m_menuOverlay->updateContent(m_game->getPlayer());
-        m_menuOverlay->showOverlay();
+    // Add defensive checks to ensure we're in an appropriate state
+    if (!m_game || !m_game->getPlayer() || !m_menuOverlay) {
+        return;
     }
+
+    // Verify we're on the correct widget (CombatPage) before showing menu
+    QWidget *currentWidget = stackedWidget->currentWidget();
+    if (!currentWidget || currentWidget != m_combatPage) {
+        return;
+    }
+
+    m_menuOverlay->updateContent(m_game->getPlayer());
+    m_menuOverlay->showOverlay();
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
