@@ -58,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_combatPage, &CombatPage::itemClicked, this, &MainWindow::handleItemClicked);
     connect(m_combatPage, &CombatPage::statsClicked, this, &MainWindow::handleStatsClicked);
     connect(m_combatPage, &CombatPage::runClicked, this, &MainWindow::handleRunClicked);
+    connect(m_combatPage, &CombatPage::menuClicked, this, &MainWindow::handleMenuButtonClicked);
     stackedWidget->addWidget(m_combatPage);
 
     // Inventory Page
@@ -99,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Menu Overlay (floating overlay, not in stacked widget)
     m_menuOverlay = new MenuOverlay(this);
     m_menuOverlay->setGeometry(0, 0, width(), height());
+    connect(m_menuOverlay, &MenuOverlay::quitRequested, this, &MainWindow::handleQuitClicked);
     m_menuOverlay->hide();
 }
 
@@ -133,7 +135,17 @@ void MainWindow::handleRestClicked()
 
 void MainWindow::handleQuitClicked()
 {
-    close();
+    // Add confirmation dialog to prevent accidental exits
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        "Quit Game",
+        "Are you sure you want to quit? Any unsaved progress will be lost.",
+        QMessageBox::Yes | QMessageBox::No
+    );
+
+    if (reply == QMessageBox::Yes) {
+        close();
+    }
 }
 
 void MainWindow::handleAttackClicked()
@@ -347,10 +359,19 @@ void MainWindow::handleSaveLoadBack()
 void MainWindow::handleMenuButtonClicked()
 {
     // Show menu overlay from CombatPage (only when player exists)
-    if (m_game && m_game->getPlayer() && m_menuOverlay) {
-        m_menuOverlay->updateContent(m_game->getPlayer());
-        m_menuOverlay->showOverlay();
+    // Add defensive checks to ensure we're in an appropriate state
+    if (!m_game || !m_game->getPlayer() || !m_menuOverlay) {
+        return;
     }
+
+    // Verify we're on the correct widget (CombatPage) before showing menu
+    QWidget *currentWidget = stackedWidget->currentWidget();
+    if (!currentWidget || currentWidget != m_combatPage) {
+        return;
+    }
+
+    m_menuOverlay->updateContent(m_game->getPlayer());
+    m_menuOverlay->showOverlay();
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)

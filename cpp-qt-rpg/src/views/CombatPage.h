@@ -30,6 +30,7 @@ void statsClicked();
     void runClicked();
     void exploreClicked();
     void restClicked();
+    void menuClicked();
 
 private:
     void setupUi();

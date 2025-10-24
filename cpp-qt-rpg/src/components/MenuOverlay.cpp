@@ -167,6 +167,30 @@ void MenuOverlay::setupUi()
 
     contentLayout->addWidget(m_tabWidget);
 
+    // Add quit button
+    QPushButton *quitButton = new QPushButton("🚪 Quit Game");
+    quitButton->setObjectName("quitButton");
+    quitButton->setMinimumHeight(40);
+    quitButton->setStyleSheet(QString(
+        "QPushButton#quitButton { "
+        "background-color: %1; "
+        "color: %2; "
+        "border: 1px solid %3; "
+        "border-radius: 8px; "
+        "font-size: 14px; "
+        "font-weight: bold; "
+        "padding: 10px; "
+        "} "
+        "QPushButton#quitButton:hover { "
+        "background-color: %4; "
+        "}"
+    ).arg(Theme::DESTRUCTIVE.name())
+     .arg(Theme::DESTRUCTIVE_FOREGROUND.name())
+     .arg(Theme::DESTRUCTIVE.darker(110).name())
+     .arg(Theme::DESTRUCTIVE.lighter(110).name()));
+    connect(quitButton, &QPushButton::clicked, this, &MenuOverlay::handleQuitClicked);
+    contentLayout->addWidget(quitButton);
+
     // Add hint text
     QLabel *hintLabel = new QLabel("Press ESC to close");
     hintLabel->setStyleSheet(QString("color: %1; font-size: %2px;")
@@ -278,4 +302,9 @@ void MenuOverlay::handleItemChanged()
     if (m_currentPlayer) {
         updateContent(m_currentPlayer);
     }
+}
+
+void MenuOverlay::handleQuitClicked()
+{
+    emit quitRequested();
 }
