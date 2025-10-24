@@ -239,8 +239,17 @@ QLayout* CombatPage::createNonCombatActionsLayout()
     ).arg(Theme::SECONDARY.name()).arg(Theme::FOREGROUND.name()).arg(Theme::SECONDARY.darker(110).name()));
     connect(restButton, &QPushButton::clicked, this, &CombatPage::restClicked);
 
+    QPushButton *menuButton = new QPushButton("📋 Menu");
+    menuButton->setMinimumHeight(60);
+    menuButton->setStyleSheet(QString(
+        "QPushButton { background-color: %1; color: %2; border-radius: 8px; padding: 10px; font-size: 16px; font-weight: bold; }"
+        "QPushButton:hover { background-color: %3; }"
+    ).arg(Theme::ACCENT.name()).arg(Theme::ACCENT_FOREGROUND.name()).arg(Theme::ACCENT.darker(110).name()));
+    connect(menuButton, &QPushButton::clicked, this, &CombatPage::menuClicked);
+
     actionsLayout->addWidget(exploreButton);
     actionsLayout->addWidget(restButton);
+    actionsLayout->addWidget(menuButton);
     actionsLayout->addStretch();
 
     return actionsLayout;
