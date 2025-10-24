@@ -35,6 +35,11 @@ private slots:
     void handleItemChanged();
     void handleSaveClicked();
     void handleLoadClicked();
+    void quitRequested();
+
+private slots:
+    void handleItemChanged();
+    void handleQuitClicked();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
