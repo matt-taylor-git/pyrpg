@@ -167,6 +167,63 @@ void MenuOverlay::setupUi()
 
     contentLayout->addWidget(m_tabWidget);
 
+    // Save/Load buttons row
+    QHBoxLayout *saveLoadLayout = new QHBoxLayout();
+    saveLoadLayout->setSpacing(Theme::SPACING_MD);
+
+    m_saveButton = new QPushButton("💾 Save Game");
+    m_saveButton->setObjectName("saveButton");
+    m_saveButton->setMinimumHeight(40);
+    m_saveButton->setStyleSheet(QString(
+        "QPushButton#saveButton { "
+        "background-color: %1; "
+        "color: %2; "
+        "border: 1px solid %3; "
+        "border-radius: %4px; "
+        "padding: 8px 16px; "
+        "font-size: %5px; "
+        "font-weight: %6; "
+        "} "
+        "QPushButton#saveButton:hover { "
+        "background-color: %7; "
+        "}"
+    ).arg(Theme::ACCENT.name())
+     .arg(Theme::ACCENT_FOREGROUND.name())
+     .arg(Theme::ACCENT.name())
+     .arg(Theme::BORDER_RADIUS_MD)
+     .arg(Theme::FONT_SIZE_MD)
+     .arg(Theme::FONT_WEIGHT_MEDIUM)
+     .arg(Theme::ACCENT.lighter(110).name()));
+    connect(m_saveButton, &QPushButton::clicked, this, &MenuOverlay::handleSaveClicked);
+
+    m_loadButton = new QPushButton("📂 Load Game");
+    m_loadButton->setObjectName("loadButton");
+    m_loadButton->setMinimumHeight(40);
+    m_loadButton->setStyleSheet(QString(
+        "QPushButton#loadButton { "
+        "background-color: %1; "
+        "color: %2; "
+        "border: 1px solid %3; "
+        "border-radius: %4px; "
+        "padding: 8px 16px; "
+        "font-size: %5px; "
+        "font-weight: %6; "
+        "} "
+        "QPushButton#loadButton:hover { "
+        "background-color: %7; "
+        "}"
+    ).arg(Theme::SECONDARY.name())
+     .arg(Theme::FOREGROUND.name())
+     .arg(Theme::BORDER.name())
+     .arg(Theme::BORDER_RADIUS_MD)
+     .arg(Theme::FONT_SIZE_MD)
+     .arg(Theme::FONT_WEIGHT_MEDIUM)
+     .arg(Theme::MUTED.name()));
+    connect(m_loadButton, &QPushButton::clicked, this, &MenuOverlay::handleLoadClicked);
+
+    saveLoadLayout->addWidget(m_saveButton);
+    saveLoadLayout->addWidget(m_loadButton);
+    contentLayout->addLayout(saveLoadLayout);
     // Add quit button
     QPushButton *quitButton = new QPushButton("🚪 Quit Game");
     quitButton->setObjectName("quitButton");
@@ -302,6 +359,18 @@ void MenuOverlay::handleItemChanged()
     if (m_currentPlayer) {
         updateContent(m_currentPlayer);
     }
+}
+
+void MenuOverlay::handleSaveClicked()
+{
+    emit saveRequested();
+    hideOverlay();
+}
+
+void MenuOverlay::handleLoadClicked()
+{
+    emit loadRequested();
+    hideOverlay();
 }
 
 void MenuOverlay::handleQuitClicked()
