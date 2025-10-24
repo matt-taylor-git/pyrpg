@@ -58,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_combatPage, &CombatPage::itemClicked, this, &MainWindow::handleItemClicked);
     connect(m_combatPage, &CombatPage::statsClicked, this, &MainWindow::handleStatsClicked);
     connect(m_combatPage, &CombatPage::runClicked, this, &MainWindow::handleRunClicked);
+    connect(m_combatPage, &CombatPage::menuClicked, this, &MainWindow::handleMenuButtonClicked);
     stackedWidget->addWidget(m_combatPage);
 
     // Inventory Page
@@ -99,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Menu Overlay (floating overlay, not in stacked widget)
     m_menuOverlay = new MenuOverlay(this);
     m_menuOverlay->setGeometry(0, 0, width(), height());
+    connect(m_menuOverlay, &MenuOverlay::quitRequested, this, &MainWindow::handleQuitClicked);
     m_menuOverlay->hide();
 }
 

@@ -28,9 +28,11 @@ public:
 
 signals:
     void overlayHidden();
+    void quitRequested();
 
 private slots:
     void handleItemChanged();
+    void handleQuitClicked();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
