@@ -7,16 +7,20 @@ class QLabel;
 class QProgressBar;
 class QPushButton;
 class QTextEdit;
+class QVBoxLayout;
 class Player;
 class Monster;
 
 class CombatPage : public QWidget
 {
 Q_OBJECT
+Q_PROPERTY(bool inCombat READ isInCombat)
 public:
 explicit CombatPage(QWidget *parent = nullptr);
 void updateCombatState(Player *player, Monster *monster, const QString &log);
-    void setCombatActive(bool active);
+void setCombatActive(bool active);
+void setCombatMode(bool inCombat);
+    bool isInCombat() const { return m_inCombat; }
 
 signals:
 void attackClicked();
@@ -24,11 +28,15 @@ void skillClicked();
 void itemClicked();
 void statsClicked();
     void runClicked();
+    void exploreClicked();
+    void restClicked();
 
 private:
     void setupUi();
     QWidget* createArenaCard();
     QWidget* createLogCard();
+    QLayout* createCombatActionsLayout();
+    QLayout* createNonCombatActionsLayout();
 
     // Arena widgets
     QLabel *m_heroSpriteLabel;
@@ -37,11 +45,11 @@ private:
     QProgressBar *m_heroHealthBar;
     QProgressBar *m_heroManaBar;
     QProgressBar *m_enemyHealthBar;
-    QPushButton *m_attackButton;
-    QPushButton *m_skillButton;
-    QPushButton *m_itemButton;
-    QPushButton *m_statsButton;
-    QPushButton *m_runButton;
+
+    // UI state
+    QVBoxLayout *m_cardLayout;
+    QLayout *m_actionsLayout;
+    bool m_inCombat;
 
     // Log widgets
     QTextEdit *m_battleLog;

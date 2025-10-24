@@ -48,7 +48,6 @@ add_executable(pyrpg-qt
     src/components/CombatResultDialog.cpp
     src/components/MenuOverlay.cpp
     src/views/MainMenu.cpp
-    src/views/AdventurePage.cpp
     src/views/CharacterCustomizationPage.cpp
     src/views/CombatPage.cpp
     src/views/InventoryPage.cpp
@@ -71,7 +70,6 @@ enable_testing()
 add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
     src/views/MainMenu.cpp
     src/views/NewGameView.cpp
-    src/views/AdventurePage.cpp
     src/views/CharacterCustomizationPage.cpp
     src/views/CombatPage.cpp
     src/views/InventoryPage.cpp
@@ -122,6 +120,45 @@ add_executable(test_persistence tests/test_persistence.cpp
 target_link_libraries(test_persistence PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_persistence PRIVATE src)
 add_test(NAME PersistenceTest COMMAND test_persistence)
+
+# Test for CombatPage dual mode
+add_executable(test_combat_page_dual_mode tests/test_combat_page_dual_mode.cpp src/views/CombatPage.cpp src/models/Player.cpp src/models/Character.cpp src/models/Monster.cpp src/models/Item.cpp src/models/Skill.cpp)
+target_link_libraries(test_combat_page_dual_mode PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_combat_page_dual_mode PRIVATE src)
+add_test(NAME CombatPageDualModeTest COMMAND test_combat_page_dual_mode)
+
+# Test for Navigation Flow
+add_executable(test_navigation_flow tests/test_navigation_flow.cpp src/MainWindow.cpp
+    src/views/MainMenu.cpp
+    src/views/NewGameView.cpp
+    src/views/CharacterCustomizationPage.cpp
+    src/views/CombatPage.cpp
+    src/views/InventoryPage.cpp
+    src/views/MonsterStatsPage.cpp
+    src/views/SaveLoadPage.cpp
+    src/views/ShopPage.cpp
+    src/views/StatsPage.cpp
+    src/components/ValidationLabel.cpp
+    src/components/CharacterPreviewWidget.cpp
+    src/components/CustomizationSection.cpp
+    src/components/SkillSelectionDialog.cpp
+    src/components/CombatItemDialog.cpp
+    src/components/CombatResultDialog.cpp
+    src/components/MenuOverlay.cpp
+    src/game/Game.cpp
+    src/models/Player.cpp
+    src/models/Character.cpp
+    src/models/Monster.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+    src/game/factories/ItemFactory.cpp
+    src/game/factories/SkillFactory.cpp
+    src/game/factories/MonsterFactory.cpp
+    src/persistence/SaveManager.cpp
+)
+target_link_libraries(test_navigation_flow PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_navigation_flow PRIVATE src)
+add_test(NAME NavigationFlowTest COMMAND test_navigation_flow)
 
 # --- Packaging ---
 

@@ -7,7 +7,7 @@ class QStackedWidget;
 class MainMenu;
 class NewGameView;
 class CharacterCustomizationPage;
-class AdventurePage;
+
 class CombatPage;
 class InventoryPage;
 class MonsterStatsPage;
@@ -35,7 +35,6 @@ private slots:
     void handleItemClicked();
     void handleStatsClicked();
     void handleRunClicked();
-    void handleViewStatsClicked();
     void handleQuickSave();
     void handleQuickLoad();
     void handleSaveToFile(const QString &filePath);
@@ -51,8 +50,6 @@ private slots:
     void handleSaveLoadBack();
     void handleCombatEnd(int oldLevel);
     void handleCombatEnded(bool playerWon);
-    void handleInventoryClicked();
-    void handleShopClicked();
     void handleMenuButtonClicked();
 
 protected:
@@ -64,7 +61,6 @@ private:
     MainMenu *m_mainMenu;
     NewGameView *m_newGameView;
     CharacterCustomizationPage *m_characterCustomizationPage;
-    AdventurePage *m_adventurePage;
     CombatPage *m_combatPage;
     InventoryPage *m_inventoryPage;
     MonsterStatsPage *m_monsterStatsPage;

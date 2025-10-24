@@ -2,7 +2,7 @@
 #include "views/MainMenu.h"
 #include "views/NewGameView.h"
 #include "views/CharacterCustomizationPage.h"
-#include "views/AdventurePage.h"
+
 #include "views/CombatPage.h"
 #include "views/InventoryPage.h"
 #include "views/MonsterStatsPage.h"
@@ -49,19 +49,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_characterCustomizationPage = new CharacterCustomizationPage();
     stackedWidget->addWidget(m_characterCustomizationPage);
 
-    // Adventure Page
-    m_adventurePage = new AdventurePage();
-    connect(m_adventurePage, &AdventurePage::exploreClicked, this, &MainWindow::handleExploreClicked);
-    connect(m_adventurePage, &AdventurePage::restClicked, this, &MainWindow::handleRestClicked);
-    connect(m_adventurePage, &AdventurePage::quitClicked, this, &MainWindow::handleQuitClicked);
-    connect(m_adventurePage, &AdventurePage::viewStatsClicked, this, &MainWindow::handleViewStatsClicked);
-    connect(m_adventurePage, &AdventurePage::inventoryClicked, this, &MainWindow::handleInventoryClicked);
-    connect(m_adventurePage, &AdventurePage::shopClicked, this, &MainWindow::handleShopClicked);
-    connect(m_adventurePage, &AdventurePage::menuButtonClicked, this, &MainWindow::handleMenuButtonClicked);
-    stackedWidget->addWidget(m_adventurePage);
-
-    // Combat Page
+    // Combat Page (now serves as main game hub)
     m_combatPage = new CombatPage();
+    connect(m_combatPage, &CombatPage::exploreClicked, this, &MainWindow::handleExploreClicked);
+    connect(m_combatPage, &CombatPage::restClicked, this, &MainWindow::handleRestClicked);
     connect(m_combatPage, &CombatPage::attackClicked, this, &MainWindow::handleAttackClicked);
     connect(m_combatPage, &CombatPage::skillClicked, this, &MainWindow::handleSkillClicked);
     connect(m_combatPage, &CombatPage::itemClicked, this, &MainWindow::handleItemClicked);
@@ -114,14 +105,18 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::handleCharacterCreation(const QString &name, const QString &characterClass)
 {
     m_game->newGame(name, characterClass);
-    stackedWidget->setCurrentWidget(m_adventurePage);
+    // Start in non-combat mode on the main game hub (CombatPage)
+    m_combatPage->setCombatMode(false);
+    stackedWidget->setCurrentWidget(m_combatPage);
 }
 
 void MainWindow::handleExploreClicked()
 {
     m_game->startCombat();
+    m_combatPage->setCombatMode(true);
     m_combatPage->setCombatActive(true);
     m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), "");
+    // Already on CombatPage, just ensure it's visible
     stackedWidget->setCurrentWidget(m_combatPage);
 }
 
@@ -134,18 +129,6 @@ void MainWindow::handleRestClicked()
         player->mana = player->maxMana;
         QMessageBox::information(this, "Rest", "You rest and restore your health and mana!");
     }
-}
-
-void MainWindow::handleInventoryClicked()
-{
-    m_inventoryPage->updateInventory(m_game->getPlayer());
-    stackedWidget->setCurrentWidget(m_inventoryPage);
-}
-
-void MainWindow::handleShopClicked()
-{
-    m_shopPage->updateShop(m_game->getPlayer());
-    stackedWidget->setCurrentWidget(m_shopPage);
 }
 
 void MainWindow::handleQuitClicked()
@@ -223,7 +206,8 @@ void MainWindow::handleCombatEnd(int oldLevel)
 {
     // Legacy method - combat is already ended by the signal handler
     // This method is kept for backward compatibility but should be removed
-    stackedWidget->setCurrentWidget(m_adventurePage);
+    m_combatPage->setCombatMode(false);
+    stackedWidget->setCurrentWidget(m_combatPage);
 }
 
 void MainWindow::handleCombatEnded(bool playerWon)
@@ -252,18 +236,15 @@ void MainWindow::handleCombatEnded(bool playerWon)
         resultDialog.exec();
     }
 
-    stackedWidget->setCurrentWidget(m_adventurePage);
+    // Return to non-combat mode on the main game hub
+    m_combatPage->setCombatMode(false);
+    stackedWidget->setCurrentWidget(m_combatPage);
 }
 
 void MainWindow::handleRunClicked()
 {
-    stackedWidget->setCurrentWidget(m_adventurePage);
-}
-
-void MainWindow::handleViewStatsClicked()
-{
-    m_statsPage->updateStats(m_game->getPlayer());
-    stackedWidget->setCurrentWidget(m_statsPage);
+    m_combatPage->setCombatMode(false);
+    stackedWidget->setCurrentWidget(m_combatPage);
 }
 
 void MainWindow::handleQuickSave()
@@ -279,7 +260,8 @@ void MainWindow::handleQuickLoad()
 {
     QString filePath = "quicksave.dat";
     if (m_game->loadGame(filePath)) {
-        stackedWidget->setCurrentWidget(m_adventurePage);
+        m_combatPage->setCombatMode(false);
+        stackedWidget->setCurrentWidget(m_combatPage);
     }
 }
 
@@ -293,7 +275,8 @@ void MainWindow::handleSaveToFile(const QString &filePath)
 void MainWindow::handleLoadFromFile(const QString &filePath)
 {
     if (m_game->loadGame(filePath)) {
-        stackedWidget->setCurrentWidget(m_adventurePage);
+        m_combatPage->setCombatMode(false);
+        stackedWidget->setCurrentWidget(m_combatPage);
     }
 }
 
@@ -319,22 +302,40 @@ void MainWindow::handleMainMenuExit()
 
 void MainWindow::handleInventoryBack()
 {
-    // Back to adventure page
-    stackedWidget->setCurrentWidget(m_adventurePage);
+    // Back to combat page, preserving combat state
+    bool inCombat = (m_game->getCurrentMonster() != nullptr && !m_game->isCombatOver());
+    m_combatPage->setCombatMode(inCombat);
+    if (inCombat) {
+        m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), "");
+    }
+    stackedWidget->setCurrentWidget(m_combatPage);
 }
 
 void MainWindow::handleShopLeave()
 {
-    stackedWidget->setCurrentWidget(m_adventurePage);
+    m_combatPage->setCombatMode(false);
+    stackedWidget->setCurrentWidget(m_combatPage);
 }
 
 void MainWindow::handleStatsBack()
 {
-    stackedWidget->setCurrentWidget(m_adventurePage);
+    // Back to combat page, preserving combat state
+    bool inCombat = (m_game->getCurrentMonster() != nullptr && !m_game->isCombatOver());
+    m_combatPage->setCombatMode(inCombat);
+    if (inCombat) {
+        m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), "");
+    }
+    stackedWidget->setCurrentWidget(m_combatPage);
 }
 
 void MainWindow::handleMonsterStatsBack()
 {
+    // Back to combat page, preserving combat state
+    bool inCombat = (m_game->getCurrentMonster() != nullptr && !m_game->isCombatOver());
+    m_combatPage->setCombatMode(inCombat);
+    if (inCombat) {
+        m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), "");
+    }
     stackedWidget->setCurrentWidget(m_combatPage);
 }
 
@@ -345,7 +346,7 @@ void MainWindow::handleSaveLoadBack()
 
 void MainWindow::handleMenuButtonClicked()
 {
-    // Only show menu if player exists (game is in progress)
+    // Show menu overlay from CombatPage (only when player exists)
     if (m_game && m_game->getPlayer() && m_menuOverlay) {
         m_menuOverlay->updateContent(m_game->getPlayer());
         m_menuOverlay->showOverlay();
@@ -365,9 +366,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             return;
         }
 
-        // Show menu if we're in-game (on adventure or combat page) and player exists
-        if ((currentWidget == m_adventurePage || currentWidget == m_combatPage) &&
-            m_game && m_game->getPlayer()) {
+        // Show menu if we're in-game (on combat page) and player exists
+        if (currentWidget == m_combatPage && m_game && m_game->getPlayer()) {
             m_menuOverlay->updateContent(m_game->getPlayer());
             m_menuOverlay->showOverlay();
             event->accept();
