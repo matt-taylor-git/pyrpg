@@ -30,15 +30,12 @@ signals:
     void overlayHidden();
     void saveRequested();
     void loadRequested();
+    void quitRequested();
 
 private slots:
     void handleItemChanged();
     void handleSaveClicked();
     void handleLoadClicked();
-    void quitRequested();
-
-private slots:
-    void handleItemChanged();
     void handleQuitClicked();
 
 protected:

@@ -371,6 +371,8 @@ void MenuOverlay::handleLoadClicked()
 {
     emit loadRequested();
     hideOverlay();
+}
+
 void MenuOverlay::handleQuitClicked()
 {
     emit quitRequested();
