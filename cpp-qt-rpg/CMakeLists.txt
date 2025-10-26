@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(PyrpgQt VERSION 1.0)
+set(CMAKE_MACOSX_RPATH 1)
+set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks")
+
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -11,6 +14,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 # Find the required Qt modules
+set(Qt6_DIR /opt/homebrew/lib/cmake/Qt6)
 find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 
 enable_testing()
@@ -160,6 +164,8 @@ target_link_libraries(test_navigation_flow PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_navigation_flow PRIVATE src)
 add_test(NAME NavigationFlowTest COMMAND test_navigation_flow)
 
+
+
 # --- Packaging ---
 
 include(CPack)
@@ -185,5 +191,3 @@ else() # Linux
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Gemini")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6 (>= 6.0), libqt6core6 (>= 6.0)")
 endif()
-
-

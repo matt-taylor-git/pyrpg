@@ -78,7 +78,7 @@ void MonsterStatsPage::createCombatStatsSection(QVBoxLayout *parentLayout)
     QGridLayout *grid = new QGridLayout(section);
 
     grid->addWidget(createStatLabel("Health:"), 0, 0);
-    m_healthLabel = createValueLabel("???/???");
+    m_healthLabel = createValueLabel(R"(???/???)");
     grid->addWidget(m_healthLabel, 0, 1);
 
     parentLayout->addWidget(section);
