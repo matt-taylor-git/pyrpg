@@ -100,6 +100,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Menu Overlay (floating overlay, not in stacked widget)
     m_menuOverlay = new MenuOverlay(this);
     m_menuOverlay->setGeometry(0, 0, width(), height());
+    connect(m_menuOverlay, &MenuOverlay::saveRequested, this, &MainWindow::handleQuickSave);
+    connect(m_menuOverlay, &MenuOverlay::loadRequested, this, &MainWindow::handleQuickLoad);
     connect(m_menuOverlay, &MenuOverlay::quitRequested, this, &MainWindow::handleQuitClicked);
     m_menuOverlay->hide();
 }

@@ -28,10 +28,14 @@ public:
 
 signals:
     void overlayHidden();
+    void saveRequested();
+    void loadRequested();
     void quitRequested();
 
 private slots:
     void handleItemChanged();
+    void handleSaveClicked();
+    void handleLoadClicked();
     void handleQuitClicked();
 
 protected:
@@ -47,6 +51,8 @@ private:
     QWidget *m_contentWidget;
     QTabWidget *m_tabWidget;
     QPushButton *m_closeButton;
+    QPushButton *m_saveButton;
+    QPushButton *m_loadButton;
     QPropertyAnimation *m_animation;
 
     InventoryPage *m_inventoryPage;
