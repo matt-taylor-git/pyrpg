@@ -21,12 +21,6 @@ void StatsPage::setupUi()
     mainLayout->setContentsMargins(Theme::SPACING_LG, Theme::SPACING_LG, Theme::SPACING_LG, Theme::SPACING_LG);
     mainLayout->setSpacing(Theme::SPACING_LG);
 
-    // Back button
-    QPushButton *backButton = new QPushButton("⬅️ Back");
-    backButton->setMinimumHeight(40);
-    connect(backButton, &QPushButton::clicked, this, &StatsPage::backRequested);
-    mainLayout->addWidget(backButton, 0, Qt::AlignLeft);
-
     QHBoxLayout *contentLayout = new QHBoxLayout();
     contentLayout->setSpacing(Theme::SPACING_LG);
 

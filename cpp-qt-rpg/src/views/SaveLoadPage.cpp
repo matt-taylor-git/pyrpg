@@ -55,12 +55,6 @@ void SaveLoadPage::setupUi()
 
     mainLayout->addLayout(contentLayout);
 
-    // Back button
-    QPushButton *backButton = new QPushButton("⬅️ Back to Menu");
-    backButton->setMinimumHeight(40);
-    connect(backButton, &QPushButton::clicked, this, &SaveLoadPage::backRequested);
-    mainLayout->addWidget(backButton, 0, Qt::AlignCenter);
-
     // Connect buttons
     connect(m_quickSaveButton, &QPushButton::clicked, this, &SaveLoadPage::onQuickSaveClicked);
     connect(m_quickLoadButton, &QPushButton::clicked, this, &SaveLoadPage::onQuickLoadClicked);
