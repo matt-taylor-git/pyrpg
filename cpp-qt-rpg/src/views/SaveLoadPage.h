@@ -40,6 +40,7 @@ private:
     QPushButton *m_saveSelectedButton;
     QPushButton *m_loadSelectedButton;
     QPushButton *m_backButton;
+    bool m_isRefreshing = false;
 };
 
 #endif // SAVELOADPAGE_H

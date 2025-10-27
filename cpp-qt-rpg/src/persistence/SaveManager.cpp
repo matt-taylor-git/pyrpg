@@ -22,6 +22,15 @@ bool SaveManager::saveGame(Player *player, const QString &filePath)
 
     QDataStream out(&file);
     out.setVersion(QDataStream::Qt_6_0);
+
+    // Write metadata header for quick loading
+    out << QString("PYRPG_SAVE");  // Magic identifier
+    out << quint32(2);  // Save file format version
+    out << player->getName();  // Character name
+    out << player->getLevel();  // Character level
+    out << QDateTime::currentDateTime();  // Save time
+
+    // Write full player data
     out << *player;
 
     file.close();
@@ -39,6 +48,30 @@ Player* SaveManager::loadGame(const QString &filePath)
     QDataStream in(&file);
     in.setVersion(QDataStream::Qt_6_0);
 
+    // Read and validate metadata header
+    QString magic;
+    in >> magic;
+    if (magic != "PYRPG_SAVE") {
+        qWarning() << "Invalid save file format (missing magic header):" << filePath;
+        file.close();
+        return nullptr;
+    }
+
+    quint32 saveVersion;
+    in >> saveVersion;
+    if (saveVersion > 2) {
+        qWarning() << "Unsupported save file version:" << saveVersion;
+        file.close();
+        return nullptr;
+    }
+
+    // Skip metadata (we've already validated the header)
+    QString metaName;
+    int metaLevel;
+    QDateTime metaTime;
+    in >> metaName >> metaLevel >> metaTime;
+
+    // Load full player data
     Player *player = new Player(""); // Create a dummy player
     in >> *player;
 
@@ -49,6 +82,11 @@ Player* SaveManager::loadGame(const QString &filePath)
 QString SaveManager::getSavesDirectory() const
 {
     QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (dataDir.isEmpty()) {
+        qWarning() << "Could not determine AppDataLocation, using fallback";
+        // Fallback to a safe location
+        dataDir = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/.pyrpg";
+    }
     return dataDir + "/saves";
 }
 
@@ -82,14 +120,33 @@ SaveSlotInfo SaveManager::getSlotInfo(int slotNumber) const
     info.exists = true;
     info.saveTime = fileInfo.lastModified();
 
-    // Try to read basic player info without loading the full player
-    Player *player = loadGame(info.filePath);
-    if (player) {
-        info.characterName = player->getName();
-        info.level = player->getLevel();
-        delete player;
+    // Read only the metadata header for performance
+    QFile file(info.filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Could not open file for reading metadata:" << info.filePath;
+        return info;
     }
 
+    QDataStream in(&file);
+    in.setVersion(QDataStream::Qt_6_0);
+
+    // Read and validate magic header
+    QString magic;
+    in >> magic;
+    if (magic != "PYRPG_SAVE") {
+        qWarning() << "Invalid save file format:" << info.filePath;
+        file.close();
+        return info;
+    }
+
+    // Read metadata
+    quint32 saveVersion;
+    in >> saveVersion;
+    in >> info.characterName;
+    in >> info.level;
+    in >> info.saveTime;
+
+    file.close();
     return info;
 }
 

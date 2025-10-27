@@ -69,6 +69,14 @@ void SaveLoadPage::setupUi()
 
 void SaveLoadPage::refreshSaveSlots()
 {
+    // Prevent multiple simultaneous refreshes
+    if (m_isRefreshing) {
+        return;
+    }
+
+    m_isRefreshing = true;
+    setEnabled(false); // Disable all buttons during refresh
+
     m_savesList->clear();
 
     SaveManager saveManager;
@@ -90,6 +98,9 @@ void SaveLoadPage::refreshSaveSlots()
         item->setData(Qt::UserRole, slot.slotNumber);
         m_savesList->addItem(item);
     }
+
+    setEnabled(true);
+    m_isRefreshing = false;
 }
 
 int SaveLoadPage::getSelectedSlotNumber() const
