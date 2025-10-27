@@ -40,6 +40,9 @@ private slots:
     void handleSaveToFile(const QString &filePath);
     void handleLoadFromFile(const QString &filePath);
     void handleNewSave();
+    void handleSaveToSlot(int slotNumber);
+    void handleLoadFromSlot(int slotNumber);
+    void handleDeleteSlot(int slotNumber);
     void handleMainMenuNewGame();
     void handleMainMenuLoadGame();
     void handleMainMenuExit();

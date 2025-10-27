@@ -19,6 +19,11 @@ Monster* getCurrentMonster();
 bool saveGame(const QString &filePath);
     bool loadGame(const QString &filePath);
 
+    // Save slot methods
+    bool saveToSlot(int slotNumber);
+    bool loadFromSlot(int slotNumber);
+    bool deleteSlot(int slotNumber);
+
 // Combat
 void startCombat();
     QString playerAttack();
