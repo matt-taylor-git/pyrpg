@@ -75,9 +75,9 @@ MainWindow::MainWindow(QWidget *parent)
     m_saveLoadPage = new SaveLoadPage();
     connect(m_saveLoadPage, &SaveLoadPage::quickSaveRequested, this, &MainWindow::handleQuickSave);
     connect(m_saveLoadPage, &SaveLoadPage::quickLoadRequested, this, &MainWindow::handleQuickLoad);
-    connect(m_saveLoadPage, &SaveLoadPage::saveToFileRequested, this, &MainWindow::handleSaveToFile);
-    connect(m_saveLoadPage, &SaveLoadPage::loadFromFileRequested, this, &MainWindow::handleLoadFromFile);
-    connect(m_saveLoadPage, &SaveLoadPage::newSaveRequested, this, &MainWindow::handleNewSave);
+    connect(m_saveLoadPage, &SaveLoadPage::saveToSlotRequested, this, &MainWindow::handleSaveToSlot);
+    connect(m_saveLoadPage, &SaveLoadPage::loadFromSlotRequested, this, &MainWindow::handleLoadFromSlot);
+    connect(m_saveLoadPage, &SaveLoadPage::deleteSlotRequested, this, &MainWindow::handleDeleteSlot);
     connect(m_saveLoadPage, &SaveLoadPage::backRequested, this, &MainWindow::handleSaveLoadBack);
     stackedWidget->addWidget(m_saveLoadPage);
 
@@ -299,6 +299,36 @@ void MainWindow::handleNewSave()
     stackedWidget->setCurrentWidget(m_newGameView);
 }
 
+void MainWindow::handleSaveToSlot(int slotNumber)
+{
+    if (m_game->saveToSlot(slotNumber)) {
+        m_saveLoadPage->refreshSaveSlots();
+        QMessageBox::information(this, "Success", "Game saved successfully!");
+    } else {
+        QMessageBox::warning(this, "Save Failed", "Failed to save game to slot " + QString::number(slotNumber));
+    }
+}
+
+void MainWindow::handleLoadFromSlot(int slotNumber)
+{
+    if (m_game->loadFromSlot(slotNumber)) {
+        m_combatPage->setCombatMode(false);
+        stackedWidget->setCurrentWidget(m_combatPage);
+    } else {
+        QMessageBox::warning(this, "Load Failed", "Failed to load game from slot " + QString::number(slotNumber));
+    }
+}
+
+void MainWindow::handleDeleteSlot(int slotNumber)
+{
+    if (m_game->deleteSlot(slotNumber)) {
+        m_saveLoadPage->refreshSaveSlots();
+        QMessageBox::information(this, "Success", "Save slot deleted successfully!");
+    } else {
+        QMessageBox::warning(this, "Delete Failed", "Failed to delete save slot " + QString::number(slotNumber));
+    }
+}
+
 void MainWindow::handleMainMenuNewGame()
 {
     stackedWidget->setCurrentWidget(m_newGameView);
@@ -306,6 +336,7 @@ void MainWindow::handleMainMenuNewGame()
 
 void MainWindow::handleMainMenuLoadGame()
 {
+    m_saveLoadPage->refreshSaveSlots();
     stackedWidget->setCurrentWidget(m_saveLoadPage);
 }
 

@@ -51,6 +51,28 @@ player = loadedPlayer;
 return true;
 }
 
+bool Game::saveToSlot(int slotNumber)
+{
+    if (!player) return false;
+    return saveManager.saveToSlot(player, slotNumber);
+}
+
+bool Game::loadFromSlot(int slotNumber)
+{
+    Player *loadedPlayer = saveManager.loadFromSlot(slotNumber);
+    if (!loadedPlayer) return false;
+    if (player) {
+        delete player;
+    }
+    player = loadedPlayer;
+    return true;
+}
+
+bool Game::deleteSlot(int slotNumber)
+{
+    return saveManager.deleteSaveSlot(slotNumber);
+}
+
 // Combat
 void Game::startCombat()
 {
