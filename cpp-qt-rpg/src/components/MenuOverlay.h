@@ -9,6 +9,7 @@ class QPropertyAnimation;
 class InventoryPage;
 class StatsPage;
 class ShopPage;
+class SaveLoadPage;
 class Player;
 
 class MenuOverlay : public QWidget
@@ -30,6 +31,9 @@ signals:
     void overlayHidden();
     void saveRequested();
     void loadRequested();
+    void saveToSlotRequested(int slotNumber);
+    void loadFromSlotRequested(int slotNumber);
+    void deleteSlotRequested(int slotNumber);
     void quitRequested();
 
 private slots:
@@ -58,6 +62,7 @@ private:
     InventoryPage *m_inventoryPage;
     StatsPage *m_statsPage;
     ShopPage *m_shopPage;
+    SaveLoadPage *m_saveLoadPage;
 
     qreal m_opacity;
     Player *m_currentPlayer;

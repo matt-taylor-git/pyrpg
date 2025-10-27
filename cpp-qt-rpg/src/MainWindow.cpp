@@ -102,6 +102,9 @@ MainWindow::MainWindow(QWidget *parent)
     m_menuOverlay->setGeometry(0, 0, width(), height());
     connect(m_menuOverlay, &MenuOverlay::saveRequested, this, &MainWindow::handleQuickSave);
     connect(m_menuOverlay, &MenuOverlay::loadRequested, this, &MainWindow::handleQuickLoad);
+    connect(m_menuOverlay, &MenuOverlay::saveToSlotRequested, this, &MainWindow::handleSaveToSlot);
+    connect(m_menuOverlay, &MenuOverlay::loadFromSlotRequested, this, &MainWindow::handleLoadFromSlot);
+    connect(m_menuOverlay, &MenuOverlay::deleteSlotRequested, this, &MainWindow::handleDeleteSlot);
     connect(m_menuOverlay, &MenuOverlay::quitRequested, this, &MainWindow::handleQuitClicked);
     m_menuOverlay->hide();
 }
