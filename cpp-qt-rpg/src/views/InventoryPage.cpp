@@ -46,12 +46,6 @@ void InventoryPage::setupUi()
     scrollArea->setWidget(scrollContent);
     inventoryLayout->addWidget(scrollArea);
 
-    // Back button
-    m_backButton = new QPushButton("⬅️ Back");
-    m_backButton->setMinimumHeight(40);
-    connect(m_backButton, &QPushButton::clicked, this, &InventoryPage::backRequested);
-    inventoryLayout->addWidget(m_backButton);
-
     mainLayout->addLayout(inventoryLayout, 3);
 
     // Right side: Equipment panel (placeholder, will be populated in updateInventory)

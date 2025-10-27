@@ -20,12 +20,6 @@ void MonsterStatsPage::setupUi()
     mainLayout->setContentsMargins(Theme::SPACING_LG, Theme::SPACING_LG, Theme::SPACING_LG, Theme::SPACING_LG);
     mainLayout->setSpacing(Theme::SPACING_MD);
 
-    // Back button
-    QPushButton *backButton = new QPushButton("⬅️ Back");
-    backButton->setMinimumHeight(40);
-    connect(backButton, &QPushButton::clicked, this, &MonsterStatsPage::backRequested);
-    mainLayout->addWidget(backButton, 0, Qt::AlignLeft);
-
     createHeaderSection(mainLayout);
 
     QScrollArea *scrollArea = new QScrollArea();

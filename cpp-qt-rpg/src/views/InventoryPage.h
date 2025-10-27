@@ -38,7 +38,6 @@ private:
     QLabel *m_weaponSlot;
     QLabel *m_armorSlot;
     QLabel *m_accessorySlot;
-    QPushButton *m_backButton;
 };
 
 #endif // INVENTORYPAGE_H
