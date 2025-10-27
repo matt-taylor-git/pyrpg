@@ -303,7 +303,9 @@ void MainWindow::handleSaveToSlot(int slotNumber)
 {
     if (m_game->saveToSlot(slotNumber)) {
         m_saveLoadPage->refreshSaveSlots();
-        // Optionally show success message
+        QMessageBox::information(this, "Success", "Game saved successfully!");
+    } else {
+        QMessageBox::warning(this, "Save Failed", "Failed to save game to slot " + QString::number(slotNumber));
     }
 }
 
@@ -312,6 +314,8 @@ void MainWindow::handleLoadFromSlot(int slotNumber)
     if (m_game->loadFromSlot(slotNumber)) {
         m_combatPage->setCombatMode(false);
         stackedWidget->setCurrentWidget(m_combatPage);
+    } else {
+        QMessageBox::warning(this, "Load Failed", "Failed to load game from slot " + QString::number(slotNumber));
     }
 }
 
@@ -319,6 +323,9 @@ void MainWindow::handleDeleteSlot(int slotNumber)
 {
     if (m_game->deleteSlot(slotNumber)) {
         m_saveLoadPage->refreshSaveSlots();
+        QMessageBox::information(this, "Success", "Save slot deleted successfully!");
+    } else {
+        QMessageBox::warning(this, "Delete Failed", "Failed to delete save slot " + QString::number(slotNumber));
     }
 }
 

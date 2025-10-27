@@ -50,6 +50,7 @@ QDataStream &operator<<(QDataStream &out, const Player &p)
     // Serialize base class
     out << static_cast<const Character&>(p);
     // Serialize Player members
+    out << p.characterClass;
     out << p.mana << p.maxMana << p.strength << p.dexterity << p.intelligence << p.vitality;
     out << p.gold << p.experience << p.experienceToLevel << p.skillPoints << p.statPoints;
 
@@ -71,6 +72,15 @@ QDataStream &operator<<(QDataStream &out, const Player &p)
     }
     out << inv;
 
+    // Serialize skills
+    QList<Skill> skillList;
+    for (Skill* skill : p.skills) {
+        if (skill != nullptr) {
+            skillList.append(*skill);
+        }
+    }
+    out << skillList;
+
     return out;
 }
 
@@ -79,6 +89,7 @@ QDataStream &operator>>(QDataStream &in, Player &p)
     // Deserialize base class
     in >> static_cast<Character&>(p);
     // Deserialize Player members
+    in >> p.characterClass;
     in >> p.mana >> p.maxMana >> p.strength >> p.dexterity >> p.intelligence >> p.vitality;
     in >> p.gold >> p.experience >> p.experienceToLevel >> p.skillPoints >> p.statPoints;
 
@@ -98,6 +109,13 @@ QDataStream &operator>>(QDataStream &in, Player &p)
     in >> inv;
     for (const Item &item : inv) {
         p.inventory.append(new Item(item));
+    }
+
+    // Deserialize skills
+    QList<Skill> skillList;
+    in >> skillList;
+    for (const Skill &skill : skillList) {
+        p.skills.append(new Skill(skill));
     }
 
     return in;
