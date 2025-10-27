@@ -4,16 +4,17 @@
 #include <QString>
 #include <QList>
 #include <QDateTime>
+#include <vector>
 
 class Player;
 
 struct SaveSlotInfo {
     int slotNumber;
-    QString filePath;
-    QString characterName;
-    int level;
-    QDateTime saveTime;
-    bool exists;
+QString filePath;
+QString characterName;
+int level;
+QDateTime saveTime;
+bool exists;
 };
 
 class SaveManager
@@ -24,7 +25,7 @@ public:
     Player* loadGame(const QString &filePath);
 
     // Save slot management
-    QList<SaveSlotInfo> getSaveSlots() const;
+    std::vector<SaveSlotInfo> getSaveSlots() const;
     bool saveToSlot(Player *player, int slotNumber);
     Player* loadFromSlot(int slotNumber);
     bool deleteSaveSlot(int slotNumber);

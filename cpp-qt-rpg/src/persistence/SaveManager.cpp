@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>
+#include <vector>
 
 SaveManager::SaveManager()
 {
@@ -26,8 +27,8 @@ bool SaveManager::saveGame(Player *player, const QString &filePath)
     // Write metadata header for quick loading
     out << QString("PYRPG_SAVE");  // Magic identifier
     out << quint32(2);  // Save file format version
-    out << player->getName();  // Character name
-    out << player->getLevel();  // Character level
+    out << player->name;  // Character name
+    out << player->level;  // Character level
     out << QDateTime::currentDateTime();  // Save time
 
     // Write full player data
@@ -150,13 +151,13 @@ SaveSlotInfo SaveManager::getSlotInfo(int slotNumber) const
     return info;
 }
 
-QList<SaveSlotInfo> SaveManager::getSaveSlots() const
+std::vector<SaveSlotInfo> SaveManager::getSaveSlots() const
 {
-    QList<SaveSlotInfo> slots;
+    std::vector<SaveSlotInfo> slot_list {};
     for (int i = 1; i <= MAX_SAVE_SLOTS; ++i) {
-        slots.append(getSlotInfo(i));
+        slot_list.push_back(getSlotInfo(i));
     }
-    return slots;
+    return slot_list;
 }
 
 bool SaveManager::saveToSlot(Player *player, int slotNumber)

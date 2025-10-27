@@ -1,5 +1,6 @@
 #include "Player.h"
 #include <algorithm>
+#include <QDebug>
 
 Player::Player(const QString &name, const QString &characterClass)
     : Character(name, 1, 100, 100), // Base stats for a new player

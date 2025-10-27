@@ -1,6 +1,8 @@
+#include <QString>
+#include <QDateTime>
+#include "../persistence/SaveManager.h"
 #include "SaveLoadPage.h"
 #include "../theme/Theme.h"
-#include "../persistence/SaveManager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -8,6 +10,7 @@
 #include <QPushButton>
 #include <QFrame>
 #include <QMessageBox>
+#include <vector>
 
 SaveLoadPage::SaveLoadPage(QWidget *parent) : QWidget(parent)
 {
@@ -80,9 +83,9 @@ void SaveLoadPage::refreshSaveSlots()
     m_savesList->clear();
 
     SaveManager saveManager;
-    QList<SaveSlotInfo> slots = saveManager.getSaveSlots();
+    auto save_slots = saveManager.getSaveSlots();
 
-    for (const SaveSlotInfo &slot : slots) {
+    for (const SaveSlotInfo &slot : save_slots) {
         QString itemText;
         if (slot.exists) {
             itemText = QString("Slot %1: %2 (Level %3) - %4")

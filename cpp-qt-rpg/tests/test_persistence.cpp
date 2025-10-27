@@ -1,8 +1,10 @@
 #include <QtTest/QtTest>
+#include <vector>
 #include "../src/persistence/SaveManager.h"
 #include "../src/models/Player.h"
 #include "../src/game/factories/ItemFactory.h"
 #include "../src/models/Skill.h"
+#include <vector>
 
 class TestPersistence : public QObject
 {
@@ -98,10 +100,10 @@ void TestPersistence::testLoadFromSlot()
     // Load from slot
     Player *loaded = saveManager.loadFromSlot(2);
     QVERIFY(loaded != nullptr);
-    QCOMPARE(loaded->getName(), QString("LoadTest"));
+    QCOMPARE(loaded->name, QString("LoadTest"));
     QCOMPARE(loaded->characterClass, QString("Mage"));
     QCOMPARE(loaded->gold, 2000);
-    QCOMPARE(loaded->getLevel(), 15);
+    QCOMPARE(loaded->level, 15);
 
     delete player;
     delete loaded;
@@ -138,20 +140,20 @@ void TestPersistence::testGetSaveSlots()
     saveManager.saveToSlot(p3, 10);
 
     // Get all slots
-    QList<SaveSlotInfo> slots = saveManager.getSaveSlots();
-    QCOMPARE(slots.size(), 10);
+    auto save_slots = saveManager.getSaveSlots();
+    QCOMPARE((int)save_slots.size(), 10);
 
     // Verify specific slots
-    QVERIFY(slots[0].exists);
-    QCOMPARE(slots[0].characterName, QString("Player1"));
-    QVERIFY(slots[4].exists);
-    QCOMPARE(slots[4].characterName, QString("Player2"));
-    QVERIFY(slots[9].exists);
-    QCOMPARE(slots[9].characterName, QString("Player3"));
+    QVERIFY(save_slots[0].exists);
+    QCOMPARE(save_slots[0].characterName, QString("Player1"));
+    QVERIFY(save_slots[4].exists);
+    QCOMPARE(save_slots[4].characterName, QString("Player2"));
+    QVERIFY(save_slots[9].exists);
+    QCOMPARE(save_slots[9].characterName, QString("Player3"));
 
     // Verify empty slots
-    QVERIFY(!slots[1].exists);
-    QVERIFY(!slots[2].exists);
+    QVERIFY(!save_slots[1].exists);
+    QVERIFY(!save_slots[2].exists);
 
     delete p1;
     delete p2;
@@ -198,7 +200,7 @@ void TestPersistence::testSlotOverwrite()
     // Verify loaded data is from second player
     Player *loaded = saveManager.loadFromSlot(4);
     QVERIFY(loaded != nullptr);
-    QCOMPARE(loaded->getName(), QString("Overwrite"));
+    QCOMPARE(loaded->name, QString("Overwrite"));
     QCOMPARE(loaded->gold, 500);
 
     delete player1;
