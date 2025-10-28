@@ -160,6 +160,48 @@ target_link_libraries(test_navigation_flow PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_navigation_flow PRIVATE src)
 add_test(NAME NavigationFlowTest COMMAND test_navigation_flow)
 
+# Test for Inventory Shortcuts
+add_executable(test_inventory_shortcuts tests/test_inventory_shortcuts.cpp
+    src/views/InventoryPage.cpp
+    src/models/Player.cpp
+    src/models/Character.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+)
+target_link_libraries(test_inventory_shortcuts PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_inventory_shortcuts PRIVATE src)
+add_test(NAME InventoryShortcutsTest COMMAND test_inventory_shortcuts)
+
+# Test for Shop Shortcuts
+add_executable(test_shop_shortcuts tests/test_shop_shortcuts.cpp
+    src/views/ShopPage.cpp
+    src/models/Player.cpp
+    src/models/Character.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+    src/game/factories/ItemFactory.cpp
+)
+target_link_libraries(test_shop_shortcuts PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_shop_shortcuts PRIVATE src)
+add_test(NAME ShopShortcutsTest COMMAND test_shop_shortcuts)
+
+# Test for SaveLoad Shortcuts
+add_executable(test_saveload_shortcuts tests/test_saveload_shortcuts.cpp
+    src/views/SaveLoadPage.cpp
+    src/persistence/SaveManager.cpp
+    src/models/Player.cpp
+    src/models/Character.cpp
+    src/models/Monster.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+    src/game/factories/ItemFactory.cpp
+    src/game/factories/SkillFactory.cpp
+    src/game/factories/MonsterFactory.cpp
+)
+target_link_libraries(test_saveload_shortcuts PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_saveload_shortcuts PRIVATE src)
+add_test(NAME SaveLoadShortcutsTest COMMAND test_saveload_shortcuts)
+
 # --- Packaging ---
 
 include(CPack)

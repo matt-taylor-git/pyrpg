@@ -219,6 +219,31 @@ void MainWindow::handleStatsClicked()
     stackedWidget->setCurrentWidget(m_statsPage);
 }
 
+void MainWindow::handleOpenInventory()
+{
+    if (m_game && m_game->getPlayer()) {
+        m_inventoryPage->updateInventory(m_game->getPlayer());
+        stackedWidget->setCurrentWidget(m_inventoryPage);
+        m_inventoryPage->setFocus();
+    }
+}
+
+void MainWindow::handleOpenShop()
+{
+    if (m_game && m_game->getPlayer()) {
+        m_shopPage->updateShop(m_game->getPlayer());
+        stackedWidget->setCurrentWidget(m_shopPage);
+        m_shopPage->setFocus();
+    }
+}
+
+void MainWindow::handleOpenSaveLoad()
+{
+    m_saveLoadPage->refreshSaveSlots();
+    stackedWidget->setCurrentWidget(m_saveLoadPage);
+    m_saveLoadPage->setFocus();
+}
+
 void MainWindow::handleCombatEnd(int oldLevel)
 {
     // Legacy method - combat is already ended by the signal handler
@@ -412,9 +437,10 @@ void MainWindow::handleMenuButtonClicked()
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
+    QWidget *currentWidget = stackedWidget->currentWidget();
+
     // Only handle ESC if we're on the adventure page or combat page (in-game)
     if (event->key() == Qt::Key_Escape && m_menuOverlay) {
-        QWidget *currentWidget = stackedWidget->currentWidget();
 
         // Check if menu overlay is visible
         if (m_menuOverlay->isVisible()) {
@@ -429,6 +455,24 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             m_menuOverlay->showOverlay();
             event->accept();
             return;
+        }
+    }
+
+    // Handle global shortcuts only when on combat page and not in combat
+    if (currentWidget == m_combatPage && m_game && m_game->getPlayer() && !m_game->isInCombat()) {
+        switch (event->key()) {
+            case Qt::Key_I:
+                handleOpenInventory();
+                event->accept();
+                return;
+            case Qt::Key_S:
+                handleOpenShop();
+                event->accept();
+                return;
+            case Qt::Key_L:
+                handleOpenSaveLoad();
+                event->accept();
+                return;
         }
     }
 

@@ -35,6 +35,9 @@ private slots:
     void handleItemClicked();
     void handleStatsClicked();
     void handleRunClicked();
+    void handleOpenInventory();
+    void handleOpenShop();
+    void handleOpenSaveLoad();
     void handleQuickSave();
     void handleQuickLoad();
     void handleSaveToFile(const QString &filePath);

@@ -4,6 +4,7 @@
 #include <QWidget>
 
 class QListWidget;
+class QKeyEvent;
 class QPushButton;
 
 class SaveLoadPage : public QWidget
@@ -20,6 +21,9 @@ signals:
     void loadFromSlotRequested(int slotNumber);
     void deleteSlotRequested(int slotNumber);
     void backRequested();
+
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
 
 private slots:
     void onQuickSaveClicked();

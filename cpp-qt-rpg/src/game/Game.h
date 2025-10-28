@@ -31,8 +31,9 @@ void startCombat();
     QString playerUseItem(Item* item);
     QString monsterAttack();
 bool isCombatOver();
-    QString getCombatResult();
-    void endCombat();
+QString getCombatResult();
+void endCombat();
+    bool isInCombat() const;
 
 signals:
     void combatEnded(bool playerWon);

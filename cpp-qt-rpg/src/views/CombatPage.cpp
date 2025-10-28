@@ -223,6 +223,11 @@ QLayout* CombatPage::createNonCombatActionsLayout()
     title->setAlignment(Qt::AlignCenter);
     actionsLayout->addWidget(title);
 
+    QLabel *shortcutsHint = new QLabel("Keyboard shortcuts: I (Inventory), S (Shop), L (Save/Load)");
+    shortcutsHint->setStyleSheet(QString("color: %1; font-size: 12px;").arg(Theme::MUTED_FOREGROUND.name()));
+    shortcutsHint->setAlignment(Qt::AlignCenter);
+    actionsLayout->addWidget(shortcutsHint);
+
     QPushButton *exploreButton = new QPushButton("🏞️ Explore");
     exploreButton->setMinimumHeight(60);
     exploreButton->setStyleSheet(QString(

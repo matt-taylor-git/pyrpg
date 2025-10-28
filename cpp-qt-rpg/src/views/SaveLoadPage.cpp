@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QFrame>
 #include <QMessageBox>
+#include <QKeyEvent>
 #include <vector>
 
 SaveLoadPage::SaveLoadPage(QWidget *parent) : QWidget(parent)
@@ -187,4 +188,44 @@ void SaveLoadPage::onDeleteClicked()
 void SaveLoadPage::onBackClicked()
 {
     emit backRequested();
+}
+
+void SaveLoadPage::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key()) {
+        case Qt::Key_Escape:
+            emit backRequested();
+            event->accept();
+            break;
+        case Qt::Key_Q:
+            emit quickSaveRequested();
+            event->accept();
+            break;
+        case Qt::Key_W:
+            emit quickLoadRequested();
+            event->accept();
+            break;
+        case Qt::Key_Up:
+            if (m_savesList->currentRow() > 0) {
+                m_savesList->setCurrentRow(m_savesList->currentRow() - 1);
+            }
+            event->accept();
+            break;
+        case Qt::Key_Down:
+            if (m_savesList->currentRow() < m_savesList->count() - 1) {
+                m_savesList->setCurrentRow(m_savesList->currentRow() + 1);
+            }
+            event->accept();
+            break;
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+            // Trigger save or load based on context (assume save for now, or check mode)
+            emit saveToSlotRequested(m_savesList->currentRow() + 1);  // Slots are 1-based
+            event->accept();
+            break;
+        // TODO: Add number keys 1-9 for direct slot selection
+        default:
+            QWidget::keyPressEvent(event);
+            break;
+    }
 }

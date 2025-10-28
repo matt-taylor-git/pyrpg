@@ -222,6 +222,11 @@ void Game::endCombat()
     }
 }
 
+bool Game::isInCombat() const
+{
+    return combatActive;
+}
+
 int Game::calculateDamage(int baseDamage, int attackerLevel, int defenderDefense, bool isCritical)
 {
     // Base formula: damage = baseDamage * levelMultiplier - defense

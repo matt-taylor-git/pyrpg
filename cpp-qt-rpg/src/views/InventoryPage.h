@@ -4,6 +4,7 @@
 #include <QWidget>
 
 class QLabel;
+class QKeyEvent;
 class QGridLayout;
 class QPushButton;
 class QFrame;
@@ -22,6 +23,9 @@ signals:
     void itemEquipped(Item *item);
     void itemUsed(Item *item);
 
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+
 private slots:
     void handleItemClicked(Item *item);
 
@@ -30,6 +34,7 @@ private:
     void clearInventory();
     QWidget* createItemCard(Item *item);
     QWidget* createEquipmentPanel(Player *player);
+    void updateSelectionDisplay();
 
     Player *m_currentPlayer;
     QLabel *m_goldLabel;
@@ -38,6 +43,10 @@ private:
     QLabel *m_weaponSlot;
     QLabel *m_armorSlot;
     QLabel *m_accessorySlot;
+
+    QList<Item*> m_items;
+    QList<QWidget*> m_itemCards;
+    int m_selectedIndex;
 };
 
 #endif // INVENTORYPAGE_H
