@@ -47,6 +47,7 @@ add_executable(pyrpg-qt
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
     src/components/MenuOverlay.cpp
+    src/components/AnimationManager.cpp
     src/views/MainMenu.cpp
     src/views/CharacterCustomizationPage.cpp
     src/views/CombatPage.cpp
@@ -84,6 +85,7 @@ add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
     src/components/MenuOverlay.cpp
+    src/components/AnimationManager.cpp
     src/game/Game.cpp
     src/models/Player.cpp
     src/models/Character.cpp
@@ -145,6 +147,7 @@ add_executable(test_navigation_flow tests/test_navigation_flow.cpp src/MainWindo
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
     src/components/MenuOverlay.cpp
+    src/components/AnimationManager.cpp
     src/game/Game.cpp
     src/models/Player.cpp
     src/models/Character.cpp

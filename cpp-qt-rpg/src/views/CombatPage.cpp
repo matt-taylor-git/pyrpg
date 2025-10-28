@@ -313,7 +313,32 @@ void CombatPage::setCombatMode(bool inCombat)
     // Add the new layout to the card
     m_cardLayout->addLayout(m_actionsLayout);
 
-    // Force the widget to update its layout
-    m_cardLayout->update();
-    update();
-}
+        // Force the widget to update its layout
+
+        m_cardLayout->update();
+
+        update();
+
+    }
+
+    
+
+    QLabel* CombatPage::getHeroSpriteLabel()
+
+    {
+
+        return m_heroSpriteLabel;
+
+    }
+
+    
+
+    QLabel* CombatPage::getEnemySpriteLabel()
+
+    {
+
+        return m_enemySpriteLabel;
+
+    }
+
+    

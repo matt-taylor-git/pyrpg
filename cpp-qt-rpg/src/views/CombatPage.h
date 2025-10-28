@@ -22,6 +22,10 @@ void setCombatActive(bool active);
 void setCombatMode(bool inCombat);
     bool isInCombat() const { return m_inCombat; }
 
+    // Accessors for AnimationManager
+    QLabel* getHeroSpriteLabel();
+    QLabel* getEnemySpriteLabel();
+
 signals:
 void attackClicked();
 void skillClicked();

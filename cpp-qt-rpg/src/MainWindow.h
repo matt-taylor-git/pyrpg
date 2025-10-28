@@ -16,6 +16,7 @@ class ShopPage;
 class StatsPage;
 class Game;
 class MenuOverlay;
+class AnimationManager;
 
 class MainWindow : public QMainWindow
 {
@@ -57,12 +58,15 @@ private slots:
     void handleCombatEnd(int oldLevel);
     void handleCombatEnded(bool playerWon);
     void handleMenuButtonClicked();
+    void onAnimationFinished();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 
 private:
+    enum CombatState { Idle, PlayerAttacking, PlayerDamage, MonsterTurn, CombatEnded };
+
     QStackedWidget *stackedWidget;
     MainMenu *m_mainMenu;
     NewGameView *m_newGameView;
@@ -75,6 +79,8 @@ private:
     StatsPage *m_statsPage;
     Game *m_game;
     MenuOverlay *m_menuOverlay;
+    AnimationManager *m_animationManager;
+    CombatState m_combatState;
 };
 
 #endif // MAINWINDOW_H

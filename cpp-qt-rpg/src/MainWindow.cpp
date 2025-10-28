@@ -18,6 +18,7 @@
 #include "models/Monster.h"
 #include "models/Skill.h"
 #include "models/Item.h"
+#include "components/AnimationManager.h"
 #include <QStackedWidget>
 #include <QWidget>
 #include <QMessageBox>
@@ -26,6 +27,7 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
+    , m_combatState(Idle)
 {
     setWindowTitle("Pyrpg-Qt");
     resize(800, 600);
@@ -107,6 +109,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_menuOverlay, &MenuOverlay::deleteSlotRequested, this, &MainWindow::handleDeleteSlot);
     connect(m_menuOverlay, &MenuOverlay::quitRequested, this, &MainWindow::handleQuitClicked);
     m_menuOverlay->hide();
+
+    m_animationManager = new AnimationManager(m_combatPage, this);
+    connect(m_animationManager, &AnimationManager::animationFinished, this, &MainWindow::onAnimationFinished);
 }
 
 void MainWindow::handleCharacterCreation(const QString &name, const QString &characterClass)
@@ -155,21 +160,9 @@ void MainWindow::handleQuitClicked()
 
 void MainWindow::handleAttackClicked()
 {
-    int oldLevel = m_game->getPlayer()->level;
-    QString log = m_game->playerAttack();
-    m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
-
-    if (m_game->isCombatOver()) {
-        handleCombatEnd(oldLevel);
-    } else {
-        // Monster turn
-        QString monsterLog = m_game->monsterAttack();
-        m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), monsterLog);
-
-        if (m_game->isCombatOver()) {
-            handleCombatEnd(oldLevel);
-        }
-    }
+    m_combatState = PlayerAttacking;
+    m_combatPage->setCombatActive(false);
+    m_animationManager->playPlayerAttackAnimation();
 }
 
 void MainWindow::handleSkillClicked()
@@ -486,6 +479,44 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     // Keep menu overlay sized to match the window
     if (m_menuOverlay) {
         m_menuOverlay->setGeometry(0, 0, width(), height());
+    }
+}
+
+void MainWindow::onAnimationFinished()
+{
+    int oldLevel = m_game->getPlayer()->level;
+
+    switch (m_combatState) {
+        case PlayerAttacking: {
+            QString log = m_game->playerAttack();
+            m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
+
+            if (m_game->isCombatOver()) {
+                m_combatState = CombatEnded;
+                handleCombatEnd(oldLevel);
+            } else {
+                m_combatState = PlayerDamage;
+                m_animationManager->playDamageAnimation(m_combatPage->getEnemySpriteLabel());
+            }
+            break;
+        }
+        case PlayerDamage: {
+            // Now it's the monster's turn
+            m_combatState = MonsterTurn;
+            QString monsterLog = m_game->monsterAttack();
+            m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), monsterLog);
+
+            if (m_game->isCombatOver()) {
+                m_combatState = CombatEnded;
+                handleCombatEnd(oldLevel);
+            } else {
+                m_combatState = Idle;
+                m_combatPage->setCombatActive(true);
+            }
+            break;
+        }
+        default:
+            break;
     }
 }
 
