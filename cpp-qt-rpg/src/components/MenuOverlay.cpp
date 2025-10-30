@@ -2,6 +2,7 @@
 #include "../views/InventoryPage.h"
 #include "../views/StatsPage.h"
 #include "../views/ShopPage.h"
+#include "../views/SaveLoadPage.h"
 #include "../models/Player.h"
 #include "../theme/Theme.h"
 #include <QVBoxLayout>
@@ -150,20 +151,30 @@ void MenuOverlay::setupUi()
     m_inventoryPage = new InventoryPage();
     m_statsPage = new StatsPage();
     m_shopPage = new ShopPage();
+    m_saveLoadPage = new SaveLoadPage();
 
     // Connect back signals to close the overlay
     connect(m_inventoryPage, &InventoryPage::backRequested, this, &MenuOverlay::hideOverlay);
     connect(m_statsPage, &StatsPage::backRequested, this, &MenuOverlay::hideOverlay);
     connect(m_shopPage, &ShopPage::leaveRequested, this, &MenuOverlay::hideOverlay);
+    connect(m_saveLoadPage, &SaveLoadPage::backRequested, this, &MenuOverlay::hideOverlay);
 
     // Connect item change signals to refresh content
     connect(m_inventoryPage, &InventoryPage::itemEquipped, this, &MenuOverlay::handleItemChanged);
     connect(m_shopPage, &ShopPage::itemPurchased, this, &MenuOverlay::handleItemChanged);
 
+    // Connect SaveLoadPage signals
+    connect(m_saveLoadPage, &SaveLoadPage::quickSaveRequested, this, &MenuOverlay::saveRequested);
+    connect(m_saveLoadPage, &SaveLoadPage::quickLoadRequested, this, &MenuOverlay::loadRequested);
+    connect(m_saveLoadPage, &SaveLoadPage::saveToSlotRequested, this, &MenuOverlay::saveToSlotRequested);
+    connect(m_saveLoadPage, &SaveLoadPage::loadFromSlotRequested, this, &MenuOverlay::loadFromSlotRequested);
+    connect(m_saveLoadPage, &SaveLoadPage::deleteSlotRequested, this, &MenuOverlay::deleteSlotRequested);
+
     // Add tabs
     m_tabWidget->addTab(m_inventoryPage, "🎒 Inventory");
     m_tabWidget->addTab(m_statsPage, "📊 Stats");
     m_tabWidget->addTab(m_shopPage, "🏪 Shop");
+    m_tabWidget->addTab(m_saveLoadPage, "💾 Save/Load");
 
     contentLayout->addWidget(m_tabWidget);
 
@@ -291,6 +302,7 @@ void MenuOverlay::updateContent(Player *player)
         m_inventoryPage->updateInventory(player);
         m_statsPage->updateStats(player);
         m_shopPage->updateShop(player);
+        m_saveLoadPage->refreshSaveSlots();
     }
 }
 

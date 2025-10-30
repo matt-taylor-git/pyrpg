@@ -223,6 +223,11 @@ QLayout* CombatPage::createNonCombatActionsLayout()
     title->setAlignment(Qt::AlignCenter);
     actionsLayout->addWidget(title);
 
+    QLabel *shortcutsHint = new QLabel("Keyboard shortcuts: I (Inventory), S (Shop), L (Save/Load)");
+    shortcutsHint->setStyleSheet(QString("color: %1; font-size: 12px;").arg(Theme::MUTED_FOREGROUND.name()));
+    shortcutsHint->setAlignment(Qt::AlignCenter);
+    actionsLayout->addWidget(shortcutsHint);
+
     QPushButton *exploreButton = new QPushButton("🏞️ Explore");
     exploreButton->setMinimumHeight(60);
     exploreButton->setStyleSheet(QString(
@@ -308,7 +313,32 @@ void CombatPage::setCombatMode(bool inCombat)
     // Add the new layout to the card
     m_cardLayout->addLayout(m_actionsLayout);
 
-    // Force the widget to update its layout
-    m_cardLayout->update();
-    update();
-}
+        // Force the widget to update its layout
+
+        m_cardLayout->update();
+
+        update();
+
+    }
+
+    
+
+    QLabel* CombatPage::getHeroSpriteLabel()
+
+    {
+
+        return m_heroSpriteLabel;
+
+    }
+
+    
+
+    QLabel* CombatPage::getEnemySpriteLabel()
+
+    {
+
+        return m_enemySpriteLabel;
+
+    }
+
+    

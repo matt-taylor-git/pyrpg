@@ -11,11 +11,12 @@
 #include <QPushButton>
 #include <QFrame>
 #include <QMessageBox>
+#include <QKeyEvent>
 
 ShopPage::ShopPage(QWidget *parent)
-    : QWidget(parent), m_currentPlayer(nullptr)
+: QWidget(parent), m_currentPlayer(nullptr), m_selectedIndex(0)
 {
-    setupUi();
+setupUi();
 }
 
 void ShopPage::setupUi()
@@ -58,35 +59,50 @@ void ShopPage::setupUi()
 
 void ShopPage::updateShop(Player *player)
 {
-    m_currentPlayer = player;
+m_currentPlayer = player;
+m_shopItems.clear();
+    m_itemCards.clear();
+m_selectedIndex = 0;
     clearShop();
 
     if (!player) return;
 
-    m_goldLabel->setText(QString("Gold: %1").arg(player->gold));
+m_goldLabel->setText(QString("Gold: %1").arg(player->gold));
 
-    // Get shop items from ItemFactory
-    QMap<QString, Item*> shopItemsMap = ItemFactory::getShopItems();
+// Get shop items from ItemFactory
+QMap<QString, Item*> shopItemsMap = ItemFactory::getShopItems();
 
     // Populate shop grid
-    int row = 0, col = 0;
-    const int columns = 4;
+int row = 0, col = 0;
+const int columns = 4;
 
-    for (Item *item : shopItemsMap.values()) {
-        if (!item) continue;
+for (Item *item : shopItemsMap.values()) {
+if (!item) continue;
 
-        // Calculate price (base value * 1.5 for shop markup)
-        int price = static_cast<int>(item->value * 1.5);
+// Calculate price (base value * 1.5 for shop markup)
+int price = static_cast<int>(item->value * 1.5);
 
-        QWidget *itemCard = createShopItemCard(item, price);
-        m_shopGridLayout->addWidget(itemCard, row, col);
+m_shopItems.append(qMakePair(item, price));
+QWidget *itemCard = createShopItemCard(item, price);
+m_itemCards.append(itemCard);
+m_shopGridLayout->addWidget(itemCard, row, col);
 
-        col++;
+    col++;
         if (col >= columns) {
             col = 0;
             row++;
         }
     }
+
+    updateSelectionDisplay();
+}
+
+void ShopPage::updateSelectionDisplay()
+{
+    // TODO: Add visual selection indicator (border, highlight, etc.)
+    // For now, just ensure index is valid
+    if (m_selectedIndex < 0) m_selectedIndex = 0;
+    if (m_selectedIndex >= m_shopItems.size() && m_shopItems.size() > 0) m_selectedIndex = m_shopItems.size() - 1;
 }
 
 void ShopPage::clearShop()
@@ -208,4 +224,53 @@ void ShopPage::handleBuyClicked(Item *item, int price)
 
     // Refresh shop display
     updateShop(m_currentPlayer);
+}
+
+void ShopPage::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key()) {
+        case Qt::Key_Escape:
+            emit leaveRequested();
+            event->accept();
+            break;
+        case Qt::Key_Up:
+            if (m_selectedIndex >= 4) {  // Assuming 4 columns
+                m_selectedIndex -= 4;
+                updateSelectionDisplay();
+            }
+            event->accept();
+            break;
+        case Qt::Key_Down:
+            if (m_selectedIndex + 4 < m_shopItems.size()) {
+                m_selectedIndex += 4;
+                updateSelectionDisplay();
+            }
+            event->accept();
+            break;
+        case Qt::Key_Left:
+            if (m_selectedIndex > 0) {
+                m_selectedIndex--;
+                updateSelectionDisplay();
+            }
+            event->accept();
+            break;
+        case Qt::Key_Right:
+            if (m_selectedIndex + 1 < m_shopItems.size()) {
+                m_selectedIndex++;
+                updateSelectionDisplay();
+            }
+            event->accept();
+            break;
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+            if (m_selectedIndex >= 0 && m_selectedIndex < m_shopItems.size()) {
+                auto [item, price] = m_shopItems[m_selectedIndex];
+                handleBuyClicked(item, price);
+            }
+            event->accept();
+            break;
+        default:
+            QWidget::keyPressEvent(event);
+            break;
+    }
 }

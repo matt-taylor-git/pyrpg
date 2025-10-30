@@ -18,6 +18,7 @@
 #include "models/Monster.h"
 #include "models/Skill.h"
 #include "models/Item.h"
+#include "components/AnimationManager.h"
 #include <QStackedWidget>
 #include <QWidget>
 #include <QMessageBox>
@@ -26,6 +27,7 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
+    , m_combatState(Idle)
 {
     setWindowTitle("Pyrpg-Qt");
     resize(800, 600);
@@ -75,9 +77,9 @@ MainWindow::MainWindow(QWidget *parent)
     m_saveLoadPage = new SaveLoadPage();
     connect(m_saveLoadPage, &SaveLoadPage::quickSaveRequested, this, &MainWindow::handleQuickSave);
     connect(m_saveLoadPage, &SaveLoadPage::quickLoadRequested, this, &MainWindow::handleQuickLoad);
-    connect(m_saveLoadPage, &SaveLoadPage::saveToFileRequested, this, &MainWindow::handleSaveToFile);
-    connect(m_saveLoadPage, &SaveLoadPage::loadFromFileRequested, this, &MainWindow::handleLoadFromFile);
-    connect(m_saveLoadPage, &SaveLoadPage::newSaveRequested, this, &MainWindow::handleNewSave);
+    connect(m_saveLoadPage, &SaveLoadPage::saveToSlotRequested, this, &MainWindow::handleSaveToSlot);
+    connect(m_saveLoadPage, &SaveLoadPage::loadFromSlotRequested, this, &MainWindow::handleLoadFromSlot);
+    connect(m_saveLoadPage, &SaveLoadPage::deleteSlotRequested, this, &MainWindow::handleDeleteSlot);
     connect(m_saveLoadPage, &SaveLoadPage::backRequested, this, &MainWindow::handleSaveLoadBack);
     stackedWidget->addWidget(m_saveLoadPage);
 
@@ -102,8 +104,14 @@ MainWindow::MainWindow(QWidget *parent)
     m_menuOverlay->setGeometry(0, 0, width(), height());
     connect(m_menuOverlay, &MenuOverlay::saveRequested, this, &MainWindow::handleQuickSave);
     connect(m_menuOverlay, &MenuOverlay::loadRequested, this, &MainWindow::handleQuickLoad);
+    connect(m_menuOverlay, &MenuOverlay::saveToSlotRequested, this, &MainWindow::handleSaveToSlot);
+    connect(m_menuOverlay, &MenuOverlay::loadFromSlotRequested, this, &MainWindow::handleLoadFromSlot);
+    connect(m_menuOverlay, &MenuOverlay::deleteSlotRequested, this, &MainWindow::handleDeleteSlot);
     connect(m_menuOverlay, &MenuOverlay::quitRequested, this, &MainWindow::handleQuitClicked);
     m_menuOverlay->hide();
+
+    m_animationManager = new AnimationManager(m_combatPage, this);
+    connect(m_animationManager, &AnimationManager::animationFinished, this, &MainWindow::onAnimationFinished);
 }
 
 void MainWindow::handleCharacterCreation(const QString &name, const QString &characterClass)
@@ -152,21 +160,9 @@ void MainWindow::handleQuitClicked()
 
 void MainWindow::handleAttackClicked()
 {
-    int oldLevel = m_game->getPlayer()->level;
-    QString log = m_game->playerAttack();
-    m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
-
-    if (m_game->isCombatOver()) {
-        handleCombatEnd(oldLevel);
-    } else {
-        // Monster turn
-        QString monsterLog = m_game->monsterAttack();
-        m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), monsterLog);
-
-        if (m_game->isCombatOver()) {
-            handleCombatEnd(oldLevel);
-        }
-    }
+    m_combatState = PlayerAttacking;
+    m_combatPage->setCombatActive(false);
+    m_animationManager->playPlayerAttackAnimation();
 }
 
 void MainWindow::handleSkillClicked()
@@ -214,6 +210,31 @@ void MainWindow::handleStatsClicked()
     // Show player stats, not monster stats
     m_statsPage->updateStats(m_game->getPlayer());
     stackedWidget->setCurrentWidget(m_statsPage);
+}
+
+void MainWindow::handleOpenInventory()
+{
+    if (m_game && m_game->getPlayer()) {
+        m_inventoryPage->updateInventory(m_game->getPlayer());
+        stackedWidget->setCurrentWidget(m_inventoryPage);
+        m_inventoryPage->setFocus();
+    }
+}
+
+void MainWindow::handleOpenShop()
+{
+    if (m_game && m_game->getPlayer()) {
+        m_shopPage->updateShop(m_game->getPlayer());
+        stackedWidget->setCurrentWidget(m_shopPage);
+        m_shopPage->setFocus();
+    }
+}
+
+void MainWindow::handleOpenSaveLoad()
+{
+    m_saveLoadPage->refreshSaveSlots();
+    stackedWidget->setCurrentWidget(m_saveLoadPage);
+    m_saveLoadPage->setFocus();
 }
 
 void MainWindow::handleCombatEnd(int oldLevel)
@@ -299,6 +320,36 @@ void MainWindow::handleNewSave()
     stackedWidget->setCurrentWidget(m_newGameView);
 }
 
+void MainWindow::handleSaveToSlot(int slotNumber)
+{
+    if (m_game->saveToSlot(slotNumber)) {
+        m_saveLoadPage->refreshSaveSlots();
+        QMessageBox::information(this, "Success", "Game saved successfully!");
+    } else {
+        QMessageBox::warning(this, "Save Failed", "Failed to save game to slot " + QString::number(slotNumber));
+    }
+}
+
+void MainWindow::handleLoadFromSlot(int slotNumber)
+{
+    if (m_game->loadFromSlot(slotNumber)) {
+        m_combatPage->setCombatMode(false);
+        stackedWidget->setCurrentWidget(m_combatPage);
+    } else {
+        QMessageBox::warning(this, "Load Failed", "Failed to load game from slot " + QString::number(slotNumber));
+    }
+}
+
+void MainWindow::handleDeleteSlot(int slotNumber)
+{
+    if (m_game->deleteSlot(slotNumber)) {
+        m_saveLoadPage->refreshSaveSlots();
+        QMessageBox::information(this, "Success", "Save slot deleted successfully!");
+    } else {
+        QMessageBox::warning(this, "Delete Failed", "Failed to delete save slot " + QString::number(slotNumber));
+    }
+}
+
 void MainWindow::handleMainMenuNewGame()
 {
     stackedWidget->setCurrentWidget(m_newGameView);
@@ -306,6 +357,7 @@ void MainWindow::handleMainMenuNewGame()
 
 void MainWindow::handleMainMenuLoadGame()
 {
+    m_saveLoadPage->refreshSaveSlots();
     stackedWidget->setCurrentWidget(m_saveLoadPage);
 }
 
@@ -378,9 +430,10 @@ void MainWindow::handleMenuButtonClicked()
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
+    QWidget *currentWidget = stackedWidget->currentWidget();
+
     // Only handle ESC if we're on the adventure page or combat page (in-game)
     if (event->key() == Qt::Key_Escape && m_menuOverlay) {
-        QWidget *currentWidget = stackedWidget->currentWidget();
 
         // Check if menu overlay is visible
         if (m_menuOverlay->isVisible()) {
@@ -398,6 +451,24 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         }
     }
 
+    // Handle global shortcuts only when on combat page and not in combat
+    if (currentWidget == m_combatPage && m_game && m_game->getPlayer() && !m_game->isInCombat()) {
+        switch (event->key()) {
+            case Qt::Key_I:
+                handleOpenInventory();
+                event->accept();
+                return;
+            case Qt::Key_S:
+                handleOpenShop();
+                event->accept();
+                return;
+            case Qt::Key_L:
+                handleOpenSaveLoad();
+                event->accept();
+                return;
+        }
+    }
+
     QMainWindow::keyPressEvent(event);
 }
 
@@ -408,6 +479,44 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     // Keep menu overlay sized to match the window
     if (m_menuOverlay) {
         m_menuOverlay->setGeometry(0, 0, width(), height());
+    }
+}
+
+void MainWindow::onAnimationFinished()
+{
+    int oldLevel = m_game->getPlayer()->level;
+
+    switch (m_combatState) {
+        case PlayerAttacking: {
+            QString log = m_game->playerAttack();
+            m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
+
+            if (m_game->isCombatOver()) {
+                m_combatState = CombatEnded;
+                handleCombatEnd(oldLevel);
+            } else {
+                m_combatState = PlayerDamage;
+                m_animationManager->playDamageAnimation(m_combatPage->getEnemySpriteLabel());
+            }
+            break;
+        }
+        case PlayerDamage: {
+            // Now it's the monster's turn
+            m_combatState = MonsterTurn;
+            QString monsterLog = m_game->monsterAttack();
+            m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), monsterLog);
+
+            if (m_game->isCombatOver()) {
+                m_combatState = CombatEnded;
+                handleCombatEnd(oldLevel);
+            } else {
+                m_combatState = Idle;
+                m_combatPage->setCombatActive(true);
+            }
+            break;
+        }
+        default:
+            break;
     }
 }
 

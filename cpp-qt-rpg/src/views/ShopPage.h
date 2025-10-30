@@ -4,6 +4,7 @@
 #include <QWidget>
 
 class QLabel;
+class QKeyEvent;
 class QGridLayout;
 class QPushButton;
 class Player;
@@ -21,17 +22,25 @@ signals:
     void leaveRequested();
     void itemPurchased(Item *item);
 
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+
 private:
     void setupUi();
     void clearShop();
     QWidget* createShopItemCard(Item *item, int price);
     void handleBuyClicked(Item *item, int price);
+    void updateSelectionDisplay();
 
     QLabel *m_goldLabel;
     QGridLayout *m_shopGridLayout;
     QPushButton *m_sellButton;
     QPushButton *m_leaveButton;
     Player *m_currentPlayer;
+
+    QList<QPair<Item*, int>> m_shopItems;  // item and price
+    QList<QWidget*> m_itemCards;
+    int m_selectedIndex;
 };
 
 #endif // SHOPPAGE_H

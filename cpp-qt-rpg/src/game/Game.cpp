@@ -51,6 +51,28 @@ player = loadedPlayer;
 return true;
 }
 
+bool Game::saveToSlot(int slotNumber)
+{
+    if (!player) return false;
+    return saveManager.saveToSlot(player, slotNumber);
+}
+
+bool Game::loadFromSlot(int slotNumber)
+{
+    Player *loadedPlayer = saveManager.loadFromSlot(slotNumber);
+    if (!loadedPlayer) return false;
+    if (player) {
+        delete player;
+    }
+    player = loadedPlayer;
+    return true;
+}
+
+bool Game::deleteSlot(int slotNumber)
+{
+    return saveManager.deleteSaveSlot(slotNumber);
+}
+
 // Combat
 void Game::startCombat()
 {
@@ -198,6 +220,11 @@ void Game::endCombat()
     if (currentMonster && currentMonster->health <= 0 && player && player->health > 0) {
         giveCombatRewards();
     }
+}
+
+bool Game::isInCombat() const
+{
+    return combatActive;
 }
 
 int Game::calculateDamage(int baseDamage, int attackerLevel, int defenderDefense, bool isCritical)

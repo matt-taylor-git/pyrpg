@@ -44,3 +44,5 @@ sample/
 .cache/
 .pytest_cache/
 archive_python.sh
+*.dat
+*.i

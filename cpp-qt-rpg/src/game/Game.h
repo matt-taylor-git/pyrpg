@@ -19,6 +19,11 @@ Monster* getCurrentMonster();
 bool saveGame(const QString &filePath);
     bool loadGame(const QString &filePath);
 
+    // Save slot methods
+    bool saveToSlot(int slotNumber);
+    bool loadFromSlot(int slotNumber);
+    bool deleteSlot(int slotNumber);
+
 // Combat
 void startCombat();
     QString playerAttack();
@@ -26,8 +31,9 @@ void startCombat();
     QString playerUseItem(Item* item);
     QString monsterAttack();
 bool isCombatOver();
-    QString getCombatResult();
-    void endCombat();
+QString getCombatResult();
+void endCombat();
+    bool isInCombat() const;
 
 signals:
     void combatEnded(bool playerWon);
