@@ -7,12 +7,17 @@ Item* ItemFactory::generateRandomItem(int enemyLevel)
     int roll = QRandomGenerator::global()->bounded(100);
 
     if (roll < 50) {
-        // 50% consumable
-        QList<Item*> consumables;
-        consumables.append(new Item("Health Potion", "consumable", "common", "", 0, 0, "heal", 50, 25));
-        consumables.append(new Item("Mana Potion", "consumable", "common", "", 0, 0, "restore_mana", 30, 20));
-        consumables.append(new Item("Greater Health Potion", "consumable", "uncommon", "", 0, 0, "heal", 100, 50));
-        return consumables.at(QRandomGenerator::global()->bounded(consumables.size()));
+        // 50% consumable - create only the needed item to avoid memory leaks
+        int consumableChoice = QRandomGenerator::global()->bounded(3);
+        switch(consumableChoice) {
+            case 0:
+                return new Item("Health Potion", "consumable", "common", "", 0, 0, "heal", 50, 25);
+            case 1:
+                return new Item("Mana Potion", "consumable", "common", "", 0, 0, "restore_mana", 30, 20);
+            case 2:
+            default:
+                return new Item("Greater Health Potion", "consumable", "uncommon", "", 0, 0, "heal", 100, 50);
+        }
     }
 
     // Determine rarity
@@ -63,28 +68,32 @@ Item* ItemFactory::generateRandomItem(int enemyLevel)
 
 QMap<QString, Item*> ItemFactory::getShopItems()
 {
-    QMap<QString, Item*> items;
+    // Use static map to avoid creating new items on every call (memory leak fix)
+    static QMap<QString, Item*> items;
 
-    // Consumables
-    items.insert("Health Potion", new Item("Health Potion", "consumable", "common", "", 0, 0, "heal", 50, 25, "Restores 50 HP"));
-    items.insert("Mana Potion", new Item("Mana Potion", "consumable", "common", "", 0, 0, "restore_mana", 30, 20, "Restores 30 MP"));
-    items.insert("Greater Health Potion", new Item("Greater Health Potion", "consumable", "uncommon", "", 0, 0, "heal", 100, 50, "Restores 100 HP"));
-    items.insert("Greater Mana Potion", new Item("Greater Mana Potion", "consumable", "uncommon", "", 0, 0, "restore_mana", 60, 40, "Restores 60 MP"));
+    // Initialize only once
+    if (items.isEmpty()) {
+        // Consumables
+        items.insert("Health Potion", new Item("Health Potion", "consumable", "common", "", 0, 0, "heal", 50, 25, "Restores 50 HP"));
+        items.insert("Mana Potion", new Item("Mana Potion", "consumable", "common", "", 0, 0, "restore_mana", 30, 20, "Restores 30 MP"));
+        items.insert("Greater Health Potion", new Item("Greater Health Potion", "consumable", "uncommon", "", 0, 0, "heal", 100, 50, "Restores 100 HP"));
+        items.insert("Greater Mana Potion", new Item("Greater Mana Potion", "consumable", "uncommon", "", 0, 0, "restore_mana", 60, 40, "Restores 60 MP"));
 
-    // Weapons
-    items.insert("Iron Sword", new Item("Iron Sword", "weapon", "common", "weapon", 8, 0, "", 0, 75, "+8 Attack Power"));
-    items.insert("Steel Sword", new Item("Steel Sword", "weapon", "uncommon", "weapon", 15, 0, "", 0, 150, "+15 Attack Power"));
-    items.insert("Magic Staff", new Item("Magic Staff", "weapon", "rare", "weapon", 20, 0, "", 0, 300, "+20 Attack Power, Enhanced Magic"));
-    items.insert("War Hammer", new Item("War Hammer", "weapon", "uncommon", "weapon", 18, 0, "", 0, 175, "+18 Attack Power"));
+        // Weapons
+        items.insert("Iron Sword", new Item("Iron Sword", "weapon", "common", "weapon", 8, 0, "", 0, 75, "+8 Attack Power"));
+        items.insert("Steel Sword", new Item("Steel Sword", "weapon", "uncommon", "weapon", 15, 0, "", 0, 150, "+15 Attack Power"));
+        items.insert("Magic Staff", new Item("Magic Staff", "weapon", "rare", "weapon", 20, 0, "", 0, 300, "+20 Attack Power, Enhanced Magic"));
+        items.insert("War Hammer", new Item("War Hammer", "weapon", "uncommon", "weapon", 18, 0, "", 0, 175, "+18 Attack Power"));
 
-    // Armor
-    items.insert("Leather Armor", new Item("Leather Armor", "armor", "common", "armor", 0, 5, "", 0, 60, "+5 Defense"));
-    items.insert("Chain Mail", new Item("Chain Mail", "armor", "uncommon", "armor", 0, 10, "", 0, 120, "+10 Defense"));
-    items.insert("Plate Armor", new Item("Plate Armor", "armor", "rare", "armor", 0, 18, "", 0, 280, "+18 Defense"));
+        // Armor
+        items.insert("Leather Armor", new Item("Leather Armor", "armor", "common", "armor", 0, 5, "", 0, 60, "+5 Defense"));
+        items.insert("Chain Mail", new Item("Chain Mail", "armor", "uncommon", "armor", 0, 10, "", 0, 120, "+10 Defense"));
+        items.insert("Plate Armor", new Item("Plate Armor", "armor", "rare", "armor", 0, 18, "", 0, 280, "+18 Defense"));
 
-    // Accessories
-    items.insert("Power Ring", new Item("Power Ring", "accessory", "uncommon", "accessory", 5, 3, "", 0, 100, "+5 ATK, +3 DEF"));
-    items.insert("Amulet of Vitality", new Item("Amulet of Vitality", "accessory", "rare", "accessory", 3, 8, "", 0, 200, "+3 ATK, +8 DEF"));
+        // Accessories
+        items.insert("Power Ring", new Item("Power Ring", "accessory", "uncommon", "accessory", 5, 3, "", 0, 100, "+5 ATK, +3 DEF"));
+        items.insert("Amulet of Vitality", new Item("Amulet of Vitality", "accessory", "rare", "accessory", 3, 8, "", 0, 200, "+3 ATK, +8 DEF"));
+    }
 
     return items;
 }

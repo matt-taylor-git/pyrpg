@@ -96,7 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Set the initial view
     stackedWidget->setCurrentWidget(m_mainMenu);
 
-    m_game = new Game();
+    m_game = new Game(this);  // Parent to MainWindow to prevent memory leak
     connect(m_game, &Game::combatEnded, this, &MainWindow::handleCombatEnded);
 
     // Menu Overlay (floating overlay, not in stacked widget)
@@ -484,7 +484,10 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::onAnimationFinished()
 {
-    int oldLevel = m_game->getPlayer()->level;
+    Player* player = m_game->getPlayer();
+    if (!player) return;  // Guard clause to prevent null pointer dereference
+
+    int oldLevel = player->level;
 
     switch (m_combatState) {
         case PlayerAttacking: {

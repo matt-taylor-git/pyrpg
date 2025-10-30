@@ -257,10 +257,12 @@ void InventoryPage::handleItemClicked(Item *item)
 
     if (item->itemType == "consumable") {
         // Use consumable
+        QString itemName = item->name;  // Save name before deletion
         if (m_currentPlayer->useItem(item)) {
             emit itemUsed(item);
             updateInventory(m_currentPlayer); // Refresh display
-            QMessageBox::information(this, "Item Used", QString("Used %1!").arg(item->name));
+            QMessageBox::information(this, "Item Used", QString("Used %1!").arg(itemName));
+            delete item;  // Caller must delete item after use to prevent memory leak
         }
     } else if (item->itemType == "weapon" || item->itemType == "armor" || item->itemType == "accessory") {
         // Equip item

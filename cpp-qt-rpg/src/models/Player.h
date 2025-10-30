@@ -12,6 +12,7 @@ class Player : public Character
 {
 public:
     explicit Player(const QString &name, const QString &characterClass = "Hero");
+    ~Player();  // Destructor to clean up dynamically allocated memory
 
     int mana;
     int maxMana;

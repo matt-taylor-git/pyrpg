@@ -46,6 +46,19 @@ Player::Player(const QString &name, const QString &characterClass)
     equipment["accessory"] = nullptr;
 }
 
+Player::~Player()
+{
+    // Clean up dynamically allocated memory to prevent memory leaks
+    qDeleteAll(skills);
+    skills.clear();
+
+    qDeleteAll(inventory);
+    inventory.clear();
+
+    qDeleteAll(equipment.values());
+    equipment.clear();
+}
+
 QDataStream &operator<<(QDataStream &out, const Player &p)
 {
     // Version 2: Added characterClass, skills, and equipment serialization
@@ -212,13 +225,13 @@ bool Player::useItem(Item* item)
     if (item->effect == "heal") {
         health = std::min(health + item->power, maxHealth);
         inventory.removeOne(item);
-        delete item;
+        // Note: Caller is responsible for deleting the item to avoid use-after-free
         return true;
     }
     else if (item->effect == "restore_mana") {
         mana = std::min(mana + item->power, maxMana);
         inventory.removeOne(item);
-        delete item;
+        // Note: Caller is responsible for deleting the item to avoid use-after-free
         return true;
     }
 

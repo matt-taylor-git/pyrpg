@@ -157,17 +157,21 @@ QString Game::playerUseItem(Item* item)
 {
     if (!combatActive || !player || !item) return "";
 
+    QString itemName = item->name;  // Save name before deletion
+
     if (item->effect == "heal") {
         int oldHealth = player->health;
         player->useItem(item);
         int healed = player->health - oldHealth;
-        return QString("Used %1! Restored %2 HP.").arg(item->name).arg(healed);
+        delete item;  // Caller must delete item after use to prevent memory leak
+        return QString("Used %1! Restored %2 HP.").arg(itemName).arg(healed);
     }
     else if (item->effect == "restore_mana") {
         int oldMana = player->mana;
         player->useItem(item);
         int restored = player->mana - oldMana;
-        return QString("Used %1! Restored %2 MP.").arg(item->name).arg(restored);
+        delete item;  // Caller must delete item after use to prevent memory leak
+        return QString("Used %1! Restored %2 MP.").arg(itemName).arg(restored);
     }
 
     return "Item has no effect in combat.";
