@@ -115,6 +115,7 @@ void NewGameView::setupUi()
         "    color: %3;"
         "}"
     ).arg(Theme::BORDER.name()).arg(Theme::CARD.name()).arg(Theme::FOREGROUND.name()));
+    connect(m_classSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &NewGameView::updateStatsPreview);
     detailsLayout->addWidget(m_classSelector);
 
     // Validation Label
@@ -126,17 +127,9 @@ void NewGameView::setupUi()
     statsTitle->setStyleSheet("font-size: 16px; font-weight: bold; color: #f1f0f2;");
     detailsLayout->addWidget(statsTitle);
 
-    QLabel *statsInfo = new QLabel(
-        "<html><body>"
-        "<div style='line-height: 1.6; color: #abb2bf;'>"
-        "<div>🏋️ Strength: <b>8</b></div>"
-        "<div>🏃 Dexterity: <b>6</b></div>"
-        "<div>🔮 Intelligence: <b>4</b></div>"
-        "<div>❤️ Vitality: <b>10</b></div>"
-        "</div></body></html>"
-    );
-    statsInfo->setTextFormat(Qt::RichText);
-    detailsLayout->addWidget(statsInfo);
+    m_statsInfo = new QLabel();
+    m_statsInfo->setTextFormat(Qt::RichText);
+    detailsLayout->addWidget(m_statsInfo);
 
     // Start Button
     m_startButton = new QPushButton("✨ Begin Your Quest");
@@ -166,6 +159,7 @@ void NewGameView::setupUi()
     mainLayout->addWidget(m_footerLabel);
 
     validateNameInput(); // Set initial state of the button
+    updateStatsPreview(); // Initialize stats display with default class
 }
 
 void NewGameView::validateNameInput()
@@ -199,4 +193,59 @@ void NewGameView::startGame()
         }
         emit characterCreated(m_nameInput->text().trimmed(), selectedClass);
     }
+}
+
+void NewGameView::updateStatsPreview()
+{
+    int classIndex = m_classSelector->currentIndex();
+    QString statsHtml;
+
+    // Stats based on Player.cpp constructor (lines 21-41)
+    if (classIndex == 0) { // Warrior
+        statsHtml =
+            "<html><body>"
+            "<div style='line-height: 1.6; color: #abb2bf;'>"
+            "<div>🏋️ Strength: <b style='color: #98c379;'>16</b></div>"
+            "<div>🏃 Dexterity: <b>10</b></div>"
+            "<div>🔮 Intelligence: <b style='color: #e06c75;'>6</b></div>"
+            "<div>❤️ Vitality: <b style='color: #98c379;'>14</b></div>"
+            "<div>💚 Health: <b style='color: #98c379;'>120</b></div>"
+            "<div>💙 Mana: <b>50</b></div>"
+            "</div></body></html>";
+    } else if (classIndex == 1) { // Mage
+        statsHtml =
+            "<html><body>"
+            "<div style='line-height: 1.6; color: #abb2bf;'>"
+            "<div>🏋️ Strength: <b style='color: #e06c75;'>8</b></div>"
+            "<div>🏃 Dexterity: <b style='color: #e06c75;'>8</b></div>"
+            "<div>🔮 Intelligence: <b style='color: #98c379;'>16</b></div>"
+            "<div>❤️ Vitality: <b>10</b></div>"
+            "<div>💚 Health: <b>100</b></div>"
+            "<div>💙 Mana: <b style='color: #98c379;'>80</b></div>"
+            "</div></body></html>";
+    } else if (classIndex == 2) { // Rogue
+        statsHtml =
+            "<html><body>"
+            "<div style='line-height: 1.6; color: #abb2bf;'>"
+            "<div>🏋️ Strength: <b>12</b></div>"
+            "<div>🏃 Dexterity: <b style='color: #98c379;'>16</b></div>"
+            "<div>🔮 Intelligence: <b style='color: #e06c75;'>8</b></div>"
+            "<div>❤️ Vitality: <b style='color: #e06c75;'>8</b></div>"
+            "<div>💚 Health: <b style='color: #e06c75;'>90</b></div>"
+            "<div>💙 Mana: <b>50</b></div>"
+            "</div></body></html>";
+    } else { // Default/Hero
+        statsHtml =
+            "<html><body>"
+            "<div style='line-height: 1.6; color: #abb2bf;'>"
+            "<div>🏋️ Strength: <b>12</b></div>"
+            "<div>🏃 Dexterity: <b>10</b></div>"
+            "<div>🔮 Intelligence: <b>8</b></div>"
+            "<div>❤️ Vitality: <b>10</b></div>"
+            "<div>💚 Health: <b>100</b></div>"
+            "<div>💙 Mana: <b>50</b></div>"
+            "</div></body></html>";
+    }
+
+    m_statsInfo->setText(statsHtml);
 }

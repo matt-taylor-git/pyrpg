@@ -24,6 +24,7 @@ signals:
 private slots:
     void validateNameInput();
     void startGame();
+    void updateStatsPreview();
 
 private:
     void setupUi();
@@ -37,6 +38,7 @@ private:
     QPushButton *m_startButton;
     QLabel *m_footerLabel;
     QFrame *m_charPreview; // Placeholder for CharacterPreview
+    QLabel *m_statsInfo; // Stats preview label
 };
 
 #endif // NEWGAMEVIEW_H
