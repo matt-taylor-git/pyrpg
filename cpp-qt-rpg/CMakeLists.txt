@@ -29,10 +29,13 @@ add_executable(pyrpg-qt
     src/models/Character.cpp
     src/models/Player.cpp
     src/models/Monster.cpp
+    src/models/Quest.cpp
     src/game/Game.cpp
+    src/game/QuestManager.cpp
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/QuestFactory.cpp
     src/persistence/SaveManager.cpp
     src/components/ValidationLabel.cpp
     src/components/AnimatedProgressBar.cpp
@@ -50,6 +53,7 @@ add_executable(pyrpg-qt
     src/components/SkillSelectionDialog.cpp
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
+    src/components/QuestCompletionDialog.cpp
     src/components/MenuOverlay.cpp
     src/components/AnimationManager.cpp
     src/views/MainMenu.cpp
@@ -61,6 +65,7 @@ add_executable(pyrpg-qt
     src/views/SaveLoadPage.cpp
     src/views/ShopPage.cpp
     src/views/StatsPage.cpp
+    src/views/QuestLogPage.cpp
 )
 
 # Link against the Qt modules
@@ -82,23 +87,28 @@ add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
     src/views/SaveLoadPage.cpp
     src/views/ShopPage.cpp
     src/views/StatsPage.cpp
+    src/views/QuestLogPage.cpp
     src/components/ValidationLabel.cpp
     src/components/CharacterPreviewWidget.cpp
     src/components/CustomizationSection.cpp
     src/components/SkillSelectionDialog.cpp
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
+    src/components/QuestCompletionDialog.cpp
     src/components/MenuOverlay.cpp
     src/components/AnimationManager.cpp
     src/game/Game.cpp
+    src/game/QuestManager.cpp
     src/models/Player.cpp
     src/models/Character.cpp
     src/models/Monster.cpp
     src/models/Item.cpp
     src/models/Skill.cpp
+    src/models/Quest.cpp
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/QuestFactory.cpp
     src/persistence/SaveManager.cpp
 )
 target_link_libraries(test_mainwindow PRIVATE Qt6::Widgets Qt6::Test)
@@ -106,7 +116,7 @@ target_include_directories(test_mainwindow PRIVATE src)
 add_test(NAME MainWindowTest COMMAND test_mainwindow)
 
 # Test for Data Models
-add_executable(test_models tests/test_models.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/Game.cpp src/persistence/SaveManager.cpp)
+add_executable(test_models tests/test_models.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/models/Quest.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/factories/QuestFactory.cpp src/game/Game.cpp src/game/QuestManager.cpp src/persistence/SaveManager.cpp)
 target_link_libraries(test_models PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_models PRIVATE src)
 add_test(NAME ModelsTest COMMAND test_models)
@@ -119,16 +129,18 @@ add_executable(test_persistence tests/test_persistence.cpp
     src/models/Monster.cpp
     src/models/Item.cpp
     src/models/Skill.cpp
+    src/models/Quest.cpp
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/QuestFactory.cpp
 )
 target_link_libraries(test_persistence PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_persistence PRIVATE src)
 add_test(NAME PersistenceTest COMMAND test_persistence)
 
 # Test for CombatPage dual mode
-add_executable(test_combat_page_dual_mode tests/test_combat_page_dual_mode.cpp src/views/CombatPage.cpp src/models/Player.cpp src/models/Character.cpp src/models/Monster.cpp src/models/Item.cpp src/models/Skill.cpp)
+add_executable(test_combat_page_dual_mode tests/test_combat_page_dual_mode.cpp src/views/CombatPage.cpp src/models/Player.cpp src/models/Character.cpp src/models/Monster.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Quest.cpp)
 target_link_libraries(test_combat_page_dual_mode PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_combat_page_dual_mode PRIVATE src)
 add_test(NAME CombatPageDualModeTest COMMAND test_combat_page_dual_mode)
@@ -144,23 +156,28 @@ add_executable(test_navigation_flow tests/test_navigation_flow.cpp src/MainWindo
     src/views/SaveLoadPage.cpp
     src/views/ShopPage.cpp
     src/views/StatsPage.cpp
+    src/views/QuestLogPage.cpp
     src/components/ValidationLabel.cpp
     src/components/CharacterPreviewWidget.cpp
     src/components/CustomizationSection.cpp
     src/components/SkillSelectionDialog.cpp
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
+    src/components/QuestCompletionDialog.cpp
     src/components/MenuOverlay.cpp
     src/components/AnimationManager.cpp
     src/game/Game.cpp
+    src/game/QuestManager.cpp
     src/models/Player.cpp
     src/models/Character.cpp
     src/models/Monster.cpp
     src/models/Item.cpp
     src/models/Skill.cpp
+    src/models/Quest.cpp
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/QuestFactory.cpp
     src/persistence/SaveManager.cpp
 )
 target_link_libraries(test_navigation_flow PRIVATE Qt6::Widgets Qt6::Test)
@@ -174,6 +191,7 @@ add_executable(test_inventory_shortcuts tests/test_inventory_shortcuts.cpp
     src/models/Character.cpp
     src/models/Item.cpp
     src/models/Skill.cpp
+    src/models/Quest.cpp
 )
 target_link_libraries(test_inventory_shortcuts PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_inventory_shortcuts PRIVATE src)
@@ -186,6 +204,7 @@ add_executable(test_shop_shortcuts tests/test_shop_shortcuts.cpp
     src/models/Character.cpp
     src/models/Item.cpp
     src/models/Skill.cpp
+    src/models/Quest.cpp
     src/game/factories/ItemFactory.cpp
 )
 target_link_libraries(test_shop_shortcuts PRIVATE Qt6::Widgets Qt6::Test)
@@ -201,13 +220,50 @@ add_executable(test_saveload_shortcuts tests/test_saveload_shortcuts.cpp
     src/models/Monster.cpp
     src/models/Item.cpp
     src/models/Skill.cpp
+    src/models/Quest.cpp
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
+    src/game/factories/QuestFactory.cpp
     src/game/factories/MonsterFactory.cpp
 )
 target_link_libraries(test_saveload_shortcuts PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_saveload_shortcuts PRIVATE src)
 add_test(NAME SaveLoadShortcutsTest COMMAND test_saveload_shortcuts)
+
+# Test for Quest Models
+add_executable(test_quest_models tests/test_quest_models.cpp
+    src/models/Quest.cpp
+    src/models/Player.cpp
+    src/models/Character.cpp
+    src/models/Monster.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+    src/game/factories/QuestFactory.cpp
+    src/game/factories/ItemFactory.cpp
+    src/game/factories/SkillFactory.cpp
+    src/game/factories/MonsterFactory.cpp
+)
+target_link_libraries(test_quest_models PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_quest_models PRIVATE src)
+add_test(NAME QuestModelsTest COMMAND test_quest_models)
+
+# Test for Quest System Integration
+add_executable(test_quest_system tests/test_quest_system.cpp
+    src/game/QuestManager.cpp
+    src/models/Quest.cpp
+    src/models/Player.cpp
+    src/models/Character.cpp
+    src/models/Monster.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+    src/game/factories/QuestFactory.cpp
+    src/game/factories/ItemFactory.cpp
+    src/game/factories/SkillFactory.cpp
+    src/game/factories/MonsterFactory.cpp
+)
+target_link_libraries(test_quest_system PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_quest_system PRIVATE src)
+add_test(NAME QuestSystemTest COMMAND test_quest_system)
 
 # --- Packaging ---
 

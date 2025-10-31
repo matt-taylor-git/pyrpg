@@ -5,8 +5,21 @@
 #include <QRandomGenerator>
 
 Game::Game(QObject *parent)
-: QObject(parent), player(nullptr), currentMonster(nullptr), combatActive(false)
+: QObject(parent), player(nullptr), currentMonster(nullptr), combatActive(false), m_questManager(nullptr)
 {
+}
+
+Game::~Game()
+{
+    if (player) {
+        delete player;
+    }
+    if (currentMonster) {
+        delete currentMonster;
+    }
+    if (m_questManager) {
+        delete m_questManager;
+    }
 }
 
 void Game::newGame(const QString &playerName, const QString &characterClass)
@@ -22,6 +35,13 @@ void Game::newGame(const QString &playerName, const QString &characterClass)
     for (Skill* skill : startingSkills) {
         player->learnSkill(skill);
     }
+
+    // Create and initialize QuestManager
+    if (m_questManager) {
+        delete m_questManager;
+    }
+    m_questManager = new QuestManager(player, this);
+    m_questManager->loadQuests();
 }
 
 Player* Game::getPlayer()
@@ -48,6 +68,14 @@ if (player) {
 delete player;
 }
 player = loadedPlayer;
+
+// Recreate QuestManager for loaded player
+if (m_questManager) {
+    delete m_questManager;
+}
+m_questManager = new QuestManager(player, this);
+m_questManager->loadQuests();
+
 return true;
 }
 
@@ -65,6 +93,14 @@ bool Game::loadFromSlot(int slotNumber)
         delete player;
     }
     player = loadedPlayer;
+
+    // Recreate QuestManager for loaded player
+    if (m_questManager) {
+        delete m_questManager;
+    }
+    m_questManager = new QuestManager(player, this);
+    m_questManager->loadQuests();
+
     return true;
 }
 
@@ -266,9 +302,17 @@ void Game::giveCombatRewards()
 {
     if (!player || !currentMonster) return;
 
+    // Store old level to detect level ups
+    int oldLevel = player->level;
+
     // Give experience
     int expGained = currentMonster->expReward;
     player->gainExperience(expGained);
+
+    // Check if player leveled up and notify quest manager
+    if (m_questManager && player->level > oldLevel) {
+        m_questManager->onLevelUp(player->level);
+    }
 
     // Give gold
     int goldGained = currentMonster->goldReward;
@@ -281,11 +325,25 @@ void Game::giveCombatRewards()
         if (loot) {
             player->inventory.append(loot);
             combatLog += QString("\nFound loot: %1!").arg(loot->name);
+            // Notify quest manager about item collection
+            if (m_questManager) {
+                m_questManager->onItemCollected(loot->name);
+            }
         }
     }
 
     combatLog += QString("\nGained %1 EXP and %2 gold!").arg(expGained).arg(goldGained);
+
+    // Notify quest manager about combat end (for kill quests)
+    if (m_questManager) {
+        m_questManager->onCombatEnd(currentMonster->name);
+    }
 }
+QuestManager* Game::getQuestManager()
+{
+    return m_questManager;
+}
+
 void Game::checkCombatEndAfterAction()
 {
     if (!combatActive) return;

@@ -14,6 +14,7 @@ class MonsterStatsPage;
 class SaveLoadPage;
 class ShopPage;
 class StatsPage;
+class QuestLogPage;
 class Game;
 class MenuOverlay;
 class AnimationManager;
@@ -55,6 +56,10 @@ private slots:
     void handleStatsBack();
     void handleMonsterStatsBack();
     void handleSaveLoadBack();
+    void handleOpenQuestLog();
+    void handleQuestLogBack();
+    void handleQuestAccepted(const QString &questId);
+    void handleQuestCompleted(const QString &questId, int expReward, int goldReward);
     void handleCombatEnd(int oldLevel);
     void handleCombatEnded(bool playerWon);
     void handleMenuButtonClicked();
@@ -77,6 +82,7 @@ private:
     SaveLoadPage *m_saveLoadPage;
     ShopPage *m_shopPage;
     StatsPage *m_statsPage;
+    QuestLogPage *m_questLogPage;
     Game *m_game;
     MenuOverlay *m_menuOverlay;
     AnimationManager *m_animationManager;

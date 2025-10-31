@@ -52,6 +52,9 @@ Player::~Player()
     qDeleteAll(skills);
     skills.clear();
 
+    qDeleteAll(quests);
+    quests.clear();
+
     qDeleteAll(inventory);
     inventory.clear();
 
@@ -61,8 +64,8 @@ Player::~Player()
 
 QDataStream &operator<<(QDataStream &out, const Player &p)
 {
-    // Version 2: Added characterClass, skills, and equipment serialization
-    out << quint32(2);
+    // Version 3: Added quests serialization
+    out << quint32(3);
 
     // Serialize base class
     out << static_cast<const Character&>(p);
@@ -97,6 +100,15 @@ QDataStream &operator<<(QDataStream &out, const Player &p)
         }
     }
     out << skillList;
+
+    // Serialize quests (version 3+)
+    QList<Quest> questList;
+    for (Quest* quest : p.quests) {
+        if (quest != nullptr) {
+            questList.append(*quest);
+        }
+    }
+    out << questList;
 
     return out;
 }
@@ -156,6 +168,16 @@ QDataStream &operator>>(QDataStream &in, Player &p)
     for (const Skill &skill : skillList) {
         p.skills.append(new Skill(skill));
     }
+
+    // Deserialize quests (version 3+)
+    if (version >= 3) {
+        QList<Quest> questList;
+        in >> questList;
+        for (const Quest &quest : questList) {
+            p.quests.append(new Quest(quest));
+        }
+    }
+    // For version < 3, p.quests remains empty (default constructed)
 
     return in;
 }
@@ -288,4 +310,44 @@ int Player::getTotalDefense() const
         defense += equipment["accessory"]->defenseBonus;
     }
     return defense;
+}
+
+// Quest management methods
+void Player::addQuest(Quest* quest)
+{
+    if (quest) {
+        quests.append(quest);
+    }
+}
+
+Quest* Player::getQuest(const QString &questId) const
+{
+    for (Quest* quest : quests) {
+        if (quest && quest->questId == questId) {
+            return quest;
+        }
+    }
+    return nullptr;
+}
+
+QList<Quest*> Player::getActiveQuests() const
+{
+    QList<Quest*> activeQuests;
+    for (Quest* quest : quests) {
+        if (quest && quest->isActive()) {
+            activeQuests.append(quest);
+        }
+    }
+    return activeQuests;
+}
+
+QList<Quest*> Player::getCompletedQuests() const
+{
+    QList<Quest*> completedQuests;
+    for (Quest* quest : quests) {
+        if (quest && quest->isComplete()) {
+            completedQuests.append(quest);
+        }
+    }
+    return completedQuests;
 }

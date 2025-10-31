@@ -9,10 +9,12 @@
 #include "views/SaveLoadPage.h"
 #include "views/ShopPage.h"
 #include "views/StatsPage.h"
+#include "views/QuestLogPage.h"
 #include "game/Game.h"
 #include "components/SkillSelectionDialog.h"
 #include "components/CombatItemDialog.h"
 #include "components/CombatResultDialog.h"
+#include "components/QuestCompletionDialog.h"
 #include "components/MenuOverlay.h"
 #include "models/Player.h"
 #include "models/Monster.h"
@@ -93,6 +95,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_statsPage, &StatsPage::backRequested, this, &MainWindow::handleStatsBack);
     stackedWidget->addWidget(m_statsPage);
 
+    // Quest Log Page
+    m_questLogPage = new QuestLogPage();
+    connect(m_questLogPage, &QuestLogPage::backRequested, this, &MainWindow::handleQuestLogBack);
+    connect(m_questLogPage, &QuestLogPage::questAccepted, this, &MainWindow::handleQuestAccepted);
+    stackedWidget->addWidget(m_questLogPage);
+
     // Set the initial view
     stackedWidget->setCurrentWidget(m_mainMenu);
 
@@ -117,6 +125,13 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::handleCharacterCreation(const QString &name, const QString &characterClass)
 {
     m_game->newGame(name, characterClass);
+
+    // Connect QuestManager signals
+    if (m_game->getQuestManager()) {
+        connect(m_game->getQuestManager(), &QuestManager::questCompleted,
+                this, &MainWindow::handleQuestCompleted, Qt::UniqueConnection);
+    }
+
     // Start in non-combat mode on the main game hub (CombatPage)
     m_combatPage->setCombatMode(false);
     stackedWidget->setCurrentWidget(m_combatPage);
@@ -310,6 +325,12 @@ void MainWindow::handleSaveToFile(const QString &filePath)
 void MainWindow::handleLoadFromFile(const QString &filePath)
 {
     if (m_game->loadGame(filePath)) {
+        // Connect QuestManager signals after loading
+        if (m_game->getQuestManager()) {
+            connect(m_game->getQuestManager(), &QuestManager::questCompleted,
+                    this, &MainWindow::handleQuestCompleted, Qt::UniqueConnection);
+        }
+
         m_combatPage->setCombatMode(false);
         stackedWidget->setCurrentWidget(m_combatPage);
     }
@@ -333,6 +354,12 @@ void MainWindow::handleSaveToSlot(int slotNumber)
 void MainWindow::handleLoadFromSlot(int slotNumber)
 {
     if (m_game->loadFromSlot(slotNumber)) {
+        // Connect QuestManager signals after loading
+        if (m_game->getQuestManager()) {
+            connect(m_game->getQuestManager(), &QuestManager::questCompleted,
+                    this, &MainWindow::handleQuestCompleted, Qt::UniqueConnection);
+        }
+
         m_combatPage->setCombatMode(false);
         stackedWidget->setCurrentWidget(m_combatPage);
     } else {
@@ -466,6 +493,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
                 handleOpenSaveLoad();
                 event->accept();
                 return;
+            case Qt::Key_Q:
+                handleOpenQuestLog();
+                event->accept();
+                return;
         }
     }
 
@@ -520,6 +551,48 @@ void MainWindow::onAnimationFinished()
         }
         default:
             break;
+    }
+}
+
+void MainWindow::handleOpenQuestLog()
+{
+    if (m_game->getPlayer() && m_game->getQuestManager()) {
+        m_questLogPage->updateQuests(m_game->getQuestManager(), m_game->getPlayer());
+        stackedWidget->setCurrentWidget(m_questLogPage);
+    }
+}
+
+void MainWindow::handleQuestLogBack()
+{
+    stackedWidget->setCurrentWidget(m_combatPage);
+}
+
+void MainWindow::handleQuestAccepted(const QString &questId)
+{
+    if (m_game->getQuestManager()) {
+        m_game->getQuestManager()->acceptQuest(questId);
+        // Refresh the quest log to show updated status
+        m_questLogPage->updateQuests(m_game->getQuestManager(), m_game->getPlayer());
+    }
+}
+
+void MainWindow::handleQuestCompleted(const QString &questId, int expReward, int goldReward)
+{
+    // Get quest details
+    Quest* quest = nullptr;
+    if (m_game->getQuestManager()) {
+        quest = m_game->getQuestManager()->getQuestById(questId);
+    }
+
+    if (quest) {
+        // Show completion dialog
+        QuestCompletionDialog dialog(quest->title, expReward, goldReward, quest->rewards.itemNames, this);
+        dialog.exec();
+
+        // Update the combat page display to reflect new stats
+        if (m_game->getPlayer()) {
+            m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), "");
+        }
     }
 }
 

@@ -4,6 +4,7 @@
 #include "Character.h"
 #include "Item.h"
 #include "Skill.h"
+#include "Quest.h"
 #include <QList>
 #include <QMap>
 #include <QDataStream>
@@ -23,6 +24,7 @@ public:
 
     QString characterClass;
     QList<Skill*> skills;
+    QList<Quest*> quests;
 
     QMap<QString, Item*> equipment;
     QList<Item*> inventory;
@@ -37,6 +39,12 @@ public:
     void learnSkill(Skill* skill);
     bool hasSkill(const QString &skillName) const;
     Skill* getSkill(const QString &skillName) const;
+
+    // Quest management
+    void addQuest(Quest* quest);
+    Quest* getQuest(const QString &questId) const;
+    QList<Quest*> getActiveQuests() const;
+    QList<Quest*> getCompletedQuests() const;
 
     // Item management
     bool equipItem(Item* item);

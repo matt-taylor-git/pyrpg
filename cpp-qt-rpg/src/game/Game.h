@@ -5,6 +5,7 @@
 #include "../models/Monster.h"
 #include "../models/Skill.h"
 #include "../persistence/SaveManager.h"
+#include "QuestManager.h"
 #include <QObject>
 
 class Game : public QObject
@@ -13,9 +14,11 @@ Q_OBJECT
 
 public:
 explicit Game(QObject *parent = nullptr);
+~Game();
 void newGame(const QString &playerName, const QString &characterClass = "Hero");
 Player* getPlayer();
 Monster* getCurrentMonster();
+QuestManager* getQuestManager();
 bool saveGame(const QString &filePath);
     bool loadGame(const QString &filePath);
 
@@ -44,6 +47,7 @@ private:
     bool combatActive;
     QString combatLog;
     SaveManager saveManager;
+    QuestManager *m_questManager;
 
     friend class TestModels;
 
