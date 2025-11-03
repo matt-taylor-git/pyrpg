@@ -3,6 +3,7 @@
 #include "../models/Item.h"
 #include "../game/factories/ItemFactory.h"
 #include "../theme/Theme.h"
+#include "../components/ItemSelectionOverlay.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -51,6 +52,7 @@ void ShopPage::setupUi()
     m_leaveButton = new QPushButton("⬅️ Leave Shop");
     m_leaveButton->setMinimumHeight(40);
     connect(m_leaveButton, &QPushButton::clicked, this, &ShopPage::leaveRequested);
+    connect(m_sellButton, &QPushButton::clicked, this, &ShopPage::handleSellClicked);
     buttonLayout->addStretch();
     buttonLayout->addWidget(m_sellButton);
     buttonLayout->addWidget(m_leaveButton);
@@ -232,6 +234,66 @@ void ShopPage::handleBuyClicked(Item *item, int price)
 
     // Refresh shop display
     updateShop(m_currentPlayer);
+}
+
+void ShopPage::handleSellClicked()
+{
+    if (!m_currentPlayer) return;
+
+    // Check if player has items to sell
+    if (m_currentPlayer->inventory.isEmpty()) {
+        QMessageBox::information(this, "No Items",
+            "You don't have any items to sell.");
+        return;
+    }
+
+    // Create item selection dialog for selling
+    ItemSelectionOverlay *sellDialog = new ItemSelectionOverlay(
+        m_currentPlayer->inventory,
+        "Select Item to Sell",
+        "Sell",
+        true,  // show price
+        this
+    );
+
+    connect(sellDialog, &ItemSelectionOverlay::itemSelected,
+            this, &ShopPage::onItemSelectedForSell);
+
+    sellDialog->exec();
+}
+
+void ShopPage::onItemSelectedForSell(Item *item)
+{
+    if (!item || !m_currentPlayer) return;
+
+    // Calculate sell price (typically half of item value)
+    int sellPrice = item->value / 2;
+    if (sellPrice <= 0) {
+        QMessageBox::information(this, "Cannot Sell",
+            QString("%1 cannot be sold.").arg(item->name));
+        return;
+    }
+
+    // Remove item from inventory
+    if (m_currentPlayer->inventory.removeOne(item)) {
+        // Add gold to player
+        m_currentPlayer->gold += sellPrice;
+
+        // Emit signal
+        emit itemSold(item, sellPrice);
+
+        QMessageBox::information(this, "Item Sold",
+            QString("You sold %1 for %2 gold!").arg(item->name).arg(sellPrice));
+
+        // Refresh shop display
+        updateShop(m_currentPlayer);
+
+        // Clean up - delete the item
+        delete item;
+    } else {
+        QMessageBox::warning(this, "Sell Failed",
+            "Failed to remove item from inventory.");
+    }
 }
 
 void ShopPage::keyPressEvent(QKeyEvent *event)

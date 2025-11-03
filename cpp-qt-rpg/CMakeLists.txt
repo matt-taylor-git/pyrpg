@@ -108,6 +108,8 @@ add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
     src/components/ValidationLabel.cpp
     src/components/CharacterPreviewWidget.cpp
     src/components/CustomizationSection.cpp
+    src/components/ItemSelectionOverlay.cpp
+    src/components/ItemCard.cpp
     src/components/SkillSelectionDialog.cpp
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
@@ -204,6 +206,8 @@ add_executable(test_navigation_flow tests/test_navigation_flow.cpp src/MainWindo
     src/components/ValidationLabel.cpp
     src/components/CharacterPreviewWidget.cpp
     src/components/CustomizationSection.cpp
+    src/components/ItemSelectionOverlay.cpp
+    src/components/ItemCard.cpp
     src/components/SkillSelectionDialog.cpp
     src/components/CombatItemDialog.cpp
     src/components/CombatResultDialog.cpp
@@ -258,6 +262,8 @@ add_executable(test_shop_shortcuts tests/test_shop_shortcuts.cpp
     src/models/Item.cpp
     src/models/Skill.cpp
     src/models/Quest.cpp
+    src/components/ItemSelectionOverlay.cpp
+    src/components/ItemCard.cpp
     src/game/factories/ItemFactory.cpp
 )
 target_link_libraries(test_shop_shortcuts PRIVATE Qt6::Widgets Qt6::Test)

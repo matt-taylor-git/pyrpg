@@ -7,6 +7,7 @@
 #include "components/PointOfNoReturnDialog.h"
 
 class QStackedWidget;
+class Item;
 class MainMenu;
 class NewGameView;
 class CharacterCustomizationPage;
@@ -62,6 +63,8 @@ private slots:
     void handleStatsBack();
     void handleMonsterStatsBack();
     void handleSaveLoadBack();
+    void onItemPurchased(Item *item);
+    void onItemSold(Item *item, int goldReceived);
     void handleOpenQuestLog();
     void handleQuestLogBack();
     void handleQuestAccepted(const QString &questId);

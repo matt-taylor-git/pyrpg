@@ -21,6 +21,7 @@ public:
 signals:
     void leaveRequested();
     void itemPurchased(Item *item);
+    void itemSold(Item *item, int goldReceived);
     void loreUnlockedFromPurchase(const QString &loreId);
 
 protected:
@@ -31,6 +32,8 @@ private:
     void clearShop();
     QWidget* createShopItemCard(Item *item, int price);
     void handleBuyClicked(Item *item, int price);
+    void handleSellClicked();
+    void onItemSelectedForSell(Item *item);
     void updateSelectionDisplay();
 
     QLabel *m_goldLabel;

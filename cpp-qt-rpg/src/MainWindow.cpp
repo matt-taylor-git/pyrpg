@@ -93,6 +93,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Shop Page
     m_shopPage = new ShopPage();
     connect(m_shopPage, &ShopPage::leaveRequested, this, &MainWindow::handleShopLeave);
+    connect(m_shopPage, &ShopPage::itemPurchased, this, &MainWindow::onItemPurchased);
+    connect(m_shopPage, &ShopPage::itemSold, this, &MainWindow::onItemSold);
     connect(m_shopPage, &ShopPage::loreUnlockedFromPurchase, this, &MainWindow::handleLoreUnlockedFromPurchase);
     stackedWidget->addWidget(m_shopPage);
 
@@ -769,6 +771,22 @@ void MainWindow::handleLoreUnlockedFromPurchase(const QString &loreId)
     LoreEntry* entry = m_game->getCodexManager()->getEntry(loreId);
     if (entry) {
         handleLoreUnlocked(loreId, entry->title);
+    }
+}
+
+void MainWindow::onItemPurchased(Item *item)
+{
+    // Update inventory if open
+    if (stackedWidget->currentWidget() == m_inventoryPage) {
+        m_inventoryPage->updateInventory(m_game->getPlayer());
+    }
+}
+
+void MainWindow::onItemSold(Item *item, int goldReceived)
+{
+    // Update inventory if open
+    if (stackedWidget->currentWidget() == m_inventoryPage) {
+        m_inventoryPage->updateInventory(m_game->getPlayer());
     }
 }
 
