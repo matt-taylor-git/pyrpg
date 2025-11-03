@@ -155,6 +155,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::handleCharacterCreation(const QString &name, const QString &characterClass)
 {
+    // Create new game and initialize all managers
     m_game->newGame(name, characterClass);
 
     // Connect QuestManager signals
@@ -179,6 +180,12 @@ void MainWindow::handleCharacterCreation(const QString &name, const QString &cha
     if (m_game->getCodexManager()) {
         connect(m_game->getCodexManager(), &CodexManager::loreUnlocked,
                 this, &MainWindow::handleLoreUnlocked, Qt::UniqueConnection);
+    }
+
+    // NOW load quests after all UI connections are established
+    // This ensures story event dialogs display properly when first quest is auto-accepted
+    if (m_game->getQuestManager()) {
+        m_game->getQuestManager()->loadQuests();
     }
 
     // Start in non-combat mode on the main game hub (CombatPage)
@@ -398,6 +405,11 @@ void MainWindow::handleLoadFromFile(const QString &filePath)
                     this, &MainWindow::handleLoreUnlocked, Qt::UniqueConnection);
         }
 
+        // Load quests after all connections are established
+        if (m_game->getQuestManager()) {
+            m_game->getQuestManager()->loadQuests();
+        }
+
         m_combatPage->setCombatMode(false);
         stackedWidget->setCurrentWidget(m_combatPage);
     }
@@ -443,6 +455,11 @@ void MainWindow::handleLoadFromSlot(int slotNumber)
         if (m_game->getCodexManager()) {
             connect(m_game->getCodexManager(), &CodexManager::loreUnlocked,
                     this, &MainWindow::handleLoreUnlocked, Qt::UniqueConnection);
+        }
+
+        // Load quests after all connections are established
+        if (m_game->getQuestManager()) {
+            m_game->getQuestManager()->loadQuests();
         }
 
         m_combatPage->setCombatMode(false);

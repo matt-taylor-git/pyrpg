@@ -81,11 +81,8 @@ void Game::newGame(const QString &playerName, const QString &characterClass)
     connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
     connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
 
-    qDebug() << "=== Game::newGame - about to call loadQuests() ===";
-    // Load quests AFTER connections are made
-    // This way, when the first quest is auto-accepted, the story event will trigger
-    m_questManager->loadQuests();
-    qDebug() << "=== Game::newGame - loadQuests() completed ===";
+    // NOTE: loadQuests() is now called by MainWindow AFTER it connects to StoryManager signals
+    // This ensures the tutorial event displays properly on character creation
 }
 
 Player* Game::getPlayer()
@@ -214,8 +211,8 @@ bool Game::loadFromSlot(int slotNumber)
     connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
     connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
 
-    // Load quests AFTER connections are made
-    m_questManager->loadQuests();
+    // NOTE: loadQuests() is now called by MainWindow AFTER it connects to StoryManager signals
+    // This ensures the tutorial event displays properly on character creation
 
     return true;
 }
