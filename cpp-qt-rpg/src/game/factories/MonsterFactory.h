@@ -10,8 +10,12 @@ class MonsterFactory
 public:
     static Monster* createMonster(const QString &monsterType, int playerLevel);
     static Monster* createRandomMonster(int playerLevel);
-    static Monster* createBoss(int playerLevel);
-    static FinalBoss* createFinalBoss(int playerLevel);
+    static Monster* createBoss(int playerLevel, const QString &bossType = "");
+    static FinalBoss* createFinalBoss(int playerLevel, const QString &bossType = "");
+
+    // Validation methods
+    static bool isValidMonsterType(const QString &monsterType);
+    static QStringList getAllValidMonsterTypes();
 };
 
 #endif // MONSTERFACTORY_H

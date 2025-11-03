@@ -222,6 +222,44 @@ void Game::startCombat()
     if (currentMonster) {
         delete currentMonster;
     }
+
+    // Check if player has active quest objectives requiring specific monsters
+    QString questMonsterType;
+    if (m_questManager) {
+        QList<Quest*> activeQuests = m_questManager->getActiveQuests();
+        for (Quest* quest : activeQuests) {
+            if (!quest) continue;
+
+            for (const QuestObjective &obj : quest->objectives) {
+                // Check for incomplete kill objectives
+                if ((obj.type == "kill_enemies" || obj.type == "defeat_boss") && !obj.completed) {
+                    questMonsterType = obj.targetId;
+                    break;
+                }
+            }
+            if (!questMonsterType.isEmpty()) {
+                break;
+            }
+        }
+    }
+
+    // Spawn quest-specific monster or random monster
+    if (!questMonsterType.isEmpty()) {
+        // Try to create the quest monster
+        currentMonster = MonsterFactory::createMonster(questMonsterType, player->level);
+        if (currentMonster && currentMonster->name != "Unknown Beast") {
+            combatActive = true;
+            combatLog = QString("Combat started! A %1 (Level %2) appears!").arg(currentMonster->name).arg(currentMonster->level);
+            return;
+        }
+        // Fall back to random if quest monster creation failed
+        if (currentMonster) {
+            delete currentMonster;
+            currentMonster = nullptr;
+        }
+    }
+
+    // Default: create a random monster
     currentMonster = MonsterFactory::createRandomMonster(player->level);
     combatActive = true;
     combatLog = QString("Combat started! A %1 (Level %2) appears!").arg(currentMonster->name).arg(currentMonster->level);
@@ -528,8 +566,29 @@ void Game::startFinalBossCombat()
         delete currentMonster;
     }
 
-    // Create final boss
-    currentMonster = MonsterFactory::createFinalBoss(player->level);
+    // Check if quest requires "Dark Overlord"
+    QString bossType = "The Eternal Shadow";  // Default
+    if (m_questManager) {
+        QList<Quest*> activeQuests = m_questManager->getActiveQuests();
+        for (Quest* quest : activeQuests) {
+            if (!quest) continue;
+
+            for (const QuestObjective &obj : quest->objectives) {
+                // Check for incomplete final boss objectives
+                if (obj.type == "defeat_boss" && !obj.completed &&
+                    (obj.targetId == "Dark Overlord" || obj.targetId == "dark_overlord")) {
+                    bossType = "Dark Overlord";
+                    break;
+                }
+            }
+            if (bossType == "Dark Overlord") {
+                break;
+            }
+        }
+    }
+
+    // Create final boss with appropriate name
+    currentMonster = MonsterFactory::createFinalBoss(player->level, bossType);
     combatActive = true;
 
     // Emit boss encountered signal

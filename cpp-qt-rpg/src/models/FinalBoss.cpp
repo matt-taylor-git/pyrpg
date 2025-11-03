@@ -1,9 +1,10 @@
 #include "FinalBoss.h"
 
-FinalBoss::FinalBoss(int playerLevel)
-    : Monster("The Eternal Shadow", playerLevel + 2, "final_boss"),
+FinalBoss::FinalBoss(int playerLevel, const QString &bossName)
+    : Monster(bossName, playerLevel + 2, "final_boss"),
       currentPhase(1),
-      m_previousPhase(1)
+      m_previousPhase(1),
+      m_bossName(bossName)
 {
     // Enhanced stats (significantly harder than normal boss)
     health = 500 + (playerLevel * 50);

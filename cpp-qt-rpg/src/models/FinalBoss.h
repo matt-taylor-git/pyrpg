@@ -7,7 +7,7 @@
 class FinalBoss : public Monster
 {
 public:
-    explicit FinalBoss(int playerLevel);
+    explicit FinalBoss(int playerLevel, const QString &bossName = "The Eternal Shadow");
 
     int getCurrentPhase() const;
     void updatePhase();
@@ -18,6 +18,7 @@ public:
 private:
     int currentPhase;
     int m_previousPhase;
+    QString m_bossName;
 };
 
 #endif // FINALBOSS_H

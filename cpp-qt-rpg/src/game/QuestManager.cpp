@@ -165,7 +165,7 @@ void QuestManager::onCombatEnd(const QString &enemyName)
 
             // Check if this objective matches the killed enemy
             if ((obj.type == "kill_enemies" || obj.type == "defeat_boss") &&
-                obj.targetId == enemyName &&
+                QString::compare(obj.targetId, enemyName, Qt::CaseInsensitive) == 0 &&
                 !obj.completed) {
 
                 // Update progress

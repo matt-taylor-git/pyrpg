@@ -40,6 +40,7 @@ add_executable(pyrpg-qt
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/MonsterTypeRegistry.cpp
     src/game/factories/QuestFactory.cpp
     src/game/factories/DialogueFactory.cpp
     src/game/factories/StoryEventFactory.cpp
@@ -133,6 +134,7 @@ add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/MonsterTypeRegistry.cpp
     src/game/factories/QuestFactory.cpp
     src/game/factories/DialogueFactory.cpp
     src/game/factories/StoryEventFactory.cpp
@@ -144,19 +146,25 @@ target_include_directories(test_mainwindow PRIVATE src)
 add_test(NAME MainWindowTest COMMAND test_mainwindow)
 
 # Test for Data Models
-add_executable(test_models tests/test_models.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/models/FinalBoss.cpp src/models/Quest.cpp src/models/DialogueData.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/factories/QuestFactory.cpp src/game/factories/DialogueFactory.cpp src/game/factories/StoryEventFactory.cpp src/game/factories/LoreFactory.cpp src/game/Game.cpp src/game/QuestManager.cpp src/game/DialogueManager.cpp src/game/StoryManager.cpp src/game/CodexManager.cpp src/persistence/SaveManager.cpp)
+add_executable(test_models tests/test_models.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/models/FinalBoss.cpp src/models/Quest.cpp src/models/DialogueData.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/factories/MonsterTypeRegistry.cpp src/game/factories/QuestFactory.cpp src/game/factories/DialogueFactory.cpp src/game/factories/StoryEventFactory.cpp src/game/factories/LoreFactory.cpp src/game/Game.cpp src/game/QuestManager.cpp src/game/DialogueManager.cpp src/game/StoryManager.cpp src/game/CodexManager.cpp src/persistence/SaveManager.cpp)
 target_link_libraries(test_models PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_models PRIVATE src)
 add_test(NAME ModelsTest COMMAND test_models)
 
+# Test for Monster Factory
+add_executable(test_monster_factory tests/test_monster_factory.cpp src/models/Character.cpp src/models/Monster.cpp src/models/FinalBoss.cpp src/game/factories/MonsterFactory.cpp src/game/factories/MonsterTypeRegistry.cpp)
+target_link_libraries(test_monster_factory PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_monster_factory PRIVATE src)
+add_test(NAME MonsterFactoryTest COMMAND test_monster_factory)
+
 # Test for Lore Discovery (Phase 5)
-add_executable(test_lore_discovery tests/test_lore_discovery.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/models/FinalBoss.cpp src/models/Quest.cpp src/models/DialogueData.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/factories/QuestFactory.cpp src/game/factories/DialogueFactory.cpp src/game/factories/StoryEventFactory.cpp src/game/factories/LoreFactory.cpp src/game/Game.cpp src/game/QuestManager.cpp src/game/DialogueManager.cpp src/game/StoryManager.cpp src/game/CodexManager.cpp src/persistence/SaveManager.cpp)
+add_executable(test_lore_discovery tests/test_lore_discovery.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/models/FinalBoss.cpp src/models/Quest.cpp src/models/DialogueData.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/factories/MonsterTypeRegistry.cpp src/game/factories/QuestFactory.cpp src/game/factories/DialogueFactory.cpp src/game/factories/StoryEventFactory.cpp src/game/factories/LoreFactory.cpp src/game/Game.cpp src/game/QuestManager.cpp src/game/DialogueManager.cpp src/game/StoryManager.cpp src/game/CodexManager.cpp src/persistence/SaveManager.cpp)
 target_link_libraries(test_lore_discovery PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_lore_discovery PRIVATE src)
 add_test(NAME LoreDiscoveryTest COMMAND test_lore_discovery)
 
 # Test for Item-Lore Integration (Phase 5)
-add_executable(test_item_lore tests/test_item_lore.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/models/FinalBoss.cpp src/models/Quest.cpp src/models/DialogueData.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/factories/QuestFactory.cpp src/game/factories/DialogueFactory.cpp src/game/factories/StoryEventFactory.cpp src/game/factories/LoreFactory.cpp src/game/Game.cpp src/game/QuestManager.cpp src/game/DialogueManager.cpp src/game/StoryManager.cpp src/game/CodexManager.cpp src/persistence/SaveManager.cpp)
+add_executable(test_item_lore tests/test_item_lore.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/models/FinalBoss.cpp src/models/Quest.cpp src/models/DialogueData.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/factories/MonsterTypeRegistry.cpp src/game/factories/QuestFactory.cpp src/game/factories/DialogueFactory.cpp src/game/factories/StoryEventFactory.cpp src/game/factories/LoreFactory.cpp src/game/Game.cpp src/game/QuestManager.cpp src/game/DialogueManager.cpp src/game/StoryManager.cpp src/game/CodexManager.cpp src/persistence/SaveManager.cpp)
 target_link_libraries(test_item_lore PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_item_lore PRIVATE src)
 add_test(NAME ItemLoreTest COMMAND test_item_lore)
@@ -175,6 +183,7 @@ add_executable(test_persistence tests/test_persistence.cpp
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/MonsterTypeRegistry.cpp
     src/game/factories/QuestFactory.cpp
 )
 target_link_libraries(test_persistence PRIVATE Qt6::Widgets Qt6::Test)
@@ -231,6 +240,7 @@ add_executable(test_navigation_flow tests/test_navigation_flow.cpp src/MainWindo
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/MonsterTypeRegistry.cpp
     src/game/factories/QuestFactory.cpp
     src/game/factories/DialogueFactory.cpp
     src/game/factories/StoryEventFactory.cpp
@@ -285,6 +295,7 @@ add_executable(test_saveload_shortcuts tests/test_saveload_shortcuts.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/QuestFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/MonsterTypeRegistry.cpp
 )
 target_link_libraries(test_saveload_shortcuts PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_saveload_shortcuts PRIVATE src)
@@ -303,6 +314,7 @@ add_executable(test_quest_models tests/test_quest_models.cpp
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/MonsterTypeRegistry.cpp
 )
 target_link_libraries(test_quest_models PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_quest_models PRIVATE src)
@@ -322,6 +334,7 @@ add_executable(test_quest_system tests/test_quest_system.cpp
     src/game/factories/ItemFactory.cpp
     src/game/factories/SkillFactory.cpp
     src/game/factories/MonsterFactory.cpp
+    src/game/factories/MonsterTypeRegistry.cpp
 )
 target_link_libraries(test_quest_system PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_quest_system PRIVATE src)

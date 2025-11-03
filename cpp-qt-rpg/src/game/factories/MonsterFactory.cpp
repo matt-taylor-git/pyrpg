@@ -1,4 +1,5 @@
 #include "MonsterFactory.h"
+#include "MonsterTypeRegistry.h"
 #include <QRandomGenerator>
 #include <QStringList>
 
@@ -88,6 +89,16 @@ Monster* MonsterFactory::createMonster(const QString &monsterType, int playerLev
         m->goldReward = level * 4;
         return m;
     }
+    else if (monsterType == "Shadow Wolf" || monsterType == "shadow_wolf") {
+        Monster* m = new Monster("Shadow Wolf", level, "wolf");
+        m->health = 35 + (level * 9);
+        m->maxHealth = m->health;
+        m->attack = 7 + (level * 2);
+        m->defense = 2 + level;
+        m->expReward = level * 18;
+        m->goldReward = level * 5;
+        return m;
+    }
 
     // Default fallback
     return new Monster("Unknown Beast", level, "unknown");
@@ -118,9 +129,24 @@ Monster* MonsterFactory::createRandomMonster(int playerLevel)
     return createMonster(monsterType, playerLevel);
 }
 
-Monster* MonsterFactory::createBoss(int playerLevel)
+Monster* MonsterFactory::createBoss(int playerLevel, const QString &bossType)
 {
     int bossLevel = playerLevel + 2;
+
+    // Support quest-specific boss
+    if (bossType == "Shadow Lord" || bossType == "shadow_lord") {
+        Monster* boss = new Monster("Shadow Lord", bossLevel, "boss");
+        boss->health = 150 + (bossLevel * 30);
+        boss->maxHealth = boss->health;
+        boss->attack = 15 + (bossLevel * 4);
+        boss->defense = 10 + (bossLevel * 3);
+        boss->magicAttack = 8 + (bossLevel * 2);
+        boss->expReward = bossLevel * 100;
+        boss->goldReward = bossLevel * 50;
+        return boss;
+    }
+
+    // Default to existing behavior
     Monster* boss = new Monster("Orc Chieftain", bossLevel, "boss");
     boss->health = 150 + (bossLevel * 30);
     boss->maxHealth = boss->health;
@@ -132,7 +158,22 @@ Monster* MonsterFactory::createBoss(int playerLevel)
     return boss;
 }
 
-FinalBoss* MonsterFactory::createFinalBoss(int playerLevel)
+FinalBoss* MonsterFactory::createFinalBoss(int playerLevel, const QString &bossType)
 {
-    return new FinalBoss(playerLevel);
+    QString finalBossName = "The Eternal Shadow";
+    if (!bossType.isEmpty()) {
+        finalBossName = bossType;
+    }
+    return new FinalBoss(playerLevel, finalBossName);
+}
+
+// Validation implementation
+bool MonsterFactory::isValidMonsterType(const QString &monsterType)
+{
+    return MonsterTypeRegistry::isValidMonsterType(monsterType);
+}
+
+QStringList MonsterFactory::getAllValidMonsterTypes()
+{
+    return MonsterTypeRegistry::getAllValidTypeNames();
 }
