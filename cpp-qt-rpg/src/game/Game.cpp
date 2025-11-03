@@ -55,7 +55,6 @@ void Game::newGame(const QString &playerName, const QString &characterClass)
         delete m_questManager;
     }
     m_questManager = new QuestManager(player, this);
-    m_questManager->loadQuests();
 
     // Create and initialize narrative managers (Phase 3)
     if (m_dialogueManager) {
@@ -76,10 +75,17 @@ void Game::newGame(const QString &playerName, const QString &characterClass)
     m_codexManager = new CodexManager(player, this);
     m_codexManager->loadLoreEntries();
 
-    // Connect manager signals
+    // Connect manager signals BEFORE loading quests
+    // This ensures that when quests are auto-accepted, story events are triggered
     connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted);
     connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
     connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
+
+    qDebug() << "=== Game::newGame - about to call loadQuests() ===";
+    // Load quests AFTER connections are made
+    // This way, when the first quest is auto-accepted, the story event will trigger
+    m_questManager->loadQuests();
+    qDebug() << "=== Game::newGame - loadQuests() completed ===";
 }
 
 Player* Game::getPlayer()
@@ -132,7 +138,6 @@ if (m_questManager) {
     delete m_questManager;
 }
 m_questManager = new QuestManager(player, this);
-m_questManager->loadQuests();
 
 // Recreate narrative managers (Phase 3)
 if (m_dialogueManager) {
@@ -153,10 +158,13 @@ if (m_codexManager) {
 m_codexManager = new CodexManager(player, this);
 m_codexManager->loadLoreEntries();
 
-// Connect manager signals
+// Connect manager signals BEFORE loading quests
 connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted);
 connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
 connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
+
+// Load quests AFTER connections are made
+m_questManager->loadQuests();
 
 return true;
 }
@@ -181,7 +189,6 @@ bool Game::loadFromSlot(int slotNumber)
         delete m_questManager;
     }
     m_questManager = new QuestManager(player, this);
-    m_questManager->loadQuests();
 
     // Recreate narrative managers (Phase 3)
     if (m_dialogueManager) {
@@ -202,10 +209,13 @@ bool Game::loadFromSlot(int slotNumber)
     m_codexManager = new CodexManager(player, this);
     m_codexManager->loadLoreEntries();
 
-    // Connect manager signals
+    // Connect manager signals BEFORE loading quests
     connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted);
     connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
     connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
+
+    // Load quests AFTER connections are made
+    m_questManager->loadQuests();
 
     return true;
 }

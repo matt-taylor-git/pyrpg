@@ -749,9 +749,13 @@ void MainWindow::handleDialogueEffectTriggered(const QString &effectType, const 
 
 void MainWindow::handleStoryEventTriggered(const StoryEvent &event)
 {
+    qDebug() << "MainWindow::handleStoryEventTriggered() called with event:" << event.eventId;
+    qDebug() << "Event title:" << event.title;
     // Show modal story event dialog
     StoryEventDialog dialog(event, this);
+    qDebug() << "About to show dialog (this will block)...";
     dialog.exec();  // Blocks until player dismisses
+    qDebug() << "Dialog closed";
 }
 
 void MainWindow::handleLoreUnlocked(const QString &entryId, const QString &title)

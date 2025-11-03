@@ -17,8 +17,10 @@ QuestManager::~QuestManager()
 
 void QuestManager::loadQuests()
 {
+    qDebug() << "QuestManager::loadQuests() called";
     // Load all main quest definitions
     m_allQuests = QuestFactory::getAllMainQuests();
+    qDebug() << "Loaded" << m_allQuests.size() << "quests";
 
     // Build quick lookup map
     for (Quest* quest : m_allQuests) {
@@ -29,14 +31,19 @@ void QuestManager::loadQuests()
 
     // Check if player already has quests (loaded from save)
     if (m_player && m_player->quests.isEmpty()) {
+        qDebug() << "New game detected - auto-activating first quest";
         // New game - activate first quest
         if (!m_allQuests.isEmpty()) {
             Quest* firstQuest = m_allQuests.first();
+            qDebug() << "First quest:" << firstQuest->questId << "status:" << firstQuest->status;
             if (firstQuest && firstQuest->status == "available") {
+                qDebug() << "Calling acceptQuest() for" << firstQuest->questId;
                 acceptQuest(firstQuest->questId);
+                qDebug() << "acceptQuest() returned";
             }
         }
     } else if (m_player) {
+        qDebug() << "Loaded game - player has" << m_player->quests.size() << "quests";
         // Sync loaded player quests with our quest definitions
         // Update quest definitions to match player's quest state
         for (Quest* playerQuest : m_player->quests) {
@@ -51,20 +58,25 @@ void QuestManager::loadQuests()
 
     // Check for newly unlocked quests
     checkQuestUnlocks();
+    qDebug() << "QuestManager::loadQuests() completed";
 }
 
 bool QuestManager::acceptQuest(const QString &questId)
 {
+    qDebug() << "QuestManager::acceptQuest() called with questId:" << questId;
     Quest* quest = m_questMap.value(questId, nullptr);
     if (!quest || !m_player) {
+        qDebug() << "QuestManager::acceptQuest() failed - quest or player is null";
         return false;
     }
 
     // Can only accept available quests
     if (quest->status != "available") {
+        qDebug() << "QuestManager::acceptQuest() failed - quest status is" << quest->status << "not 'available'";
         return false;
     }
 
+    qDebug() << "QuestManager::acceptQuest() accepting quest";
     // Change status to active
     quest->status = "active";
 
@@ -79,7 +91,9 @@ bool QuestManager::acceptQuest(const QString &questId)
         }
     }
 
+    qDebug() << "QuestManager::acceptQuest() EMITTING questAccepted signal";
     emit questAccepted(questId);
+    qDebug() << "QuestManager::acceptQuest() signal emitted";
     return true;
 }
 

@@ -3,9 +3,12 @@
 #include <QVBoxLayout>
 #include <QFont>
 #include <QPushButton>
+#include <QSettings>
+#include <QCoreApplication>
 
 StoryEventDialog::StoryEventDialog(const StoryEvent &event, QWidget *parent)
     : QDialog(parent)
+    , m_dontShowAgainCheckbox(nullptr)
 {
     setModal(true);
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
@@ -57,8 +60,35 @@ void StoryEventDialog::setupUi(const StoryEvent &event)
 
     mainLayout->addSpacing(Theme::SPACING_LG);
 
+    // "Don't show again" checkbox for tutorial events
+    if (event.eventId == "quest_system_intro") {
+        QSettings settings;
+        QString settingsKey = "dismissed_events/" + event.eventId;
+        bool alreadyDismissed = settings.value(settingsKey, false).toBool();
+
+        if (!alreadyDismissed) {
+            m_dontShowAgainCheckbox = new QCheckBox("Don't show this again", this);
+            m_dontShowAgainCheckbox->setFont(textFont);
+            m_dontShowAgainCheckbox->setStyleSheet(QString(
+                "QCheckBox {"
+                "    color: %1;"
+                "    spacing: %2px;"
+                "}"
+                "QCheckBox::indicator {"
+                "    width: %3px;"
+                "    height: %3px;"
+                "}"
+            ).arg(Theme::FOREGROUND.name())
+             .arg(Theme::SPACING_SM)
+             .arg(Theme::SPACING_LG));
+
+            mainLayout->addWidget(m_dontShowAgainCheckbox, 0, Qt::AlignCenter);
+            mainLayout->addSpacing(Theme::SPACING_LG);
+        }
+    }
+
     // Continue button
-    QPushButton *continueBtn = new QPushButton("Continue (ESC)", this);
+    QPushButton *continueBtn = new QPushButton("Got it! (ESC)", this);
     continueBtn->setMinimumHeight(50);
     continueBtn->setMaximumWidth(300);
     QFont btnFont;
@@ -92,7 +122,15 @@ void StoryEventDialog::setupUi(const StoryEvent &event)
      .arg(Theme::ACCENT.name())
      .arg(Theme::SECONDARY.name()));
 
-    connect(continueBtn, &QPushButton::clicked, this, &QDialog::accept);
+    connect(continueBtn, &QPushButton::clicked, [this, &event]() {
+        // Save "don't show again" preference if checkbox exists
+        if (m_dontShowAgainCheckbox && m_dontShowAgainCheckbox->isChecked()) {
+            QSettings settings;
+            QString settingsKey = "dismissed_events/" + event.eventId;
+            settings.setValue(settingsKey, true);
+        }
+        accept();
+    });
 
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
@@ -122,6 +160,12 @@ void StoryEventDialog::keyPressEvent(QKeyEvent *event)
     }
 
     if (event->key() == Qt::Key_Escape || event->key() == Qt::Key_Return || event->key() == Qt::Key_Space) {
+        // Save "don't show again" preference if checkbox exists
+        if (m_dontShowAgainCheckbox && m_dontShowAgainCheckbox->isChecked()) {
+            QSettings settings;
+            QString settingsKey = "dismissed_events/quest_system_intro";
+            settings.setValue(settingsKey, true);
+        }
         accept();
         return;
     }

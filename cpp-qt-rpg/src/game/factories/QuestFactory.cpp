@@ -6,9 +6,10 @@ Quest* QuestFactory::createQuest(const QString &questId)
     if (questId == "main_quest_01") {
         Quest* quest = new Quest("main_quest_01", "A Dark Omen",
             "Strange shadows have been spotted near the village.", "available", 1);
-        quest->longDescription = "The village elder speaks of dark omens. Shadow Wolves have been "
-                                 "seen prowling near the village outskirts. Defeat them to prove "
-                                 "your courage and help protect the village.";
+        quest->longDescription = "Your first quest! The village elder needs your help. Shadow Wolves "
+                                 "have been seen prowling near the village outskirts. This is a "
+                                 "perfect opportunity to test your combat skills. Defeat 3 Shadow Wolves "
+                                 "to protect the village and earn your first rewards.";
         quest->orderIndex = 1;
 
         // Objective: Kill 3 Shadow Wolves

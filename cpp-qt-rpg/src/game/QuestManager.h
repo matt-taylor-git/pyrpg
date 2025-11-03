@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QMap>
 #include <QString>
+#include <QDebug>
 
 class QuestManager : public QObject
 {

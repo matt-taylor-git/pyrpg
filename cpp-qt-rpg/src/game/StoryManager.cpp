@@ -41,6 +41,7 @@ void StoryManager::checkEventTriggers()
 
 void StoryManager::triggerEvent(const QString &eventId)
 {
+    qDebug() << "StoryManager::triggerEvent() called with eventId:" << eventId;
     StoryEvent* event = m_eventMap.value(eventId, nullptr);
     if (!event) {
         qWarning() << "Story event not found:" << eventId;
@@ -52,6 +53,7 @@ void StoryManager::triggerEvent(const QString &eventId)
         qDebug() << "Story event already viewed:" << eventId;
         return;
     }
+    qDebug() << "Event not yet viewed, checking prerequisites...";
 
     // Check prerequisites
     for (const QString &prereq : event->prerequisites) {
@@ -70,21 +72,28 @@ void StoryManager::triggerEvent(const QString &eventId)
             }
         }
     }
-
+    qDebug() << "All prerequisites met, emitting eventTriggered signal";
     // Emit event (copy event data for UI)
     emit eventTriggered(*event);
+    qDebug() << "eventTriggered signal emitted";
 
     // Mark as viewed
     m_player->markEventViewed(eventId);
+    qDebug() << "Event marked as viewed";
 }
 
 void StoryManager::onQuestStarted(const QString &questId)
 {
+    qDebug() << "StoryManager::onQuestStarted() called with questId:" << questId;
+    qDebug() << "Looking for events with triggerType='quest_start' and triggerId='" << questId << "'";
     for (StoryEvent* event : m_allEvents) {
+        qDebug() << "  Checking event:" << event->eventId << "triggerType:" << event->triggerType << "triggerId:" << event->triggerId;
         if (event->triggerType == "quest_start" && event->triggerId == questId) {
+            qDebug() << "  MATCH FOUND! Calling triggerEvent(" << event->eventId << ")";
             triggerEvent(event->eventId);
         }
     }
+    qDebug() << "StoryManager::onQuestStarted() completed";
 }
 
 void StoryManager::onQuestCompleted(const QString &questId)

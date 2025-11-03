@@ -28,7 +28,37 @@ Your adventure begins...)";
         cache["intro_cutscene"] = intro;
 
         // ================================================================
-        // EVENT 2: Quest 01 Start
+        // EVENT 2: Quest System Tutorial
+        // ================================================================
+        StoryEvent* questTutorial = new StoryEvent();
+        questTutorial->eventId = "quest_system_intro";
+        questTutorial->title = "Understanding Quests";
+        questTutorial->eventText = R"(Welcome to the world of quests!
+
+QUESTS are missions that guide your adventure. Each quest has:
+• A description explaining the task
+• Objectives that track your progress (shown with ✓ when complete)
+• Rewards like experience, gold, and items
+
+HOW TO VIEW YOUR QUESTS:
+Open the Quest Log (press Q or click the Quests button) anytime.
+You'll see your Active, Available, and Completed quests here.
+
+YOUR FIRST QUEST: "A Dark Omen"
+The village needs your help! Your objective is to defeat Shadow Wolves.
+Fight enemies by exploring or engaging in combat. Quest progress updates automatically.
+
+Complete quests to gain rewards and unlock new adventures!
+
+Press "Got it!" to begin your journey.)";
+        questTutorial->triggerType = "quest_start";
+        questTutorial->triggerId = "main_quest_01";
+        questTutorial->viewed = false;
+
+        cache["quest_system_intro"] = questTutorial;
+
+        // ================================================================
+        // EVENT 3: Quest 01 Start
         // ================================================================
         StoryEvent* quest01Start = new StoryEvent();
         quest01Start->eventId = "quest_01_start";
@@ -122,6 +152,7 @@ QList<StoryEvent*> StoryEventFactory::getAllEvents()
 
     if (allEvents.isEmpty()) {
         allEvents.append(createEvent("intro_cutscene"));
+        allEvents.append(createEvent("quest_system_intro"));
         allEvents.append(createEvent("quest_01_start"));
         allEvents.append(createEvent("quest_01_complete"));
         allEvents.append(createEvent("level_5_reached"));
