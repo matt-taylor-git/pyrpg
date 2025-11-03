@@ -26,6 +26,16 @@ public:
     QList<Skill*> skills;
     QList<Quest*> quests;
 
+    // Narrative tracking (Phase 3)
+    QList<QString> viewedDialogueIds;      // Track completed unique dialogues
+    QList<QString> viewedEventIds;         // Track viewed story events
+    QList<QString> unlockedLoreEntries;    // Track discovered lore
+
+    // Game completion tracking (Phase 4)
+    bool hasDefeatedFinalBoss = false;
+    QString gameCompletionTime = "";
+    int finalGameLevel = 0;
+
     QMap<QString, Item*> equipment;
     QList<Item*> inventory;
     int gold;
@@ -45,6 +55,15 @@ public:
     Quest* getQuest(const QString &questId) const;
     QList<Quest*> getActiveQuests() const;
     QList<Quest*> getCompletedQuests() const;
+
+    // Narrative tracking (Phase 3)
+    bool hasViewedDialogue(const QString &dialogueId) const;
+    bool hasViewedEvent(const QString &eventId) const;
+    bool hasUnlockedLore(const QString &entryId) const;
+    QList<QString> getUnlockedLoreEntries() const;
+    void markDialogueViewed(const QString &dialogueId);
+    void markEventViewed(const QString &eventId);
+    void unlockLore(const QString &entryId);
 
     // Item management
     bool equipItem(Item* item);

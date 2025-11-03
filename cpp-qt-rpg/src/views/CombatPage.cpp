@@ -341,4 +341,12 @@ void CombatPage::setCombatMode(bool inCombat)
 
     }
 
-    
+void CombatPage::addLogEntry(const QString &message, const QString &type)
+{
+    // Simple implementation - just append to the battle log
+    // The type parameter is optional and could be used for color-coding in the future
+    if (m_battleLog) {
+        m_battleLog->append(message);
+    }
+}
+

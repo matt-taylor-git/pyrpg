@@ -6,7 +6,12 @@
 #include "../models/Skill.h"
 #include "../persistence/SaveManager.h"
 #include "QuestManager.h"
+#include "DialogueManager.h"
+#include "StoryManager.h"
+#include "CodexManager.h"
 #include <QObject>
+#include <QTime>
+#include <QDateTime>
 
 class Game : public QObject
 {
@@ -19,6 +24,9 @@ void newGame(const QString &playerName, const QString &characterClass = "Hero");
 Player* getPlayer();
 Monster* getCurrentMonster();
 QuestManager* getQuestManager();
+DialogueManager* getDialogueManager();
+StoryManager* getStoryManager();
+CodexManager* getCodexManager();
 bool saveGame(const QString &filePath);
     bool loadGame(const QString &filePath);
 
@@ -38,8 +46,17 @@ QString getCombatResult();
 void endCombat();
     bool isInCombat() const;
 
+// Final Boss
+void startFinalBossCombat();
+bool canAccessFinalBoss() const;
+int calculatePlaytimeMinutes() const;
+
 signals:
     void combatEnded(bool playerWon);
+    void bossEncountered(const QString &bossName);
+    void bossPhaseChanged(int newPhase);
+    void finalBossDefeated();
+    void gameCompleted(int finalLevel, int playtimeMinutes);
 
 private:
     Player *player;
@@ -48,6 +65,10 @@ private:
     QString combatLog;
     SaveManager saveManager;
     QuestManager *m_questManager;
+    DialogueManager *m_dialogueManager;
+    StoryManager *m_storyManager;
+    CodexManager *m_codexManager;
+    QTime m_gameStartTime;
 
     friend class TestModels;
 

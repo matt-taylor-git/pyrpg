@@ -131,3 +131,8 @@ Monster* MonsterFactory::createBoss(int playerLevel)
     boss->goldReward = bossLevel * 50;
     return boss;
 }
+
+FinalBoss* MonsterFactory::createFinalBoss(int playerLevel)
+{
+    return new FinalBoss(playerLevel);
+}

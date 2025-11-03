@@ -21,6 +21,7 @@ void updateCombatState(Player *player, Monster *monster, const QString &log);
 void setCombatActive(bool active);
 void setCombatMode(bool inCombat);
     bool isInCombat() const { return m_inCombat; }
+    void addLogEntry(const QString &message, const QString &type = "");
 
     // Accessors for AnimationManager
     QLabel* getHeroSpriteLabel();

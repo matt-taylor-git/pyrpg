@@ -217,6 +217,14 @@ void ShopPage::handleBuyClicked(Item *item, int price)
     m_currentPlayer->gold -= price;
     m_currentPlayer->inventory.append(purchasedItem);
 
+    // Unlock lore entry if item has associated lore (Phase 5)
+    if (!purchasedItem->loreId.isEmpty()) {
+        if (!m_currentPlayer->hasUnlockedLore(purchasedItem->loreId)) {
+            m_currentPlayer->unlockLore(purchasedItem->loreId);
+            emit loreUnlockedFromPurchase(purchasedItem->loreId);
+        }
+    }
+
     emit itemPurchased(purchasedItem);
 
     QMessageBox::information(this, "Purchase Successful",

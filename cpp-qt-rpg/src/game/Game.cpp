@@ -2,10 +2,12 @@
 #include "factories/MonsterFactory.h"
 #include "factories/SkillFactory.h"
 #include "factories/ItemFactory.h"
+#include "../models/FinalBoss.h"
 #include <QRandomGenerator>
 
 Game::Game(QObject *parent)
-: QObject(parent), player(nullptr), currentMonster(nullptr), combatActive(false), m_questManager(nullptr)
+: QObject(parent), player(nullptr), currentMonster(nullptr), combatActive(false), m_questManager(nullptr),
+  m_dialogueManager(nullptr), m_storyManager(nullptr), m_codexManager(nullptr)
 {
 }
 
@@ -20,6 +22,15 @@ Game::~Game()
     if (m_questManager) {
         delete m_questManager;
     }
+    if (m_dialogueManager) {
+        delete m_dialogueManager;
+    }
+    if (m_storyManager) {
+        delete m_storyManager;
+    }
+    if (m_codexManager) {
+        delete m_codexManager;
+    }
 }
 
 void Game::newGame(const QString &playerName, const QString &characterClass)
@@ -29,6 +40,9 @@ void Game::newGame(const QString &playerName, const QString &characterClass)
         delete player;
     }
     player = new Player(playerName, characterClass);
+
+    // Initialize game start time for playtime tracking
+    m_gameStartTime = QTime::currentTime();
 
     // Give starting skills
     QList<Skill*> startingSkills = SkillFactory::getStartingSkills(characterClass);
@@ -42,6 +56,30 @@ void Game::newGame(const QString &playerName, const QString &characterClass)
     }
     m_questManager = new QuestManager(player, this);
     m_questManager->loadQuests();
+
+    // Create and initialize narrative managers (Phase 3)
+    if (m_dialogueManager) {
+        delete m_dialogueManager;
+    }
+    m_dialogueManager = new DialogueManager(player, this);
+    m_dialogueManager->loadDialogues();
+
+    if (m_storyManager) {
+        delete m_storyManager;
+    }
+    m_storyManager = new StoryManager(player, this);
+    m_storyManager->loadEvents();
+
+    if (m_codexManager) {
+        delete m_codexManager;
+    }
+    m_codexManager = new CodexManager(player, this);
+    m_codexManager->loadLoreEntries();
+
+    // Connect manager signals
+    connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted);
+    connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
+    connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
 }
 
 Player* Game::getPlayer()
@@ -52,6 +90,26 @@ return player;
 Monster* Game::getCurrentMonster()
 {
     return currentMonster;
+}
+
+QuestManager* Game::getQuestManager()
+{
+    return m_questManager;
+}
+
+DialogueManager* Game::getDialogueManager()
+{
+    return m_dialogueManager;
+}
+
+StoryManager* Game::getStoryManager()
+{
+    return m_storyManager;
+}
+
+CodexManager* Game::getCodexManager()
+{
+    return m_codexManager;
 }
 
 bool Game::saveGame(const QString &filePath)
@@ -75,6 +133,30 @@ if (m_questManager) {
 }
 m_questManager = new QuestManager(player, this);
 m_questManager->loadQuests();
+
+// Recreate narrative managers (Phase 3)
+if (m_dialogueManager) {
+    delete m_dialogueManager;
+}
+m_dialogueManager = new DialogueManager(player, this);
+m_dialogueManager->loadDialogues();
+
+if (m_storyManager) {
+    delete m_storyManager;
+}
+m_storyManager = new StoryManager(player, this);
+m_storyManager->loadEvents();
+
+if (m_codexManager) {
+    delete m_codexManager;
+}
+m_codexManager = new CodexManager(player, this);
+m_codexManager->loadLoreEntries();
+
+// Connect manager signals
+connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted);
+connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
+connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
 
 return true;
 }
@@ -100,6 +182,30 @@ bool Game::loadFromSlot(int slotNumber)
     }
     m_questManager = new QuestManager(player, this);
     m_questManager->loadQuests();
+
+    // Recreate narrative managers (Phase 3)
+    if (m_dialogueManager) {
+        delete m_dialogueManager;
+    }
+    m_dialogueManager = new DialogueManager(player, this);
+    m_dialogueManager->loadDialogues();
+
+    if (m_storyManager) {
+        delete m_storyManager;
+    }
+    m_storyManager = new StoryManager(player, this);
+    m_storyManager->loadEvents();
+
+    if (m_codexManager) {
+        delete m_codexManager;
+    }
+    m_codexManager = new CodexManager(player, this);
+    m_codexManager->loadLoreEntries();
+
+    // Connect manager signals
+    connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted);
+    connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
+    connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
 
     return true;
 }
@@ -135,6 +241,17 @@ QString Game::playerAttack()
         combatLog = QString("**CRITICAL HIT!** You strike for %1 damage!").arg(damage);
     } else {
         combatLog = QString("You attack for %1 damage!").arg(damage);
+    }
+
+    // Check for boss phase transitions (before combat end check)
+    if (FinalBoss* boss = dynamic_cast<FinalBoss*>(currentMonster)) {
+        boss->updatePhase();
+        if (boss->shouldEmitPhaseTransition()) {
+            emit bossPhaseChanged(boss->getCurrentPhase());
+            combatLog += QString("\n\n=== PHASE %1 ===\n%2\n")
+                .arg(boss->getCurrentPhase())
+                .arg(boss->getPhaseDescription());
+        }
     }
 
     if (currentMonster->health <= 0) {
@@ -218,6 +335,13 @@ QString Game::monsterAttack()
     if (!combatActive || !currentMonster || !player) return "";
 
     int baseDamage = currentMonster->attack;
+
+    // Apply boss phase multiplier
+    if (FinalBoss* boss = dynamic_cast<FinalBoss*>(currentMonster)) {
+        int multiplier = boss->getPhaseAttackMultiplier();
+        baseDamage = (baseDamage * multiplier) / 100;  // Scale by percentage
+    }
+
     int damage = calculateDamage(baseDamage, currentMonster->level, player->getTotalDefense());
 
     player->health -= damage;
@@ -256,9 +380,23 @@ void Game::endCombat()
 
     combatActive = false;
 
+    bool playerWon = (currentMonster && currentMonster->health <= 0 && player && player->health > 0);
+
     // If player won, give rewards
-    if (currentMonster && currentMonster->health <= 0 && player && player->health > 0) {
+    if (playerWon) {
         giveCombatRewards();
+
+        // FINAL BOSS VICTORY DETECTION
+        if (currentMonster && currentMonster->enemyType == "final_boss") {
+            // Mark player as game completer
+            player->hasDefeatedFinalBoss = true;
+            player->gameCompletionTime = QDateTime::currentDateTime().toString(Qt::ISODate);
+            player->finalGameLevel = player->level;
+
+            // Emit completion signals
+            emit finalBossDefeated();
+            emit gameCompleted(player->level, calculatePlaytimeMinutes());
+        }
     }
 }
 
@@ -307,6 +445,12 @@ void Game::giveCombatRewards()
 
     // Give experience
     int expGained = currentMonster->expReward;
+
+    // Final boss gets 2x XP multiplier
+    if (currentMonster->enemyType == "final_boss") {
+        expGained *= 2;
+    }
+
     player->gainExperience(expGained);
 
     // Check if player leveled up and notify quest manager
@@ -329,6 +473,24 @@ void Game::giveCombatRewards()
             if (m_questManager) {
                 m_questManager->onItemCollected(loot->name);
             }
+            // Unlock lore entry if item has associated lore (Phase 5)
+            if (!loot->loreId.isEmpty() && m_codexManager) {
+                m_codexManager->unlockEntry(loot->loreId);
+            }
+        }
+    }
+
+    // Final boss guaranteed legendary drop
+    if (currentMonster->enemyType == "final_boss") {
+        Item* legendary = ItemFactory::generateRandomItem(player->level + 5);
+        if (legendary) {
+            legendary->rarity = "Legendary";
+            player->inventory.append(legendary);
+            combatLog += QString("\n*** LEGENDARY REWARD: %1 ***").arg(legendary->name);
+            // Unlock lore entry if legendary has associated lore (Phase 5)
+            if (!legendary->loreId.isEmpty() && m_codexManager) {
+                m_codexManager->unlockEntry(legendary->loreId);
+            }
         }
     }
 
@@ -338,10 +500,11 @@ void Game::giveCombatRewards()
     if (m_questManager) {
         m_questManager->onCombatEnd(currentMonster->name);
     }
-}
-QuestManager* Game::getQuestManager()
-{
-    return m_questManager;
+
+    // Notify codex manager about enemy kill (for lore unlocks) - Phase 3
+    if (m_codexManager) {
+        m_codexManager->onEnemyKilled(currentMonster->name);
+    }
 }
 
 void Game::checkCombatEndAfterAction()
@@ -355,4 +518,50 @@ void Game::checkCombatEndAfterAction()
         endCombat();
         emit combatEnded(playerWon);
     }
+}
+
+// Final Boss Methods
+void Game::startFinalBossCombat()
+{
+    // Clean up existing monster
+    if (currentMonster) {
+        delete currentMonster;
+    }
+
+    // Create final boss
+    currentMonster = MonsterFactory::createFinalBoss(player->level);
+    combatActive = true;
+
+    // Emit boss encountered signal
+    emit bossEncountered(currentMonster->name);
+
+    combatLog = QString("=== THE FINAL BATTLE BEGINS ===\n%1 emerges from the shadows!\nPrepare yourself for the ultimate challenge!").arg(currentMonster->name);
+}
+
+bool Game::canAccessFinalBoss() const
+{
+    if (!player || !m_questManager) return false;
+
+    // Check level requirement
+    if (player->level < 20) {
+        return false;
+    }
+
+    // Check all main quests complete
+    // We need to verify that there are no active or locked main quests
+    QList<Quest*> activeQuests = m_questManager->getActiveQuests();
+    for (Quest* quest : activeQuests) {
+        if (quest && quest->questId.startsWith("main_quest_")) {
+            return false;  // Block if any main quest is still active
+        }
+    }
+
+    return true;  // All requirements met
+}
+
+int Game::calculatePlaytimeMinutes() const
+{
+    QTime now = QTime::currentTime();
+    int seconds = m_gameStartTime.secsTo(now);
+    return seconds / 60;
 }

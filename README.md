@@ -72,6 +72,44 @@ During combat you can:
 - **Use Item** - Use consumables like potions
 - **Run** - Attempt to escape from battle
 
+## Lore & Codex System
+
+Discover the rich history and lore of the world through the **Codex** - a collection of entries about enemies, items, characters, locations, and world events.
+
+### How to Access
+
+- Press **L** key during gameplay to open the Lore Book
+- Navigate through 5 categories:
+  - **Bestiary** - Information about creatures you've encountered
+  - **Items** - Backstories of legendary equipment and artifacts
+  - **World** - Historical events and world lore
+  - **Characters** - Biographies of important NPCs
+  - **Locations** - Details about places in the world
+
+### How to Unlock Lore
+
+Lore entries unlock automatically as you play:
+
+- **Defeat Enemies** - After defeating certain enemies multiple times, unlock bestiary entries
+- **Find Rare Items** - Discover legendary or rare items to unlock their lore
+- **Complete Quests** - Major quest completions reveal world history and character backgrounds
+- **Explore** - Visiting new locations and progressing the story unlocks new entries
+
+### Notifications
+
+Watch the **combat log** for notifications when you unlock new lore:
+- "**New Codex Entry: Shadow Wolves**" appears when a new entry is discovered
+- All unlocked lore persists through save/load
+
+### Tips
+
+- Defeat the same enemy type multiple times to unlock their bestiary entry
+- Purchase special items from the shop to discover their lore
+- Complete all main quests to unlock the full world history
+- Save your game regularly to preserve your lore discoveries
+
+**Total Entries**: 30 lore entries across 5 categories wait to be discovered!
+
 ## Technologies
 
 - **C++17** - Modern C++ standard

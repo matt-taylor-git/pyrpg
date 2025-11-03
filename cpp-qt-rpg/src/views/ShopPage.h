@@ -21,6 +21,7 @@ public:
 signals:
     void leaveRequested();
     void itemPurchased(Item *item);
+    void loreUnlockedFromPurchase(const QString &loreId);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;

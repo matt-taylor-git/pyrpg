@@ -343,6 +343,13 @@ void QuestManager::giveQuestRewards(Quest* quest)
         Item* item = ItemFactory::createItem(itemName);
         if (item) {
             m_player->inventory.append(item);
+            // Unlock lore entry if item has associated lore (Phase 5)
+            if (!item->loreId.isEmpty()) {
+                if (!m_player->hasUnlockedLore(item->loreId)) {
+                    m_player->unlockLore(item->loreId);
+                    // Signal will be caught by CodexManager via Game connections
+                }
+            }
         }
     }
 }

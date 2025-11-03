@@ -64,8 +64,8 @@ Player::~Player()
 
 QDataStream &operator<<(QDataStream &out, const Player &p)
 {
-    // Version 3: Added quests serialization
-    out << quint32(3);
+    // Version 5: Added game completion tracking
+    out << quint32(5);
 
     // Serialize base class
     out << static_cast<const Character&>(p);
@@ -109,6 +109,16 @@ QDataStream &operator<<(QDataStream &out, const Player &p)
         }
     }
     out << questList;
+
+    // Serialize narrative tracking (version 4+)
+    out << p.viewedDialogueIds;
+    out << p.viewedEventIds;
+    out << p.unlockedLoreEntries;
+
+    // Serialize game completion tracking (version 5+)
+    out << p.hasDefeatedFinalBoss;
+    out << p.gameCompletionTime;
+    out << p.finalGameLevel;
 
     return out;
 }
@@ -178,6 +188,26 @@ QDataStream &operator>>(QDataStream &in, Player &p)
         }
     }
     // For version < 3, p.quests remains empty (default constructed)
+
+    // Deserialize narrative tracking (version 4+)
+    if (version >= 4) {
+        in >> p.viewedDialogueIds;
+        in >> p.viewedEventIds;
+        in >> p.unlockedLoreEntries;
+    }
+    // For version < 4, narrative lists remain empty (default constructed)
+
+    // Deserialize game completion tracking (version 5+)
+    if (version >= 5) {
+        in >> p.hasDefeatedFinalBoss;
+        in >> p.gameCompletionTime;
+        in >> p.finalGameLevel;
+    } else {
+        // Default values for old saves
+        p.hasDefeatedFinalBoss = false;
+        p.gameCompletionTime = "";
+        p.finalGameLevel = 0;
+    }
 
     return in;
 }
@@ -350,4 +380,46 @@ QList<Quest*> Player::getCompletedQuests() const
         }
     }
     return completedQuests;
+}
+
+// Narrative tracking methods (Phase 3)
+bool Player::hasViewedDialogue(const QString &dialogueId) const
+{
+    return viewedDialogueIds.contains(dialogueId);
+}
+
+bool Player::hasViewedEvent(const QString &eventId) const
+{
+    return viewedEventIds.contains(eventId);
+}
+
+bool Player::hasUnlockedLore(const QString &entryId) const
+{
+    return unlockedLoreEntries.contains(entryId);
+}
+
+QList<QString> Player::getUnlockedLoreEntries() const
+{
+    return unlockedLoreEntries;
+}
+
+void Player::markDialogueViewed(const QString &dialogueId)
+{
+    if (!viewedDialogueIds.contains(dialogueId)) {
+        viewedDialogueIds.append(dialogueId);
+    }
+}
+
+void Player::markEventViewed(const QString &eventId)
+{
+    if (!viewedEventIds.contains(eventId)) {
+        viewedEventIds.append(eventId);
+    }
+}
+
+void Player::unlockLore(const QString &entryId)
+{
+    if (!unlockedLoreEntries.contains(entryId)) {
+        unlockedLoreEntries.append(entryId);
+    }
 }

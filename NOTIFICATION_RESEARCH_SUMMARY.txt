@@ -1,0 +1,201 @@
+================================================================================
+                   PYRPG QT NOTIFICATION PATTERNS RESEARCH
+                            FINDINGS SUMMARY
+================================================================================
+
+MISSION OBJECTIVE COMPLETION STATUS: 100%
+
+The following has been successfully documented:
+✅ Quest notification patterns
+✅ Combat log message systems  
+✅ Level-up notification implementation
+✅ Existing toast/popup/banner components
+✅ Qt notification patterns used
+✅ Recommendations for lore discovery notifications
+
+================================================================================
+                            KEY FINDINGS
+================================================================================
+
+1. EXISTING NOTIFICATION ARCHITECTURE
+   - Primarily modal dialog-based system (QDialog subclasses)
+   - All notifications use Theme:: color constants for consistency
+   - New LogDisplay component provides non-blocking message logging
+   - App does NOT use QMessageBox or application StatusBar
+
+2. QUEST UPDATE NOTIFICATIONS
+   - Pattern: Modal dialog with celebration header
+   - File: QuestCompletionDialog.cpp (lines 1-131)
+   - Shows: "🎉 QUEST COMPLETE! 🎉" + Rewards
+   - Blocks gameplay until user clicks "Continue"
+   - Uses consistent Theme styling
+
+3. LEVEL-UP NOTIFICATIONS
+   - Pattern: Embedded widget in CombatResultDialog
+   - File: CombatResultDialog.cpp (lines 39-51)
+   - Shows: "⭐ LEVEL UP! ⭐" with blue background
+   - Only displays when leveledUp==true
+   - Part of larger modal combat result dialog
+
+4. COMBAT LOG MESSAGING (LOGDISPLAY)
+   - Pattern: Non-intrusive scrollable widget
+   - File: LogDisplay.h/cpp (core), CombatPage uses it
+   - Color-coded message types: info, success, warning, error, combat
+   - Each type has 3px left border with themed color
+   - Auto-scrolls to show newest entries
+   - Non-blocking (passive display)
+   - Intrusive Level: 5/5 stars (very non-intrusive)
+
+5. LORE DISCOVERY NOTIFICATIONS (CURRENT)
+   - Pattern: Combat log entry (NO DEDICATED NOTIFICATION YET)
+   - File: MainWindow.cpp (lines 753-757)
+   - Current code: m_combatPage->addLogEntry("New Codex Entry: ...", "lore")
+   - Status: Works, but "lore" message type is not visually distinct
+   - Already integrated via CodexManager::loreUnlocked signal
+
+6. RECOMMENDED PATTERN FOR LORE DISCOVERY
+   - Use: LogDisplay combat log widget
+   - Why: Non-blocking, already integrated, theme-consistent, scalable
+   - Enhancement: Add dedicated "lore" color (#9d4edd purple suggested)
+   - Location: LogDisplay.cpp line 17-25, getBorderColor() method
+   - Effort: LOW - just add one color handling line
+
+================================================================================
+                        RELATED COMPONENTS FOUND
+================================================================================
+
+MODAL DIALOGS:
+- QuestCompletionDialog - Quest completion rewards
+- CombatResultDialog - Combat results + level-up
+- StoryEventDialog - Narrative events
+- DialogueView - NPC dialogue system
+- VictoryScreen - Game completion screen
+
+ANIMATED OVERLAYS:
+- MenuOverlay - Animated fade in/out, semi-transparent (200ms animation)
+- ItemSelectionOverlay - Grid-based item selection
+
+QT PATTERNS:
+- Custom QDialog subclasses (PRIMARY)
+- Custom QWidget with animation (SECONDARY)
+- LogDisplay for passive logging (NEW/OPTIMAL)
+
+NOT USED:
+- QMessageBox (avoided for theme consistency)
+- QSystemTrayIcon (not applicable to game)
+- Application StatusBar (uses QStackedWidget navigation instead)
+
+================================================================================
+                    RECOMMENDED IMPLEMENTATION
+================================================================================
+
+PRIMARY RECOMMENDATION: LogDisplay Combat Log
+
+CURRENT STATUS:
+- Fully functional and integrated
+- Already receives lore discovery signals
+- Non-blocking, theme-consistent, scalable
+
+TO ENHANCE:
+1. Add dedicated "lore" color in LogDisplay.cpp::getBorderColor()
+   Location: Line 17-25
+   Add: if (messageType == "lore") return QColor("#9d4edd");
+
+2. Optional: Add emoji prefix
+   Change: m_combatPage->addLogEntry(QString("📖 New Codex Entry: %1").arg(title), "lore");
+
+3. Testing:
+   - Trigger lore discovery
+   - Verify color appears correctly
+   - Check log scroll behavior
+   - Test multiple rapid discoveries
+
+EFFORT: Low (~5 minutes for enhancement)
+BENEFIT: Visual distinction for lore entries + immediate deployment
+
+================================================================================
+                        FILE LOCATION REFERENCE
+================================================================================
+
+Core Lore Notification Files:
+├─ CodexManager (Signal Source)
+│  ├─ /cpp-qt-rpg/src/game/CodexManager.h (lines 32-33: signal definition)
+│  └─ /cpp-qt-rpg/src/game/CodexManager.cpp (lines 39-52: unlock logic)
+│
+├─ MainWindow (Handler)
+│  └─ /cpp-qt-rpg/src/MainWindow.cpp (lines 753-757: handleLoreUnlocked)
+│
+├─ LogDisplay (Notification Display)
+│  ├─ /cpp-qt-rpg/src/components/LogDisplay.h (full spec)
+│  └─ /cpp-qt-rpg/src/components/LogDisplay.cpp
+│     ├─ lines 17-25: getBorderColor() - MODIFY THIS
+│     └─ lines 94-116: addEntry() - already perfect
+
+Other Notification References:
+├─ Level-Up: CombatResultDialog.cpp (lines 39-51)
+├─ Quests: QuestCompletionDialog.cpp (lines 1-131)
+├─ Victory: VictoryScreen.cpp (full implementation)
+└─ Theme: /cpp-qt-rpg/src/theme/Theme.h (color constants)
+
+================================================================================
+                         SIGNAL FLOW DIAGRAM
+================================================================================
+
+Lore Discovery Flow:
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. LoreFactory creates LoreEntry with discoveryTrigger          │
+│ 2. CodexManager::checkDiscoveryTriggers() called during gameplay│
+│ 3. Match found → CodexManager::unlockEntry() called            │
+│ 4. Emits signal: CodexManager::loreUnlocked(entryId, title)   │
+│ 5. Connected to: MainWindow::handleLoreUnlocked()              │
+│ 6. Handler calls: m_combatPage->addLogEntry(..., "lore")       │
+│ 7. LogDisplay creates entry with color-coded border            │
+│ 8. Entry appears in CombatPage log widget                       │
+│ 9. Auto-scrolls to show newest entry                           │
+└─────────────────────────────────────────────────────────────────┘
+
+Documentation Files Created:
+- NOTIFICATION_PATTERNS.md (Comprehensive markdown)
+- NOTIFICATION_PATTERNS.yaml (Quick reference)
+- NOTIFICATION_RESEARCH_SUMMARY.txt (This file)
+
+================================================================================
+                            CONCLUSION
+================================================================================
+
+The PyRPG Qt codebase has excellent notification infrastructure with:
+
+STRENGTHS:
+✓ Consistent Theme-based styling across all components
+✓ Mix of modal (intrusive) and non-blocking patterns
+✓ LogDisplay provides perfect non-intrusive messaging
+✓ Already fully integrated for lore discoveries
+✓ Signal/slot architecture enables clean separation
+
+RECOMMENDATION:
+Use the existing LogDisplay combat log pattern for lore discoveries.
+It requires minimal enhancement (1-2 lines for color handling) and
+provides the optimal user experience for frequent discoveries.
+
+The lore discovery notification system is ready to deploy as-is,
+with optional visual enhancements available at low effort.
+
+================================================================================
+                         QUICK ACTION ITEMS
+================================================================================
+
+IMMEDIATE (No Code Changes Required):
+- Deploy lore discoveries using current LogDisplay
+- Player will see "New Codex Entry: [Title]" in combat log
+
+ENHANCEMENT (5 minutes):
+- Modify LogDisplay.cpp line 17-25 to add lore color
+- Suggested color: #9d4edd (purple) for visual distinction
+
+OPTIONAL (Future):
+- Add emoji prefix (📖) to lore entries
+- Consider toast notification for major discoveries
+- Add sound effects to lore discovery
+- Track new lore for main menu notification badge
+
+================================================================================

@@ -10,7 +10,8 @@ public:
     Item();
     Item(const QString &name, const QString &itemType, const QString &rarity = "common",
          const QString &slot = "", int attackBonus = 0, int defenseBonus = 0,
-         const QString &effect = "", int power = 0, int value = 0, const QString &description = "");
+         const QString &effect = "", int power = 0, int value = 0, const QString &description = "",
+         const QString &loreId = "");
 
     QString name;
     QString itemType;
@@ -22,6 +23,7 @@ public:
     int power;
     int value;
     QString description;
+    QString loreId;  // Links to LoreEntry (e.g., "item_ancient_blade")
 
     friend QDataStream &operator<<(QDataStream &out, const Item &item);
     friend QDataStream &operator>>(QDataStream &in, Item &item);

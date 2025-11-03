@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "models/StoryEvent.h"
+#include "views/VictoryScreen.h"
+#include "components/PointOfNoReturnDialog.h"
 
 class QStackedWidget;
 class MainMenu;
@@ -15,6 +18,9 @@ class SaveLoadPage;
 class ShopPage;
 class StatsPage;
 class QuestLogPage;
+class DialogueView;
+class StoryEventDialog;
+class LoreBookPage;
 class Game;
 class MenuOverlay;
 class AnimationManager;
@@ -65,6 +71,27 @@ private slots:
     void handleMenuButtonClicked();
     void onAnimationFinished();
 
+    // Narrative system handlers (Phase 3)
+    void handleDialogueNodeChanged(const QString &nodeId, const QString &speaker, const QString &text);
+    void handleDialogueChoiceSelected(int choiceIndex);
+    void handleDialogueEnded();
+    void handleDialogueEffectTriggered(const QString &effectType, const QString &target, int value);
+    void handleStoryEventTriggered(const StoryEvent &event);
+    void handleLoreUnlocked(const QString &entryId, const QString &title);
+    void handleLoreUnlockedFromPurchase(const QString &loreId);
+    void handleOpenLoreBook();
+    void handleLoreBookBack();
+    void handleOpenDialogue(const QString &dialogueId);
+
+    // Final boss and victory handlers (Phase 4)
+    void handleFinalBossRequest();
+    void handleBossEncountered(const QString &bossName);
+    void handleBossPhaseChanged(int newPhase);
+    void handleFinalBossDefeated();
+    void handleGameCompleted(int finalLevel, int playtime);
+    void handleVictoryContinue();
+    void handleVictoryMainMenu();
+
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
@@ -83,6 +110,9 @@ private:
     ShopPage *m_shopPage;
     StatsPage *m_statsPage;
     QuestLogPage *m_questLogPage;
+    DialogueView *m_dialogueView;
+    LoreBookPage *m_loreBookPage;
+    VictoryScreen *m_victoryScreen;
     Game *m_game;
     MenuOverlay *m_menuOverlay;
     AnimationManager *m_animationManager;

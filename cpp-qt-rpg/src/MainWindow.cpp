@@ -10,6 +10,10 @@
 #include "views/ShopPage.h"
 #include "views/StatsPage.h"
 #include "views/QuestLogPage.h"
+#include "views/DialogueView.h"
+#include "views/StoryEventDialog.h"
+#include "views/LoreBookPage.h"
+#include "models/DialogueData.h"
 #include "game/Game.h"
 #include "components/SkillSelectionDialog.h"
 #include "components/CombatItemDialog.h"
@@ -21,6 +25,7 @@
 #include "models/Skill.h"
 #include "models/Item.h"
 #include "components/AnimationManager.h"
+#include "theme/Theme.h"
 #include <QStackedWidget>
 #include <QWidget>
 #include <QMessageBox>
@@ -88,6 +93,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Shop Page
     m_shopPage = new ShopPage();
     connect(m_shopPage, &ShopPage::leaveRequested, this, &MainWindow::handleShopLeave);
+    connect(m_shopPage, &ShopPage::loreUnlockedFromPurchase, this, &MainWindow::handleLoreUnlockedFromPurchase);
     stackedWidget->addWidget(m_shopPage);
 
     // Stats Page
@@ -101,11 +107,34 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_questLogPage, &QuestLogPage::questAccepted, this, &MainWindow::handleQuestAccepted);
     stackedWidget->addWidget(m_questLogPage);
 
+    // Dialogue View (Phase 3)
+    m_dialogueView = new DialogueView(this);
+    connect(m_dialogueView, &DialogueView::choiceSelected,
+            this, &MainWindow::handleDialogueChoiceSelected);
+    connect(m_dialogueView, &DialogueView::dialogueClosed,
+            this, &MainWindow::handleDialogueEnded);
+    stackedWidget->addWidget(m_dialogueView);
+
+    // Lore Book Page (Phase 3)
+    m_loreBookPage = new LoreBookPage();
+    connect(m_loreBookPage, &LoreBookPage::backRequested,
+            this, &MainWindow::handleLoreBookBack);
+    stackedWidget->addWidget(m_loreBookPage);
+
     // Set the initial view
     stackedWidget->setCurrentWidget(m_mainMenu);
 
+    // Initialize victory screen (lazy creation)
+    m_victoryScreen = nullptr;
+
     m_game = new Game(this);  // Parent to MainWindow to prevent memory leak
     connect(m_game, &Game::combatEnded, this, &MainWindow::handleCombatEnded);
+
+    // Connect boss and victory signals
+    connect(m_game, &Game::bossEncountered, this, &MainWindow::handleBossEncountered);
+    connect(m_game, &Game::bossPhaseChanged, this, &MainWindow::handleBossPhaseChanged);
+    connect(m_game, &Game::finalBossDefeated, this, &MainWindow::handleFinalBossDefeated);
+    connect(m_game, &Game::gameCompleted, this, &MainWindow::handleGameCompleted);
 
     // Menu Overlay (floating overlay, not in stacked widget)
     m_menuOverlay = new MenuOverlay(this);
@@ -130,6 +159,24 @@ void MainWindow::handleCharacterCreation(const QString &name, const QString &cha
     if (m_game->getQuestManager()) {
         connect(m_game->getQuestManager(), &QuestManager::questCompleted,
                 this, &MainWindow::handleQuestCompleted, Qt::UniqueConnection);
+    }
+
+    // Connect narrative manager signals (Phase 3)
+    if (m_game->getDialogueManager()) {
+        connect(m_game->getDialogueManager(), &DialogueManager::dialogueNodeChanged,
+                this, &MainWindow::handleDialogueNodeChanged, Qt::UniqueConnection);
+        connect(m_game->getDialogueManager(), &DialogueManager::dialogueEnded,
+                this, &MainWindow::handleDialogueEnded, Qt::UniqueConnection);
+        connect(m_game->getDialogueManager(), &DialogueManager::effectTriggered,
+                this, &MainWindow::handleDialogueEffectTriggered, Qt::UniqueConnection);
+    }
+    if (m_game->getStoryManager()) {
+        connect(m_game->getStoryManager(), &StoryManager::eventTriggered,
+                this, &MainWindow::handleStoryEventTriggered, Qt::UniqueConnection);
+    }
+    if (m_game->getCodexManager()) {
+        connect(m_game->getCodexManager(), &CodexManager::loreUnlocked,
+                this, &MainWindow::handleLoreUnlocked, Qt::UniqueConnection);
     }
 
     // Start in non-combat mode on the main game hub (CombatPage)
@@ -331,6 +378,24 @@ void MainWindow::handleLoadFromFile(const QString &filePath)
                     this, &MainWindow::handleQuestCompleted, Qt::UniqueConnection);
         }
 
+        // Connect narrative manager signals (Phase 3)
+        if (m_game->getDialogueManager()) {
+            connect(m_game->getDialogueManager(), &DialogueManager::dialogueNodeChanged,
+                    this, &MainWindow::handleDialogueNodeChanged, Qt::UniqueConnection);
+            connect(m_game->getDialogueManager(), &DialogueManager::dialogueEnded,
+                    this, &MainWindow::handleDialogueEnded, Qt::UniqueConnection);
+            connect(m_game->getDialogueManager(), &DialogueManager::effectTriggered,
+                    this, &MainWindow::handleDialogueEffectTriggered, Qt::UniqueConnection);
+        }
+        if (m_game->getStoryManager()) {
+            connect(m_game->getStoryManager(), &StoryManager::eventTriggered,
+                    this, &MainWindow::handleStoryEventTriggered, Qt::UniqueConnection);
+        }
+        if (m_game->getCodexManager()) {
+            connect(m_game->getCodexManager(), &CodexManager::loreUnlocked,
+                    this, &MainWindow::handleLoreUnlocked, Qt::UniqueConnection);
+        }
+
         m_combatPage->setCombatMode(false);
         stackedWidget->setCurrentWidget(m_combatPage);
     }
@@ -358,6 +423,24 @@ void MainWindow::handleLoadFromSlot(int slotNumber)
         if (m_game->getQuestManager()) {
             connect(m_game->getQuestManager(), &QuestManager::questCompleted,
                     this, &MainWindow::handleQuestCompleted, Qt::UniqueConnection);
+        }
+
+        // Connect narrative manager signals (Phase 3)
+        if (m_game->getDialogueManager()) {
+            connect(m_game->getDialogueManager(), &DialogueManager::dialogueNodeChanged,
+                    this, &MainWindow::handleDialogueNodeChanged, Qt::UniqueConnection);
+            connect(m_game->getDialogueManager(), &DialogueManager::dialogueEnded,
+                    this, &MainWindow::handleDialogueEnded, Qt::UniqueConnection);
+            connect(m_game->getDialogueManager(), &DialogueManager::effectTriggered,
+                    this, &MainWindow::handleDialogueEffectTriggered, Qt::UniqueConnection);
+        }
+        if (m_game->getStoryManager()) {
+            connect(m_game->getStoryManager(), &StoryManager::eventTriggered,
+                    this, &MainWindow::handleStoryEventTriggered, Qt::UniqueConnection);
+        }
+        if (m_game->getCodexManager()) {
+            connect(m_game->getCodexManager(), &CodexManager::loreUnlocked,
+                    this, &MainWindow::handleLoreUnlocked, Qt::UniqueConnection);
         }
 
         m_combatPage->setCombatMode(false);
@@ -489,12 +572,21 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
                 handleOpenShop();
                 event->accept();
                 return;
-            case Qt::Key_L:
+            case Qt::Key_O:
                 handleOpenSaveLoad();
                 event->accept();
                 return;
             case Qt::Key_Q:
                 handleOpenQuestLog();
+                event->accept();
+                return;
+            case Qt::Key_L:
+                handleOpenLoreBook();
+                event->accept();
+                return;
+            case Qt::Key_D:
+                // Test dialogue (replace with context-sensitive triggering later)
+                handleOpenDialogue("elder_intro");
                 event->accept();
                 return;
         }
@@ -594,6 +686,184 @@ void MainWindow::handleQuestCompleted(const QString &questId, int expReward, int
             m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), "");
         }
     }
+}
+
+// Phase 3: Narrative system handlers
+
+void MainWindow::handleDialogueNodeChanged(const QString &nodeId, const QString &speaker, const QString &text)
+{
+    DialogueNode* node = m_game->getDialogueManager()->getCurrentNode();
+    if (!node) return;
+
+    // Build choice texts
+    QStringList choiceTexts;
+    for (const DialogueChoice &choice : node->choices) {
+        choiceTexts.append(choice.text);
+    }
+
+    // Display dialogue
+    m_dialogueView->displayNode(speaker, text, choiceTexts);
+
+    // Check requirements and disable invalid choices
+    for (int i = 0; i < node->choices.size(); ++i) {
+        const DialogueChoice &choice = node->choices[i];
+        bool enabled = true;
+
+        if (choice.requiresLevel && m_game->getPlayer()->level < choice.requiredLevel) {
+            enabled = false;
+        }
+
+        m_dialogueView->setChoiceEnabled(i, enabled);
+    }
+
+    // Switch to dialogue view
+    stackedWidget->setCurrentWidget(m_dialogueView);
+}
+
+void MainWindow::handleDialogueChoiceSelected(int choiceIndex)
+{
+    m_game->getDialogueManager()->selectChoice(choiceIndex);
+}
+
+void MainWindow::handleDialogueEnded()
+{
+    // Return to combat page (main hub)
+    stackedWidget->setCurrentWidget(m_combatPage);
+}
+
+void MainWindow::handleDialogueEffectTriggered(const QString &effectType, const QString &target, int value)
+{
+    // Log dialogue effects to combat log
+    if (effectType == "GiveGold") {
+        m_combatPage->addLogEntry(QString("Received %1 gold!").arg(value), "success");
+    } else if (effectType == "GiveXP") {
+        m_combatPage->addLogEntry(QString("Gained %1 experience!").arg(value), "success");
+    } else if (effectType == "GiveItem") {
+        m_combatPage->addLogEntry(QString("Received item: %1!").arg(target), "success");
+    } else if (effectType == "UnlockQuest") {
+        m_combatPage->addLogEntry(QString("New quest available!"), "quest");
+    }
+}
+
+void MainWindow::handleStoryEventTriggered(const StoryEvent &event)
+{
+    // Show modal story event dialog
+    StoryEventDialog dialog(event, this);
+    dialog.exec();  // Blocks until player dismisses
+}
+
+void MainWindow::handleLoreUnlocked(const QString &entryId, const QString &title)
+{
+    // Show notification in combat log with PRIMARY color highlighting (Phase 5)
+    QString message = QString("<span style='color:%1'>New Codex Entry:</span> %2")
+        .arg(Theme::PRIMARY.name())
+        .arg(title);
+    m_combatPage->addLogEntry(message, "lore");
+}
+
+void MainWindow::handleLoreUnlockedFromPurchase(const QString &loreId)
+{
+    // Get lore entry and display notification (Phase 5)
+    if (!m_game || !m_game->getCodexManager()) return;
+
+    LoreEntry* entry = m_game->getCodexManager()->getEntry(loreId);
+    if (entry) {
+        handleLoreUnlocked(loreId, entry->title);
+    }
+}
+
+void MainWindow::handleOpenLoreBook()
+{
+    if (!m_game || !m_game->getCodexManager()) return;
+
+    m_loreBookPage->updateLore(m_game->getCodexManager());
+    stackedWidget->setCurrentWidget(m_loreBookPage);
+}
+
+void MainWindow::handleLoreBookBack()
+{
+    stackedWidget->setCurrentWidget(m_combatPage);
+}
+
+void MainWindow::handleOpenDialogue(const QString &dialogueId)
+{
+    if (!m_game || !m_game->getDialogueManager()) return;
+
+    m_game->getDialogueManager()->startDialogue(dialogueId);
+}
+
+// Final Boss and Victory Handlers (Phase 4)
+void MainWindow::handleFinalBossRequest()
+{
+    if (!m_game) return;
+
+    // Check if player can access final boss
+    if (!m_game->canAccessFinalBoss()) {
+        // Show error dialog
+        return;
+    }
+
+    // Show Point of No Return dialog
+    PointOfNoReturnDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        // Player accepted - start final boss combat
+        m_game->startFinalBossCombat();
+        stackedWidget->setCurrentWidget(m_combatPage);
+    }
+}
+
+void MainWindow::handleBossEncountered(const QString &bossName)
+{
+    // Disable run button in CombatPage
+    // Show dramatic message in combat log
+    qDebug() << "Boss encountered:" << bossName;
+}
+
+void MainWindow::handleBossPhaseChanged(int newPhase)
+{
+    // Show phase transition message in CombatPage
+    // Update UI with phase indicator
+    qDebug() << "Boss phase changed to:" << newPhase;
+}
+
+void MainWindow::handleFinalBossDefeated()
+{
+    // Trigger victory cutscene
+    // VictoryScreen will be shown in handleGameCompleted
+    qDebug() << "Final boss defeated!";
+}
+
+void MainWindow::handleGameCompleted(int finalLevel, int playtime)
+{
+    if (!m_game || !m_game->getPlayer()) return;
+
+    // Collect statistics
+    Player* player = m_game->getPlayer();
+    int kills = 0;  // Would need to track this
+    int deaths = 0; // Would need to track this
+    int gold = player->gold;
+    int quests = player->getCompletedQuests().size();
+
+    // Create and show victory screen
+    if (!m_victoryScreen) {
+        m_victoryScreen = new VictoryScreen(finalLevel, playtime, kills, deaths, gold, quests, this);
+        connect(m_victoryScreen, &VictoryScreen::continuePlaying, this, &MainWindow::handleVictoryContinue);
+        connect(m_victoryScreen, &VictoryScreen::returnToMainMenu, this, &MainWindow::handleVictoryMainMenu);
+    }
+
+    m_victoryScreen->exec();
+}
+
+void MainWindow::handleVictoryContinue()
+{
+    // Return to game world - player can continue exploring
+    stackedWidget->setCurrentWidget(m_combatPage);
+}
+
+void MainWindow::handleVictoryMainMenu()
+{
+    // Return to main menu
+    stackedWidget->setCurrentWidget(m_mainMenu);
 }
 
 MainWindow::~MainWindow()

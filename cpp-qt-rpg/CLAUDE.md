@@ -169,6 +169,143 @@ Views emit signals that MainWindow connects to handler methods:
 - Navigation: Switch stackedWidget page in handler
 - State updates: Call Game methods and refresh UI accordingly
 
+## Lore System Architecture (Phase 5)
+
+The lore/codex system provides world-building through collectible narrative entries unlocked via gameplay.
+
+### Core Components
+
+```mermaid
+graph LR
+    A[LoreEntry] --> B[LoreFactory]
+    B --> C[CodexManager]
+    C --> D[Player.unlockedLoreEntries]
+    C --> E[MainWindow]
+    E --> F[LogDisplay Notifications]
+    E --> G[LoreBookPage]
+    H[Game Events] --> C
+    I[Item.loreId] --> C
+```
+
+**LoreEntry** (`src/models/LoreEntry.h`)
+- Plain struct with 7 fields: entryId, category, title, shortDescription, fullText, imagePath, discoveryTrigger
+- Categories: Bestiary, Items, World, Characters, Locations
+- Discovery triggers format: `kill_EnemyName_Count`, `quest_complete_QuestId`, `item_get_ItemName`
+
+**LoreFactory** (`src/game/factories/LoreFactory.cpp`)
+- Static factory creating all lore entries (30 total: 8 Bestiary, 6 Items, 6 World, 5 Characters, 5 Locations)
+- Entries cached in static map to prevent re-allocation
+- Methods: createLoreEntry(entryId), getAllLoreEntries(), getLoreByCategory(category)
+- Dark fantasy voice/tone across all entries with interconnected narrative
+
+**CodexManager** (`src/game/CodexManager.h/cpp`)
+- QObject managing lore discovery and persistence
+- Event handlers: onEnemyKilled(), onQuestCompleted(), onItemCollected()
+- Unlocking: unlockEntry(entryId) checks Player's unlockedLoreEntries, emits loreUnlocked signal
+- Duplicate prevention: Entries can only unlock once per Player
+- Connected to QuestManager signals for automatic quest-based unlocks
+
+**Player.unlockedLoreEntries** (`src/models/Player.h`)
+- QList<QString> storing IDs of unlocked lore entries
+- Persisted through save/load via QDataStream operators
+- Methods: hasUnlockedLore(entryId), unlockLore(entryId), getUnlockedLoreEntries()
+
+**Item.loreId** (`src/models/Item.h/cpp`)
+- QString field linking items to lore entries (empty if no associated lore)
+- Added in serialization version 2 with backward compatibility
+- Assigned in ItemFactory for legendary/rare items (15-20 items total)
+
+### Data Flow
+
+**Discovery Flow**:
+1. Game event occurs (enemy killed, quest completed, item acquired)
+2. CodexManager event handler triggered (onEnemyKilled, onQuestCompleted, onItemCollected)
+3. Handler checks discovery trigger against lore entries
+4. If match found and not already unlocked, calls unlockEntry(entryId)
+5. CodexManager emits loreUnlocked(entryId, title) signal
+6. MainWindow.handleLoreUnlocked() displays notification in LogDisplay with Theme::PRIMARY color
+7. Player.unlockedLoreEntries updated for persistence
+
+**Item-Lore Flow**:
+1. Player acquires item (combat loot, shop purchase, quest reward)
+2. Item added to Player.inventory
+3. If item.loreId not empty, CodexManager.unlockEntry(loreId) called
+4. Notification displayed, lore unlocked
+
+### Unlock Hooks
+
+**Game.cpp** (combat loot drops)
+- Line 477-479: Random loot lore unlock
+- Line 491-493: Final boss legendary lore unlock
+
+**ShopPage.cpp** (shop purchases)
+- After inventory.append(): Check item.loreId, call Player.unlockLore()
+
+**DialogueManager.cpp / QuestManager.cpp** (quest rewards)
+- After item rewards: Check item.loreId, call Player.unlockLore()
+
+### UI Integration
+
+**LoreBookPage** (`src/views/LoreBookPage.h/cpp`)
+- QTabWidget with 5 tabs (one per category)
+- Entry list (QListWidget) shows unlocked entries
+- Detail panel (QTextEdit) displays full lore text
+- Keyboard shortcut: 'L' key opens lore book
+- Future enhancements: Search bar, progress indicators, sorting, locked entry previews
+
+**LogDisplay Notifications** (`src/MainWindow.cpp:753-760`)
+- Format: `<span style='color:PRIMARY'>New Codex Entry:</span> {title}`
+- Non-intrusive combat log messages
+- Multiple unlocks queue sequentially
+
+### Serialization Version 2 (Phase 5)
+
+**Item.cpp operator<<**:
+```cpp
+out << quint32(2);  // Version 2: Added loreId field
+out << i.name << ... << i.loreId;
+```
+
+**Item.cpp operator>>**:
+```cpp
+quint32 version;
+in >> version;
+in >> i.name >> ... >> i.description;
+if (version >= 2) {
+    in >> i.loreId;
+} else {
+    i.loreId = "";  // Backward compatibility
+}
+```
+
+**Backward Compatibility**: Version 1 saves (pre-Phase 5) load without crashes. Items default to empty loreId.
+
+### Discovery Trigger Patterns
+
+Format specifications for discoveryTrigger field:
+- **Kill count**: `kill_EnemyName_Count` (e.g., "kill_Goblin_5" unlocks on 5th goblin kill)
+- **Quest completion**: `quest_complete_QuestId` (e.g., "quest_complete_main_quest_01")
+- **Item acquisition**: `item_get_ItemName` (e.g., "item_get_Healing Potion")
+- **Manual unlock**: `manual` (unlocked via code or at game start)
+
+**CodexManager.cpp event handlers**:
+- onEnemyKilled: Increments kill count, checks `kill_X_Count` triggers
+- onQuestCompleted: Checks `quest_complete_X` triggers
+- onItemCollected: Checks `item_get_X` triggers
+
+### Content Guidelines
+
+**Voice/Tone**:
+- Dark fantasy atmosphere consistent across all 30 entries
+- Active voice ("wolves emerged") not passive
+- Brief shortDescription (1-2 sentences), detailed fullText (100-300 words)
+- Interconnected references create cohesive world narrative
+- Leave mystery - questions drive player curiosity
+
+**Naming Convention**:
+- Entry IDs: `category_name` format (e.g., "bestiary_goblin", "item_ancient_blade")
+- Consistent namespacing enables searching and categorization
+
 ## Dependencies
 
 - **Qt6**: Widgets (GUI), Test (unit testing)
