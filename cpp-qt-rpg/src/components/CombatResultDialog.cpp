@@ -1,18 +1,48 @@
 #include "CombatResultDialog.h"
+#include "ParticleSystem.h"
 #include "../theme/Theme.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QFont>
+#include <QTimer>
 
 CombatResultDialog::CombatResultDialog(bool victory, int expGained, int goldGained,
                                        const QString &lootMessage, bool leveledUp,
                                        QWidget *parent)
-    : QDialog(parent)
+    : QDialog(parent),
+      m_particleSystem(nullptr)
 {
     setWindowTitle(victory ? "Victory!" : "Defeat");
     setMinimumWidth(400);
     setupUi(victory, expGained, goldGained, lootMessage, leveledUp);
+
+    // Initialize particle system
+    m_particleSystem = new ParticleSystem(this);
+    m_particleSystem->setGeometry(rect());
+    m_particleSystem->raise();
+
+    // Trigger particle effects after a short delay
+    QTimer::singleShot(200, [this, victory, leveledUp]() {
+        if (m_particleSystem) {
+            QPoint centerPos = rect().center();
+
+            if (victory) {
+                // Victory particles
+                m_particleSystem->victoryExplosion(centerPos);
+
+                if (leveledUp) {
+                    // Additional level up particles
+                    QTimer::singleShot(500, [this, centerPos]() {
+                        m_particleSystem->levelUpBurst(centerPos);
+                    });
+                }
+            } else {
+                // Defeat particles (dark red)
+                m_particleSystem->createBurst(centerPos, 12, "spark", "#8b0000", false);
+            }
+        }
+    });
 }
 
 void CombatResultDialog::setupUi(bool victory, int expGained, int goldGained,

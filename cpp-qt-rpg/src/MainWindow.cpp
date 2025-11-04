@@ -271,6 +271,23 @@ void MainWindow::handleItemClicked()
         if (selectedItem) {
             QString log = m_game->playerUseItem(selectedItem);
             m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
+
+            // Trigger particle effects based on item type
+            if (m_combatPage->getParticleSystem()) {
+                QLabel* heroSprite = m_combatPage->getHeroSpriteLabel();
+                if (heroSprite) {
+                    QPoint heroPos = heroSprite->geometry().center();
+
+                    if (selectedItem->effect == "heal") {
+                        // Healing particle burst
+                        m_combatPage->getParticleSystem()->healingBurst(heroPos);
+                    } else if (selectedItem->effect == "restore_mana") {
+                        // Mana restoration particle burst (blue)
+                        m_combatPage->getParticleSystem()->createBurst(heroPos, 10, "spark", "#3498db", false);
+                    }
+                }
+            }
+
             // Item use doesn't end player's turn, no monster attack
         }
     }
@@ -320,6 +337,18 @@ void MainWindow::handleCombatEnded(bool playerWon)
 {
     // Disable combat buttons since combat has ended
     m_combatPage->setCombatActive(false);
+
+    // Trigger particle effects for victory or defeat
+    if (m_combatPage->getParticleSystem()) {
+        QPoint centerPos = m_combatPage->rect().center();
+        if (playerWon) {
+            // Victory explosion effect
+            m_combatPage->getParticleSystem()->victoryExplosion(centerPos);
+        } else {
+            // Defeat effect (red particles)
+            m_combatPage->getParticleSystem()->createBurst(centerPos, 12, "spark", "#8b0000", false);
+        }
+    }
 
     // For now, don't check leveling - rewards are already given
     bool leveledUp = false;
