@@ -38,7 +38,7 @@ void AnimationManager::playPlayerAttackAnimation()
 
     // Trigger particle effect at impact (midpoint of attack)
     if (particles) {
-        QTimer::singleShot(300, [particles, enemySprite]() {
+        QTimer::singleShot(ParticleConstants::ATTACK_IMPACT_DELAY_MS, [particles, enemySprite]() {
             QPoint impactPos = enemySprite->geometry().center();
             particles->createBurst(impactPos, 10, "spark", "#e74c3c", false);
         });

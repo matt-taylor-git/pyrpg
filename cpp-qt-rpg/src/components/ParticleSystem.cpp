@@ -21,6 +21,7 @@ namespace ParticleConstants {
     constexpr int TEXT_ANIMATION_DURATION_MS = 2000;
     constexpr int TEXT_VERTICAL_OFFSET = 50;
     constexpr int MAX_PARTICLES_PER_BURST = 100;
+    constexpr int ATTACK_IMPACT_DELAY_MS = 300;
 }
 
 // Thread-safe random number generator
@@ -60,7 +61,9 @@ Particle::Particle(QWidget *parent, const QString &particleType, const QString &
 
 Particle::~Particle()
 {
-    qDeleteAll(m_animations);
+    // Animations are managed by Qt's parent-child ownership and will be
+    // deleted automatically. We don't need to manually delete them here.
+    // Just clear the list to avoid dangling pointers.
     m_animations.clear();
 }
 
@@ -154,11 +157,13 @@ void ParticleSystem::onParticleDestroyed()
 {
     m_activeParticleCount--;
 
-    // When all particles are destroyed and we should emit signal, do so
-    if (m_activeParticleCount == 0 && m_emitSignalWhenComplete) {
+    // When all particles are destroyed, clean up and emit signal if needed
+    if (m_activeParticleCount == 0) {
         m_particles.clear();
-        m_emitSignalWhenComplete = false;
-        emit animationFinished();
+        if (m_emitSignalWhenComplete) {
+            m_emitSignalWhenComplete = false;
+            emit animationFinished();
+        }
     }
 }
 

@@ -10,6 +10,13 @@
 #include <QObject>
 #include <QGraphicsOpacityEffect> // Added for fading
 
+// Particle animation constants
+namespace ParticleConstants {
+    constexpr int ATTACK_IMPACT_DELAY_MS = 300;
+    constexpr int COMBAT_RESULT_DELAY_MS = 200;
+    constexpr int LEVEL_UP_DELAY_MS = 500;
+}
+
 // --- Particle Class ---
 class Particle : public QLabel
 {
@@ -23,7 +30,6 @@ public:
     void animate(const QPoint &startPos, const QPoint &endPos, int duration = 1000);
 
 private:
-    void initParticle();
     QList<QPropertyAnimation*> m_animations;
     QGraphicsOpacityEffect *m_opacityEffect; // New member for fading
 };

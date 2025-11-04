@@ -273,7 +273,7 @@ void MainWindow::handleItemClicked()
             m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
 
             // Trigger particle effects based on item type
-            if (m_combatPage->getParticleSystem()) {
+            if (m_combatPage && m_combatPage->getParticleSystem()) {
                 QLabel* heroSprite = m_combatPage->getHeroSpriteLabel();
                 if (heroSprite) {
                     QPoint heroPos = heroSprite->geometry().center();
@@ -335,6 +335,11 @@ void MainWindow::handleCombatEnd(int oldLevel)
 
 void MainWindow::handleCombatEnded(bool playerWon)
 {
+    // Defensive null check for combat page
+    if (!m_combatPage) {
+        return;
+    }
+
     // Disable combat buttons since combat has ended
     m_combatPage->setCombatActive(false);
 

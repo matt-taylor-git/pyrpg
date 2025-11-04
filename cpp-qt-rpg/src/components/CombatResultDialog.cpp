@@ -23,7 +23,7 @@ CombatResultDialog::CombatResultDialog(bool victory, int expGained, int goldGain
     m_particleSystem->raise();
 
     // Trigger particle effects after a short delay
-    QTimer::singleShot(200, [this, victory, leveledUp]() {
+    QTimer::singleShot(ParticleConstants::COMBAT_RESULT_DELAY_MS, [this, victory, leveledUp]() {
         if (m_particleSystem) {
             QPoint centerPos = rect().center();
 
@@ -33,7 +33,7 @@ CombatResultDialog::CombatResultDialog(bool victory, int expGained, int goldGain
 
                 if (leveledUp) {
                     // Additional level up particles
-                    QTimer::singleShot(500, [this, centerPos]() {
+                    QTimer::singleShot(ParticleConstants::LEVEL_UP_DELAY_MS, [this, centerPos]() {
                         m_particleSystem->levelUpBurst(centerPos);
                     });
                 }
