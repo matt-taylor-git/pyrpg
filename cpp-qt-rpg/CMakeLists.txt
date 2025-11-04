@@ -118,6 +118,7 @@ add_executable(test_mainwindow tests/test_mainwindow.cpp src/MainWindow.cpp
     src/components/PointOfNoReturnDialog.cpp
     src/components/MenuOverlay.cpp
     src/components/AnimationManager.cpp
+    src/components/ParticleSystem.cpp
     src/game/Game.cpp
     src/game/QuestManager.cpp
     src/game/DialogueManager.cpp
@@ -191,7 +192,7 @@ target_include_directories(test_persistence PRIVATE src)
 add_test(NAME PersistenceTest COMMAND test_persistence)
 
 # Test for CombatPage dual mode
-add_executable(test_combat_page_dual_mode tests/test_combat_page_dual_mode.cpp src/views/CombatPage.cpp src/models/Player.cpp src/models/Character.cpp src/models/Monster.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Quest.cpp)
+add_executable(test_combat_page_dual_mode tests/test_combat_page_dual_mode.cpp src/views/CombatPage.cpp src/components/ParticleSystem.cpp src/models/Player.cpp src/models/Character.cpp src/models/Monster.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Quest.cpp)
 target_link_libraries(test_combat_page_dual_mode PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_combat_page_dual_mode PRIVATE src)
 add_test(NAME CombatPageDualModeTest COMMAND test_combat_page_dual_mode)
@@ -224,6 +225,7 @@ add_executable(test_navigation_flow tests/test_navigation_flow.cpp src/MainWindo
     src/components/PointOfNoReturnDialog.cpp
     src/components/MenuOverlay.cpp
     src/components/AnimationManager.cpp
+    src/components/ParticleSystem.cpp
     src/game/Game.cpp
     src/game/QuestManager.cpp
     src/game/DialogueManager.cpp
