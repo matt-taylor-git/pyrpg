@@ -25,6 +25,7 @@ private slots:
     void validateNameInput();
     void startGame();
     void updateStatsPreview();
+    void updateCharacterPreview();
 
 private:
     void setupUi();
@@ -38,6 +39,7 @@ private:
     QPushButton *m_startButton;
     QLabel *m_footerLabel;
     QFrame *m_charPreview; // Placeholder for CharacterPreview
+    QLabel *m_characterSpriteLabel; // Character sprite preview
     QLabel *m_statsInfo; // Stats preview label
 };
 

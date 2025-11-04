@@ -10,6 +10,7 @@
 #include <QComboBox>
 #include <QGraphicsDropShadowEffect>
 #include <QColor>
+#include <QPixmap>
 
 NewGameView::NewGameView(QWidget *parent) : QWidget(parent)
 {
@@ -56,14 +57,22 @@ void NewGameView::setupUi()
     QHBoxLayout *createLayout = new QHBoxLayout(m_createCard);
     createLayout->setSpacing(30);
 
-    // Character Preview (Placeholder)
+    // Character Preview
     m_charPreview = new QFrame();
     m_charPreview->setFixedSize(200, 200);
     m_charPreview->setStyleSheet(QString("background-color: %1; border: 2px solid %2; border-radius: 12px;").arg(Theme::CARD.name()).arg(Theme::BORDER.name()));
     QVBoxLayout* previewLayout = new QVBoxLayout(m_charPreview);
+
     QLabel* previewLabel = new QLabel("Character Preview");
+    previewLabel->setStyleSheet("font-size: 12px; color: #dc3545; font-weight: bold;");
     previewLabel->setAlignment(Qt::AlignCenter);
     previewLayout->addWidget(previewLabel);
+
+    m_characterSpriteLabel = new QLabel();
+    m_characterSpriteLabel->setAlignment(Qt::AlignCenter);
+    m_characterSpriteLabel->setMinimumSize(150, 150);
+    previewLayout->addWidget(m_characterSpriteLabel);
+
     createLayout->addWidget(m_charPreview);
 
     // Details Layout
@@ -116,6 +125,7 @@ void NewGameView::setupUi()
         "}"
     ).arg(Theme::BORDER.name()).arg(Theme::CARD.name()).arg(Theme::FOREGROUND.name()));
     connect(m_classSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &NewGameView::updateStatsPreview);
+    connect(m_classSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &NewGameView::updateCharacterPreview);
     detailsLayout->addWidget(m_classSelector);
 
     // Validation Label
@@ -160,6 +170,7 @@ void NewGameView::setupUi()
 
     validateNameInput(); // Set initial state of the button
     updateStatsPreview(); // Initialize stats display with default class
+    updateCharacterPreview(); // Initialize character sprite with default class
 }
 
 void NewGameView::validateNameInput()
@@ -248,4 +259,29 @@ void NewGameView::updateStatsPreview()
     }
 
     m_statsInfo->setText(statsHtml);
+}
+
+void NewGameView::updateCharacterPreview()
+{
+    int classIndex = m_classSelector->currentIndex();
+    QString spritePath;
+
+    // Map class index to sprite file
+    if (classIndex == 0) { // Warrior
+        spritePath = ":/assets/warrior.png";
+    } else if (classIndex == 1) { // Mage
+        spritePath = ":/assets/mage.png";
+    } else if (classIndex == 2) { // Rogue
+        spritePath = ":/assets/rogue.png";
+    } else { // Default
+        spritePath = ":/assets/warrior.png";
+    }
+
+    // Load and display the sprite
+    QPixmap sprite(spritePath);
+    if (!sprite.isNull()) {
+        m_characterSpriteLabel->setPixmap(sprite.scaled(140, 140, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    } else {
+        m_characterSpriteLabel->setText("👤"); // Fallback emoji
+    }
 }
