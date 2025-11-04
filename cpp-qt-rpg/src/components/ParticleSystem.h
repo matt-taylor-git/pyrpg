@@ -39,17 +39,19 @@ signals:
 public:
     explicit ParticleSystem(QWidget *parent = nullptr);
 
-    void createBurst(const QPoint &centerPos, int particleCount = 12, const QString &particleType = "star", const QString &color = "#dc3545");
+    void createBurst(const QPoint &centerPos, int particleCount = 12, const QString &particleType = "star", const QString &color = "#dc3545", bool emitSignal = true);
     void victoryExplosion(const QPoint &centerPos);
     void healingBurst(const QPoint &centerPos);
     void levelUpBurst(const QPoint &centerPos);
     void goldRewardBurst(const QPoint &centerPos);
 
 private slots:
-    void cleanup();
+    void onParticleDestroyed();
 
 private:
     QList<Particle*> m_particles;
+    int m_activeParticleCount;
+    bool m_emitSignalWhenComplete;
 };
 
 // --- AchievementSystem Class ---
@@ -59,7 +61,7 @@ class AchievementSystem : public QObject
 
 public:
     explicit AchievementSystem(QWidget *parentWidget);
-    ~AchievementSystem() override { delete m_particleSystem; }
+    ~AchievementSystem() override = default;
 
     void triggerAchievement(const QString &achievementType, const QPoint &position);
 

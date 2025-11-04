@@ -2,16 +2,36 @@
 #include <QEasingCurve>
 #include <QDebug>
 #include <cmath>
-#include <cstdlib>
-#include <ctime>
+#include <random>
 #include <QFontMetrics>
 #include <QGraphicsOpacityEffect>
 
-// Initialize random seed once
+// Particle constants
+namespace ParticleConstants {
+    constexpr int PARTICLE_SIZE = 16;
+    constexpr int MIN_DURATION_MS = 800;
+    constexpr int MAX_DURATION_MS = 1200;
+    constexpr int MIN_RADIUS = 30;
+    constexpr int MAX_RADIUS = 80;
+    constexpr int POSITION_VARIANCE = 10;
+    constexpr int PARTICLE_HALF_SIZE = PARTICLE_SIZE / 2;
+    constexpr double FADE_DURATION_RATIO = 0.7;
+    constexpr int VICTORY_SECOND_BURST_DELAY_MS = 200;
+    constexpr int TEXT_FLOAT_DISTANCE = 30;
+    constexpr int TEXT_ANIMATION_DURATION_MS = 2000;
+    constexpr int TEXT_VERTICAL_OFFSET = 50;
+    constexpr int MAX_PARTICLES_PER_BURST = 100;
+}
+
+// Thread-safe random number generator
 namespace {
-    struct RandomInitializer {
-        RandomInitializer() { std::srand(std::time(0)); }
-    } initializer;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    int randomInt(int min, int max) {
+        std::uniform_int_distribution<> dis(min, max);
+        return dis(gen);
+    }
 }
 
 // --- Particle Implementation ---
@@ -23,7 +43,7 @@ Particle::Particle(QWidget *parent, const QString &particleType, const QString &
     // The parent is passed from ParticleSystem::createBurst
     setParent(parent);
     setAttribute(Qt::WA_TranslucentBackground);
-    setFixedSize(16, 16);
+    setFixedSize(ParticleConstants::PARTICLE_SIZE, ParticleConstants::PARTICLE_SIZE);
     setGraphicsEffect(m_opacityEffect); // Apply the opacity effect
 
     QString text;
@@ -48,22 +68,23 @@ void Particle::animate(const QPoint &startPos, const QPoint &endPos, int duratio
 {
     move(startPos);
 
-    // Position animation
-    QPropertyAnimation *anim = new QPropertyAnimation(this, "pos", this); // Use "pos" property
+    // Position animation (no parent set - managed by m_animations list)
+    QPropertyAnimation *anim = new QPropertyAnimation(this, "pos");
     anim->setStartValue(startPos);
 
     // Add some randomness to end position
-    QPoint variance(std::rand() % 21 - 10, std::rand() % 21 - 10); // -10 to 10
+    QPoint variance(randomInt(-ParticleConstants::POSITION_VARIANCE, ParticleConstants::POSITION_VARIANCE),
+                    randomInt(-ParticleConstants::POSITION_VARIANCE, ParticleConstants::POSITION_VARIANCE));
     anim->setEndValue(endPos + variance);
 
     anim->setDuration(duration);
     anim->setEasingCurve(QEasingCurve::OutExpo);
 
-    // Fade out animation (Targeting QGraphicsOpacityEffect's opacity property)
-    QPropertyAnimation *fadeAnim = new QPropertyAnimation(m_opacityEffect, "opacity", this);
+    // Fade out animation (no parent set - managed by m_animations list)
+    QPropertyAnimation *fadeAnim = new QPropertyAnimation(m_opacityEffect, "opacity");
     fadeAnim->setStartValue(1.0);
     fadeAnim->setEndValue(0.0);
-    fadeAnim->setDuration(static_cast<int>(duration * 0.7));
+    fadeAnim->setDuration(static_cast<int>(duration * ParticleConstants::FADE_DURATION_RATIO));
     fadeAnim->setEasingCurve(QEasingCurve::InQuad);
 
     // Connect to delete the particle when fade is finished
@@ -79,49 +100,75 @@ void Particle::animate(const QPoint &startPos, const QPoint &endPos, int duratio
 // --- ParticleSystem Implementation ---
 
 ParticleSystem::ParticleSystem(QWidget *parent)
-    : QWidget(parent)
+    : QWidget(parent),
+      m_activeParticleCount(0),
+      m_emitSignalWhenComplete(false)
 {
     // The particle system should be transparent and cover the area where effects happen
     setAttribute(Qt::WA_TranslucentBackground);
     // We rely on the parent to set the geometry.
 }
 
-void ParticleSystem::createBurst(const QPoint &centerPos, int particleCount, const QString &particleType, const QString &color)
+void ParticleSystem::createBurst(const QPoint &centerPos, int particleCount, const QString &particleType, const QString &color, bool emitSignal)
 {
+    // Input validation
+    if (particleCount <= 0) {
+        qWarning() << "ParticleSystem::createBurst: particleCount must be positive, got" << particleCount;
+        return;
+    }
+
+    if (particleCount > ParticleConstants::MAX_PARTICLES_PER_BURST) {
+        qWarning() << "ParticleSystem::createBurst: particleCount" << particleCount
+                   << "exceeds maximum" << ParticleConstants::MAX_PARTICLES_PER_BURST
+                   << ", clamping to maximum";
+        particleCount = ParticleConstants::MAX_PARTICLES_PER_BURST;
+    }
+
+    if (emitSignal) {
+        m_emitSignalWhenComplete = true;
+    }
+
     for (int i = 0; i < particleCount; ++i) {
         Particle *particle = new Particle(this, particleType, color);
 
+        // Track when particles are destroyed
+        connect(particle, &QObject::destroyed, this, &ParticleSystem::onParticleDestroyed);
+        m_activeParticleCount++;
+
         // Calculate position in circle
         double angle = (static_cast<double>(i) / particleCount) * 2 * M_PI;
-        int radius = std::rand() % 51 + 30; // 30 to 80
+        int radius = randomInt(ParticleConstants::MIN_RADIUS, ParticleConstants::MAX_RADIUS);
         int endX = centerPos.x() + static_cast<int>(std::cos(angle) * radius);
         int endY = centerPos.y() + static_cast<int>(std::sin(angle) * radius);
 
-        QPoint startPos = centerPos - QPoint(8, 8); // Center the particle
+        QPoint startPos = centerPos - QPoint(ParticleConstants::PARTICLE_HALF_SIZE, ParticleConstants::PARTICLE_HALF_SIZE);
         QPoint endPos(endX, endY);
 
-        int duration = std::rand() % 401 + 800; // 800 to 1200
+        int duration = randomInt(ParticleConstants::MIN_DURATION_MS, ParticleConstants::MAX_DURATION_MS);
         particle->animate(startPos, endPos, duration);
         m_particles.append(particle);
     }
-
-    // Clean up after animation completes
-    QTimer::singleShot(1500, this, &ParticleSystem::cleanup);
 }
 
-void ParticleSystem::cleanup()
+void ParticleSystem::onParticleDestroyed()
 {
-    // The particles delete themselves via deleteLater().
-    // We just clear the list of pointers and emit the signal.
-    m_particles.clear();
-    emit animationFinished();
+    m_activeParticleCount--;
+
+    // When all particles are destroyed and we should emit signal, do so
+    if (m_activeParticleCount == 0 && m_emitSignalWhenComplete) {
+        m_particles.clear();
+        m_emitSignalWhenComplete = false;
+        emit animationFinished();
+    }
 }
 
 void ParticleSystem::victoryExplosion(const QPoint &centerPos)
 {
-    createBurst(centerPos, 8, "star", "#e5c07b");
-    QTimer::singleShot(200, [this, centerPos] {
-        createBurst(centerPos, 6, "spark", "#98c379");
+    // First burst doesn't emit signal
+    createBurst(centerPos, 8, "star", "#e5c07b", false);
+    // Second burst will emit signal when all particles from both bursts are done
+    QTimer::singleShot(ParticleConstants::VICTORY_SECOND_BURST_DELAY_MS, [this, centerPos] {
+        createBurst(centerPos, 6, "spark", "#98c379", true);
     });
 }
 
@@ -187,23 +234,27 @@ void AchievementSystem::showAchievementText(const QString &text, const QPoint &p
         border: none;
     )").arg(color));
 
+    // Create opacity effect for proper fading
+    QGraphicsOpacityEffect *opacityEffect = new QGraphicsOpacityEffect(label);
+    label->setGraphicsEffect(opacityEffect);
+
     // Position above the effect
     QFontMetrics fm(label->font());
-    QPoint textPos = position - QPoint(fm.horizontalAdvance(text) / 2, 50);
+    QPoint textPos = position - QPoint(fm.horizontalAdvance(text) / 2, ParticleConstants::TEXT_VERTICAL_OFFSET);
     label->move(textPos);
     label->show();
 
     // Animate text floating up and fading
     QPropertyAnimation *anim = new QPropertyAnimation(label, "pos", this);
     anim->setStartValue(textPos);
-    anim->setEndValue(textPos - QPoint(0, 30));
-    anim->setDuration(2000);
+    anim->setEndValue(textPos - QPoint(0, ParticleConstants::TEXT_FLOAT_DISTANCE));
+    anim->setDuration(ParticleConstants::TEXT_ANIMATION_DURATION_MS);
     anim->setEasingCurve(QEasingCurve::OutQuad);
 
-    QPropertyAnimation *fadeAnim = new QPropertyAnimation(label, "windowOpacity", this);
+    QPropertyAnimation *fadeAnim = new QPropertyAnimation(opacityEffect, "opacity", this);
     fadeAnim->setStartValue(1.0);
     fadeAnim->setEndValue(0.0);
-    fadeAnim->setDuration(2000);
+    fadeAnim->setDuration(ParticleConstants::TEXT_ANIMATION_DURATION_MS);
 
     // Connect to delete the label when fade is finished
     connect(fadeAnim, &QPropertyAnimation::finished, label, &QLabel::deleteLater);
