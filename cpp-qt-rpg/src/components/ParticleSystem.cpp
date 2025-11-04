@@ -106,6 +106,7 @@ ParticleSystem::ParticleSystem(QWidget *parent)
 {
     // The particle system should be transparent and cover the area where effects happen
     setAttribute(Qt::WA_TranslucentBackground);
+    setAttribute(Qt::WA_TransparentForMouseEvents);  // Allow clicks to pass through
     // We rely on the parent to set the geometry.
 }
 

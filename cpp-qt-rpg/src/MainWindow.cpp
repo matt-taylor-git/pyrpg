@@ -25,6 +25,7 @@
 #include "models/Skill.h"
 #include "models/Item.h"
 #include "components/AnimationManager.h"
+#include "components/ParticleSystem.h"
 #include "theme/Theme.h"
 #include <QStackedWidget>
 #include <QWidget>
