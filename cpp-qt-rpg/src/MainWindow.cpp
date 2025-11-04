@@ -32,6 +32,7 @@
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <QResizeEvent>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -273,21 +274,24 @@ void MainWindow::handleItemClicked()
             QString log = m_game->playerUseItem(selectedItem);
             m_combatPage->updateCombatState(m_game->getPlayer(), m_game->getCurrentMonster(), log);
 
-            // Trigger particle effects based on item type
-            if (m_combatPage->getParticleSystem()) {
-                QLabel* heroSprite = m_combatPage->getHeroSpriteLabel();
-                if (heroSprite) {
-                    QPoint heroPos = heroSprite->geometry().center();
+            // Trigger particle effects after a brief delay to ensure dialog is dismissed
+            QString effectType = selectedItem->effect;
+            QTimer::singleShot(100, this, [this, effectType]() {
+                if (m_combatPage->getParticleSystem()) {
+                    QLabel* heroSprite = m_combatPage->getHeroSpriteLabel();
+                    if (heroSprite) {
+                        QPoint heroPos = heroSprite->geometry().center();
 
-                    if (selectedItem->effect == "heal") {
-                        // Healing particle burst
-                        m_combatPage->getParticleSystem()->healingBurst(heroPos);
-                    } else if (selectedItem->effect == "restore_mana") {
-                        // Mana restoration particle burst (blue)
-                        m_combatPage->getParticleSystem()->createBurst(heroPos, 10, "spark", "#3498db", false);
+                        if (effectType == "heal") {
+                            // Healing particle burst
+                            m_combatPage->getParticleSystem()->healingBurst(heroPos);
+                        } else if (effectType == "restore_mana") {
+                            // Mana restoration particle burst (blue)
+                            m_combatPage->getParticleSystem()->createBurst(heroPos, 10, "spark", "#3498db", false);
+                        }
                     }
                 }
-            }
+            });
 
             // Item use doesn't end player's turn, no monster attack
         }
@@ -354,27 +358,30 @@ void MainWindow::handleCombatEnded(bool playerWon)
     // For now, don't check leveling - rewards are already given
     bool leveledUp = false;
 
-    // Show combat result dialog
-    if (playerWon) {
-        Monster *monster = m_game->getCurrentMonster();
-        CombatResultDialog resultDialog(
-            true,
-            monster ? monster->expReward : 0,
-            monster ? monster->goldReward : 0,
-            "",  // Loot message will be in combat log
-            leveledUp,
-            this
-        );
-        resultDialog.exec();
-    } else {
-        // Defeat
-        CombatResultDialog resultDialog(false, 0, 0, "", false, this);
-        resultDialog.exec();
-    }
+    // Wait 3 seconds to let particle effects play, then show dialog
+    QTimer::singleShot(3000, this, [this, playerWon, leveledUp]() {
+        // Show combat result dialog
+        if (playerWon) {
+            Monster *monster = m_game->getCurrentMonster();
+            CombatResultDialog resultDialog(
+                true,
+                monster ? monster->expReward : 0,
+                monster ? monster->goldReward : 0,
+                "",  // Loot message will be in combat log
+                leveledUp,
+                this
+            );
+            resultDialog.exec();
+        } else {
+            // Defeat
+            CombatResultDialog resultDialog(false, 0, 0, "", false, this);
+            resultDialog.exec();
+        }
 
-    // Return to non-combat mode on the main game hub
-    m_combatPage->setCombatMode(false);
-    stackedWidget->setCurrentWidget(m_combatPage);
+        // Return to non-combat mode on the main game hub
+        m_combatPage->setCombatMode(false);
+        stackedWidget->setCurrentWidget(m_combatPage);
+    });
 }
 
 void MainWindow::handleRunClicked()
