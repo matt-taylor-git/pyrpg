@@ -454,18 +454,31 @@ int Game::calculateDamage(int baseDamage, int attackerLevel, int defenderDefense
 {
     // Base formula: damage = baseDamage * levelMultiplier - defense
     double levelMultiplier = 1.0 + (attackerLevel * 0.1);
-    int damage = static_cast<int>(baseDamage * levelMultiplier) - defenderDefense;
+
+    // Prevent overflow: cap the multiplier at a reasonable maximum
+    if (levelMultiplier > 10.0) levelMultiplier = 10.0;
+
+    // Use long long to prevent overflow during multiplication
+    long long calculatedDamage = static_cast<long long>(baseDamage) * levelMultiplier;
+    int damage = static_cast<int>(calculatedDamage) - defenderDefense;
 
     // Apply critical multiplier
     if (isCritical) {
-        damage = static_cast<int>(damage * 1.75);
+        damage = static_cast<int>(static_cast<long long>(damage) * 1.75);
     }
 
     // Minimum damage is 1
     if (damage < 1) damage = 1;
 
-    // Add some variance (±10%)
-    int variance = QRandomGenerator::global()->bounded(damage / 5) - (damage / 10);
+    // Add some variance (±10%) - ensure bounded argument is positive
+    int varianceUpper = damage / 5;
+    int varianceLower = damage / 10;
+
+    // Ensure variance bounds are valid
+    if (varianceUpper <= 0) varianceUpper = 1;
+    if (varianceLower < 0) varianceLower = 0;
+
+    int variance = QRandomGenerator::global()->bounded(varianceUpper) - varianceLower;
     damage += variance;
 
     return damage > 0 ? damage : 1;
