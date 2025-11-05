@@ -6,24 +6,6 @@
 #include <QFontMetrics>
 #include <QGraphicsOpacityEffect>
 
-// Particle constants
-namespace ParticleConstants {
-    constexpr int PARTICLE_SIZE = 16;
-    constexpr int MIN_DURATION_MS = 800;
-    constexpr int MAX_DURATION_MS = 1200;
-    constexpr int MIN_RADIUS = 30;
-    constexpr int MAX_RADIUS = 80;
-    constexpr int POSITION_VARIANCE = 10;
-    constexpr int PARTICLE_HALF_SIZE = PARTICLE_SIZE / 2;
-    constexpr double FADE_DURATION_RATIO = 0.7;
-    constexpr int VICTORY_SECOND_BURST_DELAY_MS = 200;
-    constexpr int TEXT_FLOAT_DISTANCE = 30;
-    constexpr int TEXT_ANIMATION_DURATION_MS = 2000;
-    constexpr int TEXT_VERTICAL_OFFSET = 50;
-    constexpr int MAX_PARTICLES_PER_BURST = 100;
-    constexpr int ATTACK_IMPACT_DELAY_MS = 300;
-}
-
 // Thread-safe random number generator
 namespace {
     std::random_device rd;

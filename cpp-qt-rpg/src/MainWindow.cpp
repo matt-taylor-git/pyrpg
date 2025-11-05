@@ -20,6 +20,7 @@
 #include "components/CombatResultDialog.h"
 #include "components/QuestCompletionDialog.h"
 #include "components/MenuOverlay.h"
+#include "components/ParticleSystem.h"
 #include "models/Player.h"
 #include "models/Monster.h"
 #include "models/Skill.h"
