@@ -77,9 +77,9 @@ void Game::newGame(const QString &playerName, const QString &characterClass)
 
     // Connect manager signals BEFORE loading quests
     // This ensures that when quests are auto-accepted, story events are triggered
-    connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted);
-    connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
-    connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
+    connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted, Qt::UniqueConnection);
+    connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted, Qt::UniqueConnection);
+    connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted, Qt::UniqueConnection);
 
     // NOTE: loadQuests() is now called by MainWindow AFTER it connects to StoryManager signals
     // This ensures the tutorial event displays properly on character creation
@@ -156,9 +156,9 @@ m_codexManager = new CodexManager(player, this);
 m_codexManager->loadLoreEntries();
 
 // Connect manager signals BEFORE loading quests
-connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted);
-connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
-connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
+connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted, Qt::UniqueConnection);
+connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted, Qt::UniqueConnection);
+connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted, Qt::UniqueConnection);
 
 // Load quests AFTER connections are made
 m_questManager->loadQuests();
@@ -207,9 +207,9 @@ bool Game::loadFromSlot(int slotNumber)
     m_codexManager->loadLoreEntries();
 
     // Connect manager signals BEFORE loading quests
-    connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted);
-    connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted);
-    connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted);
+    connect(m_questManager, &QuestManager::questAccepted, m_storyManager, &StoryManager::onQuestStarted, Qt::UniqueConnection);
+    connect(m_questManager, &QuestManager::questCompleted, m_storyManager, &StoryManager::onQuestCompleted, Qt::UniqueConnection);
+    connect(m_questManager, &QuestManager::questCompleted, m_codexManager, &CodexManager::onQuestCompleted, Qt::UniqueConnection);
 
     // NOTE: loadQuests() is now called by MainWindow AFTER it connects to StoryManager signals
     // This ensures the tutorial event displays properly on character creation
@@ -643,4 +643,21 @@ int Game::calculatePlaytimeMinutes() const
     QTime now = QTime::currentTime();
     int seconds = m_gameStartTime.secsTo(now);
     return seconds / 60;
+}
+
+// Test utilities implementation
+void Game::setPlayerForTesting(Player* player) {
+    this->player = player;
+}
+
+void Game::setCurrentMonsterForTesting(Monster* monster) {
+    this->currentMonster = monster;
+}
+
+void Game::setCombatActiveForTesting(bool active) {
+    this->combatActive = active;
+}
+
+void Game::clearCombatLogForTesting() {
+    this->combatLog.clear();
 }

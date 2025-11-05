@@ -89,7 +89,7 @@ target_include_directories(pyrpg-qt PRIVATE src)
 enable_testing()
 
 # Test for MainWindow
-add_executable(test_mainwindow tests/test_mainwindow.cpp tests/TestBase.cpp src/MainWindow.cpp
+add_executable(test_mainwindow tests/test_mainwindow.cpp tests/TestBase.cpp tests/TestUtils.cpp src/MainWindow.cpp
     src/views/MainMenu.cpp
     src/views/NewGameView.cpp
     src/views/CharacterCustomizationPage.cpp
@@ -145,7 +145,7 @@ target_include_directories(test_mainwindow PRIVATE src)
 add_test(NAME MainWindowTest COMMAND test_mainwindow)
 
 # Test for Data Models
-add_executable(test_models tests/test_models.cpp tests/TestBase.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/models/FinalBoss.cpp src/models/Quest.cpp src/models/DialogueData.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/factories/MonsterTypeRegistry.cpp src/game/factories/QuestFactory.cpp src/game/factories/DialogueFactory.cpp src/game/factories/StoryEventFactory.cpp src/game/factories/LoreFactory.cpp src/game/Game.cpp src/game/QuestManager.cpp src/game/DialogueManager.cpp src/game/StoryManager.cpp src/game/CodexManager.cpp src/persistence/SaveManager.cpp)
+add_executable(test_models tests/test_models.cpp tests/TestBase.cpp tests/TestUtils.cpp src/models/Item.cpp src/models/Skill.cpp src/models/Character.cpp src/models/Player.cpp src/models/Monster.cpp src/models/FinalBoss.cpp src/models/Quest.cpp src/models/DialogueData.cpp src/game/factories/ItemFactory.cpp src/game/factories/SkillFactory.cpp src/game/factories/MonsterFactory.cpp src/game/factories/MonsterTypeRegistry.cpp src/game/factories/QuestFactory.cpp src/game/factories/DialogueFactory.cpp src/game/factories/StoryEventFactory.cpp src/game/factories/LoreFactory.cpp src/game/Game.cpp src/game/QuestManager.cpp src/game/DialogueManager.cpp src/game/StoryManager.cpp src/game/CodexManager.cpp src/persistence/SaveManager.cpp)
 target_link_libraries(test_models PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_models PRIVATE src)
 add_test(NAME ModelsTest COMMAND test_models)
@@ -169,7 +169,7 @@ target_include_directories(test_item_lore PRIVATE src)
 add_test(NAME ItemLoreTest COMMAND test_item_lore)
 
 # Test for Persistence
-add_executable(test_persistence tests/test_persistence.cpp tests/TestBase.cpp
+add_executable(test_persistence tests/test_persistence.cpp tests/TestBase.cpp tests/TestUtils.cpp
     src/persistence/SaveManager.cpp
     src/models/Player.cpp
     src/models/Character.cpp
@@ -349,7 +349,7 @@ target_include_directories(test_quest_system PRIVATE src)
 add_test(NAME QuestSystemTest COMMAND test_quest_system)
 
 # Test for Skill Usage
-add_executable(test_skill_usage tests/test_skill_usage.cpp tests/TestBase.cpp
+add_executable(test_skill_usage tests/test_skill_usage.cpp tests/TestBase.cpp tests/TestUtils.cpp
     src/game/Game.cpp
     src/game/QuestManager.cpp
     src/game/DialogueManager.cpp
@@ -376,6 +376,64 @@ add_executable(test_skill_usage tests/test_skill_usage.cpp tests/TestBase.cpp
 target_link_libraries(test_skill_usage PRIVATE Qt6::Widgets Qt6::Test)
 target_include_directories(test_skill_usage PRIVATE src)
 add_test(NAME SkillUsageTest COMMAND test_skill_usage)
+
+# Test for Test Utilities Demo
+add_executable(test_test_utils_demo tests/test_test_utils_demo.cpp tests/TestBase.cpp tests/TestUtils.cpp
+    src/models/Player.cpp
+    src/models/Character.cpp
+    src/models/Monster.cpp
+    src/models/FinalBoss.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+    src/models/Quest.cpp
+    src/models/DialogueData.cpp
+    src/game/Game.cpp
+    src/game/QuestManager.cpp
+    src/game/DialogueManager.cpp
+    src/game/StoryManager.cpp
+    src/game/CodexManager.cpp
+    src/game/factories/ItemFactory.cpp
+    src/game/factories/SkillFactory.cpp
+    src/game/factories/MonsterFactory.cpp
+    src/game/factories/MonsterTypeRegistry.cpp
+    src/game/factories/QuestFactory.cpp
+    src/game/factories/DialogueFactory.cpp
+    src/game/factories/StoryEventFactory.cpp
+    src/game/factories/LoreFactory.cpp
+    src/persistence/SaveManager.cpp
+)
+target_link_libraries(test_test_utils_demo PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_test_utils_demo PRIVATE src)
+add_test(NAME TestUtilsDemoTest COMMAND test_test_utils_demo)
+
+# Test for Edge Cases
+add_executable(test_edge_cases tests/test_edge_cases.cpp tests/TestBase.cpp tests/TestUtils.cpp
+    src/models/Player.cpp
+    src/models/Character.cpp
+    src/models/Monster.cpp
+    src/models/FinalBoss.cpp
+    src/models/Item.cpp
+    src/models/Skill.cpp
+    src/models/Quest.cpp
+    src/models/DialogueData.cpp
+    src/game/Game.cpp
+    src/game/QuestManager.cpp
+    src/game/DialogueManager.cpp
+    src/game/StoryManager.cpp
+    src/game/CodexManager.cpp
+    src/game/factories/ItemFactory.cpp
+    src/game/factories/SkillFactory.cpp
+    src/game/factories/MonsterFactory.cpp
+    src/game/factories/MonsterTypeRegistry.cpp
+    src/game/factories/QuestFactory.cpp
+    src/game/factories/DialogueFactory.cpp
+    src/game/factories/StoryEventFactory.cpp
+    src/game/factories/LoreFactory.cpp
+    src/persistence/SaveManager.cpp
+)
+target_link_libraries(test_edge_cases PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(test_edge_cases PRIVATE src)
+add_test(NAME EdgeCasesTest COMMAND test_edge_cases)
 
 # --- Packaging ---
 

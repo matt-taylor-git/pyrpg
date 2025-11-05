@@ -15,6 +15,11 @@ SaveManager::SaveManager()
 
 bool SaveManager::saveGame(Player *player, const QString &filePath)
 {
+    if (!player) {
+        qWarning() << "Cannot save game: player is null";
+        return false;
+    }
+
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly)) {
         qWarning() << "Could not open file for writing:" << filePath;

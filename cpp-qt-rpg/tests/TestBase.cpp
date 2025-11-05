@@ -5,6 +5,9 @@
 #include "models/Item.h"
 #include "models/Skill.h"
 
+// Include test utilities
+#include "TestUtils.h"
+
 Player* TestBase::createTestPlayer(const QString& name,
                                  const QString& characterClass,
                                  int level,
@@ -68,4 +71,85 @@ void TestBase::cleanupTestObjects()
 void TestBase::cleanup()
 {
     cleanupTestObjects();
+}
+
+// Enhanced test object creation using builders
+Player* TestBase::createPlayerUsing(PlayerBuilder builder)
+{
+    Player* player = builder.build();
+    addToCleanup(player);
+    return player;
+}
+
+Monster* TestBase::createMonsterUsing(MonsterBuilder builder)
+{
+    Monster* monster = builder.build();
+    addToCleanup(monster);
+    return monster;
+}
+
+// Convenience methods using test fixtures
+Player* TestBase::createBasicWarrior()
+{
+    Player* player = TestFixtures::createBasicWarrior();
+    addToCleanup(player);
+    return player;
+}
+
+Player* TestBase::createHighLevelWarrior()
+{
+    Player* player = TestFixtures::createHighLevelWarrior();
+    addToCleanup(player);
+    return player;
+}
+
+Player* TestBase::createLowHealthWarrior()
+{
+    Player* player = TestFixtures::createLowHealthWarrior();
+    addToCleanup(player);
+    return player;
+}
+
+Monster* TestBase::createWeakGoblin()
+{
+    Monster* monster = TestFixtures::createWeakGoblin();
+    addToCleanup(monster);
+    return monster;
+}
+
+Monster* TestBase::createStrongOrc()
+{
+    Monster* monster = TestFixtures::createStrongOrc();
+    addToCleanup(monster);
+    return monster;
+}
+
+Monster* TestBase::createBossMonster()
+{
+    Monster* monster = TestFixtures::createBossMonster();
+    addToCleanup(monster);
+    return monster;
+}
+
+// Mock creation
+MockSaveManager* TestBase::createMockSaveManager()
+{
+    MockSaveManager* mock = new MockSaveManager();
+    addToCleanup(mock);
+    return mock;
+}
+
+MockSignalEmitter* TestBase::createMockSignalEmitter()
+{
+    MockSignalEmitter* emitter = new MockSignalEmitter();
+    addToCleanup(emitter);
+    return emitter;
+}
+
+// Signal testing
+SignalTester* TestBase::createSignalTester(QObject* sender, const char* signal)
+{
+    SignalTester* tester = new SignalTester(sender, signal);
+    addToCleanup(tester);
+    return tester;
 }

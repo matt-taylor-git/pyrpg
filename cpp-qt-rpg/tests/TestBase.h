@@ -8,6 +8,7 @@
 #include "game/Game.h"
 #include "game/factories/ItemFactory.h"
 #include "game/factories/MonsterFactory.h"
+#include "TestUtils.h"
 
 /**
  * Base class for all test classes providing common functionality
@@ -39,6 +40,25 @@ protected:
     // Cleanup helpers
     void addToCleanup(void* obj);
     void cleanupTestObjects();
+
+    // Enhanced test object creation using builders
+    Player* createPlayerUsing(PlayerBuilder builder);
+    Monster* createMonsterUsing(MonsterBuilder builder);
+
+    // Convenience methods using test fixtures
+    Player* createBasicWarrior();
+    Player* createHighLevelWarrior();
+    Player* createLowHealthWarrior();
+    Monster* createWeakGoblin();
+    Monster* createStrongOrc();
+    Monster* createBossMonster();
+
+    // Mock creation
+    MockSaveManager* createMockSaveManager();
+    MockSignalEmitter* createMockSignalEmitter();
+
+    // Signal testing
+    SignalTester* createSignalTester(QObject* sender, const char* signal);
 
 private slots:
     void cleanup();

@@ -51,6 +51,12 @@ void startFinalBossCombat();
 bool canAccessFinalBoss() const;
 int calculatePlaytimeMinutes() const;
 
+    // Test utilities (public for testing)
+    void setPlayerForTesting(Player* player);
+    void setCurrentMonsterForTesting(Monster* monster);
+    void setCombatActiveForTesting(bool active);
+    void clearCombatLogForTesting();
+
 signals:
     void combatEnded(bool playerWon);
     void bossEncountered(const QString &bossName);
@@ -71,6 +77,7 @@ private:
     QTime m_gameStartTime;
 
     friend class TestModels;
+    friend class TestUtils;
 
     // Combat helpers
     int calculateDamage(int baseDamage, int attackerLevel, int defenderDefense, bool isCritical = false);
