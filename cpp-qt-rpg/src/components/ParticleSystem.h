@@ -73,26 +73,6 @@ private:
     bool m_emitSignalWhenComplete;
 };
 
-// --- AchievementSystem Class ---
-class AchievementSystem : public QObject
-{
-    Q_OBJECT
 
-public:
-    explicit AchievementSystem(QWidget *parentWidget);
-    ~AchievementSystem() override = default;
-
-    void triggerAchievement(const QString &achievementType, const QPoint &position);
-
-private slots:
-    void onParticlesFinished();
-
-private:
-    void showAchievementText(const QString &text, const QPoint &position, const QString &color);
-
-    QWidget *m_parent;
-    ParticleSystem *m_particleSystem;
-    QList<QPropertyAnimation*> m_textAnimations;
-};
 
 #endif // PARTICLESYSTEM_H
