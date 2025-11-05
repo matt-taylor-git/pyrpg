@@ -1,11 +1,11 @@
 #include <QTest>
 #include <QSignalSpy>
 #include <QKeyEvent>
+#include "TestBase.h"
 #include "MainWindow.h"
 #include "components/MenuOverlay.h"
-#include "models/Player.h"
 
-class TestMainWindow : public QObject
+class TestMainWindow : public TestBase
 {
     Q_OBJECT
 
@@ -58,13 +58,12 @@ void TestMainWindow::testMenuOverlayContentUpdate()
     MenuOverlay overlay;
 
     // Create a player with some items
-    Player player("TestPlayer", "Warrior");
-    player.level = 5;
-    player.health = 100;
-    player.maxHealth = 100;
+    Player* player = createTestPlayer("TestPlayer", "Warrior", 5, 100);
+    player->health = 100;
+    player->maxHealth = 100;
 
     // Update overlay content
-    overlay.updateContent(&player);
+    overlay.updateContent(player);
 
     // Show the overlay
     overlay.showOverlay();
@@ -76,8 +75,8 @@ void TestMainWindow::testMenuOverlayContentUpdate()
 void TestMainWindow::testMenuOverlayRapidToggle()
 {
     MenuOverlay overlay;
-    Player player("TestPlayer");
-    overlay.updateContent(&player);
+    Player* player = createTestPlayer("TestPlayer");
+    overlay.updateContent(player);
 
     // Rapidly toggle the overlay multiple times
     for (int i = 0; i < 5; ++i) {
@@ -115,8 +114,8 @@ void TestMainWindow::testMenuOverlayEdgeCases()
 void TestMainWindow::testMenuOverlayAnimationState()
 {
     MenuOverlay overlay;
-    Player player("TestPlayer");
-    overlay.updateContent(&player);
+    Player* player = createTestPlayer("TestPlayer");
+    overlay.updateContent(player);
 
     // Show overlay and immediately try to hide it
     overlay.showOverlay();
@@ -133,8 +132,8 @@ void TestMainWindow::testMenuOverlayAnimationState()
 void TestMainWindow::testMenuOverlayFocusManagement()
 {
     MenuOverlay overlay;
-    Player player("TestPlayer");
-    overlay.updateContent(&player);
+    Player* player = createTestPlayer("TestPlayer");
+    overlay.updateContent(player);
 
     // Create a widget to hold focus
     QWidget focusWidget;
