@@ -24,6 +24,9 @@ void AnimationManager::playPlayerAttackAnimation()
         return;
     }
 
+    // Raise hero sprite to ensure it renders on top of sibling widgets during animation
+    heroSprite->raise();
+
     QPoint startPos = heroSprite->pos();
     QPoint endPos = enemySprite->pos();
 

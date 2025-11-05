@@ -17,6 +17,8 @@ This project uses CMake with Qt6 automation features:
 - **CMAKE_AUTOUIC**: Automatically processes Qt UI files
 - **CMAKE_AUTORCC**: Automatically compiles Qt Resource files
 
+**Use at least 4 jobs (make -j 4) when building project**
+
 ### Common Commands
 
 ```bash
