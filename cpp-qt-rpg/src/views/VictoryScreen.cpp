@@ -1,5 +1,6 @@
 #include "VictoryScreen.h"
 #include "../theme/Theme.h"
+#include "../components/ParticleSystem.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
@@ -8,6 +9,7 @@
 #include <QFont>
 #include <QGraphicsDropShadowEffect>
 #include <QKeyEvent>
+#include <QTimer>
 
 VictoryScreen::VictoryScreen(int finalLevel, int playtime, int kills, int deaths,
                              int gold, int quests, QWidget *parent)
@@ -22,12 +24,34 @@ VictoryScreen::VictoryScreen(int finalLevel, int playtime, int kills, int deaths
       m_victoryMessage(nullptr),
       m_statsContainer(nullptr),
       m_continueButton(nullptr),
-      m_menuButton(nullptr)
+      m_menuButton(nullptr),
+      m_particleSystem(nullptr)
 {
     setWindowTitle("Victory!");
     setModal(true);
     setMinimumSize(800, 600);
     setupUi();
+
+    // Initialize particle system
+    m_particleSystem = new ParticleSystem(this);
+    m_particleSystem->setGeometry(rect());
+    m_particleSystem->raise();
+
+    // Trigger celebratory particle effects after a short delay
+    QTimer::singleShot(300, [this]() {
+        if (m_particleSystem) {
+            QPoint centerPos = rect().center();
+            m_particleSystem->victoryExplosion(centerPos);
+
+            // Trigger additional bursts for extra celebration
+            QTimer::singleShot(600, [this, centerPos]() {
+                m_particleSystem->goldRewardBurst(centerPos + QPoint(0, -100));
+            });
+            QTimer::singleShot(1000, [this, centerPos]() {
+                m_particleSystem->createBurst(centerPos + QPoint(0, 100), 12, "star", "#9b59b6", false);
+            });
+        }
+    });
 }
 
 void VictoryScreen::setupUi()

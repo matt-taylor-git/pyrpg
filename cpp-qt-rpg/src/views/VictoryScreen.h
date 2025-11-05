@@ -6,6 +6,7 @@
 class QLabel;
 class QPushButton;
 class QWidget;
+class ParticleSystem;
 
 class VictoryScreen : public QDialog
 {
@@ -43,6 +44,9 @@ private:
     QWidget* m_statsContainer;
     QPushButton* m_continueButton;
     QPushButton* m_menuButton;
+
+    // Particle effects
+    ParticleSystem* m_particleSystem;
 };
 
 #endif // VICTORYSCREEN_H

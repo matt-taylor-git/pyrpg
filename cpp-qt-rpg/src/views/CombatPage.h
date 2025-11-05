@@ -10,6 +10,7 @@ class QTextEdit;
 class QVBoxLayout;
 class Player;
 class Monster;
+class ParticleSystem;
 
 class CombatPage : public QWidget
 {
@@ -26,6 +27,7 @@ void setCombatMode(bool inCombat);
     // Accessors for AnimationManager
     QLabel* getHeroSpriteLabel();
     QLabel* getEnemySpriteLabel();
+    ParticleSystem* getParticleSystem();
 
 signals:
 void attackClicked();
@@ -59,6 +61,9 @@ private:
 
     // Log widgets
     QTextEdit *m_battleLog;
+
+    // Particle effects
+    ParticleSystem *m_particleSystem;
 };
 
 #endif // COMBATPAGE_H

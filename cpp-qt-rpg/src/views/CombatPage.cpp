@@ -2,6 +2,7 @@
 #include "../theme/Theme.h"
 #include "../models/Player.h"
 #include "../models/Monster.h"
+#include "../components/ParticleSystem.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -15,6 +16,11 @@
 CombatPage::CombatPage(QWidget *parent) : QWidget(parent), m_inCombat(false)
 {
     setupUi();
+
+    // Initialize particle system after UI is set up
+    m_particleSystem = new ParticleSystem(this);
+    m_particleSystem->setGeometry(rect());
+    m_particleSystem->raise(); // Ensure particles appear on top
 }
 
 void CombatPage::setupUi()
@@ -313,33 +319,29 @@ void CombatPage::setCombatMode(bool inCombat)
     // Add the new layout to the card
     m_cardLayout->addLayout(m_actionsLayout);
 
-        // Force the widget to update its layout
-
-        m_cardLayout->update();
-
-        update();
-
-    }
+    // Force the widget to update its layout
+    m_cardLayout->update();
+    update();
+}
 
     
 
-    QLabel* CombatPage::getHeroSpriteLabel()
-
-    {
-
-        return m_heroSpriteLabel;
-
-    }
+QLabel* CombatPage::getHeroSpriteLabel()
+{
+    return m_heroSpriteLabel;
+}
 
     
 
-    QLabel* CombatPage::getEnemySpriteLabel()
+QLabel* CombatPage::getEnemySpriteLabel()
+{
+    return m_enemySpriteLabel;
+}
 
-    {
-
-        return m_enemySpriteLabel;
-
-    }
+ParticleSystem* CombatPage::getParticleSystem()
+{
+    return m_particleSystem;
+}
 
 void CombatPage::addLogEntry(const QString &message, const QString &type)
 {

@@ -1,10 +1,12 @@
 #include "AnimationManager.h"
 #include "../views/CombatPage.h"
+#include "ParticleSystem.h"
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
 #include <QPauseAnimation>
 #include <QLabel>
 #include <QEasingCurve>
+#include <QTimer>
 
 AnimationManager::AnimationManager(CombatPage *combatPage, QObject *parent)
     : QObject(parent), m_combatPage(combatPage)
@@ -15,6 +17,7 @@ void AnimationManager::playPlayerAttackAnimation()
 {
     QLabel* heroSprite = m_combatPage->getHeroSpriteLabel();
     QLabel* enemySprite = m_combatPage->getEnemySpriteLabel();
+    ParticleSystem* particles = m_combatPage->getParticleSystem();
 
     if (!heroSprite || !enemySprite) {
         emit animationFinished();
@@ -32,6 +35,14 @@ void AnimationManager::playPlayerAttackAnimation()
     attackAnimation->setStartValue(startPos);
     attackAnimation->setEndValue(endPos);
     attackAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+
+    // Trigger particle effect at impact (midpoint of attack)
+    if (particles) {
+        QTimer::singleShot(ParticleConstants::ATTACK_IMPACT_DELAY_MS, [particles, enemySprite]() {
+            QPoint impactPos = enemySprite->geometry().center();
+            particles->createBurst(impactPos, 10, "spark", "#e74c3c", false);
+        });
+    }
 
     // Animation to return to the original position
     QPropertyAnimation *returnAnimation = new QPropertyAnimation(heroSprite, "pos");
@@ -52,6 +63,13 @@ void AnimationManager::playPlayerAttackAnimation()
 
 void AnimationManager::playDamageAnimation(QLabel* target)
 {
-    // Placeholder for now, just emit the signal.
+    ParticleSystem* particles = m_combatPage->getParticleSystem();
+
+    if (particles && target) {
+        // Trigger damage indicator particles at target location
+        QPoint damagePos = target->geometry().center();
+        particles->createBurst(damagePos, 8, "spark", "#e74c3c", false);
+    }
+
     emit animationFinished();
 }
